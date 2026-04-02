@@ -1,6 +1,6 @@
 package com.kotva.mode;
 
-enum GameMode {
+public enum GameMode {
     HOT_SEAT,
     HUMAN_VS_AI,
     LAN_MULTIPLAYER;
