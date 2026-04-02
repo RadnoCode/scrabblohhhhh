@@ -5,10 +5,10 @@ import java.util.List;
 public class GameState {
     private Board board;
     private TileBag tileBag;
-    private List<PlayerState> players;
+    private List<Player> players;
     private int currentPlayerIndex;
 
-    public GameState(List<PlayerState> players) {
+    public GameState(List<Player> players) {
         this.players = players;
         this.board = new Board();
         this.tileBag = new TileBag();
@@ -23,7 +23,7 @@ public class GameState {
         return tileBag;
     }
 
-    public List<PlayerState> getPlayers() {
+    public List<Player> getPlayers() {
         return players;
     }
 
@@ -31,7 +31,7 @@ public class GameState {
         return currentPlayerIndex;
     }
 
-    public PlayerState getCurrentPlayer() {
+    public Player getCurrentPlayer() {
         return players.get(currentPlayerIndex);
     }
 
@@ -41,7 +41,7 @@ public class GameState {
 
     public void initialDraw(){
         for(int i = 0;i<players.size();i++){
-            PlayerState player = players.get(i);
+            Player player = players.get(i);
             for(int j=0;j<7;j++){
                 Tile newTile = tileBag.drawTile();
                 player.getRack().setTileAt(j, newTile);

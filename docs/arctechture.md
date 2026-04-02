@@ -146,7 +146,7 @@ com.yourteam.scrabble
 │  ├─ TileBag
 │  ├─ Rack
 │  ├─ RackSlot
-│  ├─ PlayerState
+│  ├─ Player
 │  ├─ PlayerStatus
 │  ├─ PlayerAction
 │  ├─ PlaceTilesAction
@@ -699,7 +699,7 @@ interface SettlementService {
 
 class GameState {
     private Board board;
-    private List<PlayerState> players;
+    private List<Player> players;
     private int currentPlayerIndex;
     private TileBag tileBag;
     private boolean gameOver;
@@ -709,7 +709,7 @@ class GameState {
 
 ⸻
 
-2. PlayerState
+2. Player
 
 作用
 
@@ -717,7 +717,7 @@ class GameState {
 
 字段
 
-class PlayerState {
+class Player {
     private String playerId;
     private String playerName;
     private Rack rack;
@@ -1391,7 +1391,7 @@ TurnCoordinator 判定结束
 	4.	GameSession
 	5.	GameState
 	6.	Board
-	7.	PlayerState
+	7.	Player
 	8.	TurnDraft
 	9.	GameApplicationService
 	10.	MovePreviewService

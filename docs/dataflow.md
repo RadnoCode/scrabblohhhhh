@@ -1,4 +1,5 @@
 # 第一层：应用级流程
+
 [Presentation]
 MainMenuController
     ↓  (用户选择)
@@ -23,6 +24,7 @@ ResultController
 MainMenuController
 
 # 第二层：对局回合推进（Game Loop）
+
 [Application]
 TurnCoordinator
     ↓  当前玩家ID
@@ -53,6 +55,7 @@ TurnCoordinator
 # 第三层：落子与规则逻辑
 
 ## 3.1 预览流（不修改状态）
+
 [Presentation]
 GameController
     ↓  (tile placement)
@@ -69,6 +72,7 @@ RuleEngine
 GameUiState
 
 ## 3.2 提交流（修改状态）
+
 [Application]
 GameApplicationService
     ↓  PlaceTilesAction
