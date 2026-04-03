@@ -12,6 +12,8 @@ import com.kotva.application.draft.TurnDraft;
 import com.kotva.domain.model.Position;
 import com.kotva.domain.model.Tile;
 import com.kotva.domain.model.TileBag;
+import com.kotva.domain.model.GameState;
+
 
 public final class WordExtractor {
     private WordExtractor() {
@@ -27,9 +29,6 @@ public final class WordExtractor {
         }
 
         Map<String, DraftPlacement> draftTileByPoint = buildIndex(draft.getPlacements());
-        if (draftTileByPoint.size() < 2) {
-            return Collections.emptyList();
-        }
 
         LinkedHashSet<CandidateWord> candidateWords = new LinkedHashSet<>();
         for (DraftPlacement placement : draft.getPlacements()) {

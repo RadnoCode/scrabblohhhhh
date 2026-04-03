@@ -61,6 +61,7 @@ public class Board {
         int col = position.getCol();
         int row = position.getRow();
 
+        //If get an error, put tile back.
         if(row<0||row>=SIZE||col<0||col>=SIZE){
             throw new IllegalArgumentException("Position is out of bounds.");
         }
