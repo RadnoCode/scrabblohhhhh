@@ -4,7 +4,10 @@ package com.kotva.domain.model;
 import com.kotva.policy.BonusType;
 
 /**
- * Represents the 15x15 Scrabble board.
+ * The 15x15 Scrabble game board.
+ * * This class uses a 2D array of Cell objects to represent the grid.
+ * To make the board setup easy, we use a visual string array (BONUS_MAP)
+ * to quickly map out all the special bonus squares (like DL, TL, DW, TW).
  */
 public class Board {
 

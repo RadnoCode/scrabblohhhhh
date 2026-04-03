@@ -2,6 +2,9 @@ package com.kotva.domain.model;
 
 /**
  * Represents a single letter tile in the game.
+ * * Each tile has a letter and a base score. It also handles "Blank Tiles"
+ * which have 0 points but can act as any letter chosen by the player
+ * (stored in assignedLetter).
  */
 public class Tile {
     private final String tileID;

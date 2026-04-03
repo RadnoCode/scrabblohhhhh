@@ -1,15 +1,43 @@
 package com.kotva.domain.model;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+/**
+ * An unlimited supply of letter tiles. [cite: 46, 760]
+ * * In this "Scribble" version, the bag never runs out of tiles.
+ * This class acts as a generator that randomly picks letters from a
+ * predefined pool (including blank tiles) and creates new Tile objects
+ * whenever a player needs to draw.
+ */
 public class TileBag {
-    private static final String LETTER_pool =
-            "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ";
+    private static final String LETTER_POOL =
+            "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ  ";
     private final Random random = new Random();
+    private final List<Tile> tiles = new ArrayList<>();
+    private final Map<String, Tile> allTilesById = new HashMap<>();
+
+    public TileBag() {
+        initialize();
+    }
+
+    public void initialize() {
+        tiles.clear();
+        allTilesById.clear();
+        for (int i = 0; i < LETTER_POOL.length(); i++) {
+            char letter = LETTER_POOL.charAt(i);
+            boolean isBlank = (letter == ' ');
+            Tile tile = new Tile(UUID.randomUUID().toString(), letter, getScoreForLetter(letter), isBlank);
+            tiles.add(tile);
+            allTilesById.put(tile.getTileID(), tile);
+        }
+    }
 
     private int getScoreForLetter(char letter) {
-
         switch (letter) {
             case 'A':
             case 'E':
@@ -50,13 +78,34 @@ public class TileBag {
         }
     }
 
+    public Tile drawRandomTile() {
+        if (isEmpty()) {
+            return null;
+        }
+
+        int index = random.nextInt(tiles.size());
+        return tiles.remove(index);
+    }
+
+    // Keep existing API used by current callers.
     public Tile drawTile() {
-        int index = random.nextInt(LETTER_pool.length());
-        char c = LETTER_pool.charAt(index);
-        int score = getScoreForLetter(c);
+        return drawRandomTile();
+    }
 
-        Tile tile = new Tile(UUID.randomUUID().toString(), c, score, false);
+    public boolean isEmpty() {
+        return tiles.isEmpty();
+    }
 
-        return tile;
+    /**
+     * Finds a tile by tile id from all tiles created for this game.
+     *
+     * @param tileId The tile id to look up.
+     * @return The matching tile, or null if not found.
+     */
+    public Tile getTileById(String tileId) {
+        if (tileId == null) {
+            return null;
+        }
+        return allTilesById.get(tileId);
     }
 }
