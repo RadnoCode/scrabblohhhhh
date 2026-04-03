@@ -26,31 +26,38 @@ MainMenuController
 # 第二层：对局回合推进（Game Loop）
 
 [Application]
-TurnCoordinator
-    ↓  当前玩家ID
-[Application]
-GameSession
-    ↓  GameState
+TurnCoordinator.startTurn()
+    ↓  getNextPlayer()（跳过 inactive player）
+[Domain]
+Player
+    ↓  PlayerController.requestAction()（阻塞等待动作）
 
 （玩家动作进入）
 
-[Application]
-GameApplicationService
-    ↓  Action（Place / Pass / Timeout）
+[Presentation / AI / LAN]
+PlayerController.onSubmit / onPass / onLose
+    ↓  PlayerAction（PLACE_TILE / PASS_TURN / LOSE）入队
 
 [Application]
 TurnCoordinator
-    ↓  TurnTransitionResult
+    ↓  validateActionOwner()
+    ↓  applyAction()
+    ↓  RoundTracker.recordTurn(isPass)
+    ↓  finalizeRound()
 
 → 分支：
 
-① 继续游戏
-    ↓  更新 currentPlayerIndex
-    ↓  新回合开始
+① 本轮未完成
+    ↓  返回本次 PlayerAction
+    ↓  下次继续 startTurn()
 
-② 游戏结束
-    ↓  GameEndReason
+② 本轮完成且（全员 PASS 或 activePlayerCount = 0）
+    ↓  gameEnded = true
     ↓  SettlementService
+
+③ 本轮完成但未终局
+    ↓  RoundTracker.startNewRound(activePlayerCount)
+    ↓  下一轮 startTurn()
 
 # 第三层：落子与规则逻辑
 
