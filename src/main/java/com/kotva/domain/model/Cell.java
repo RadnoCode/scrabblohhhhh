@@ -4,7 +4,10 @@ package com.kotva.domain.model;
 import com.kotva.policy.BonusType;
 
 /**
- * Represents a single square on the Scrabble board.
+ * A single square on the Scrabble board.
+ * * This class holds the square's location (Position) and its special
+ * scoring rule (BonusType, like Double Word). It also keeps track of
+ * which letter tile (if any) is currently sitting on it.
  */
 public class Cell {
 

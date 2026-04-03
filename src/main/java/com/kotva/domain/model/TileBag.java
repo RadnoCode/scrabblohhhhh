@@ -5,6 +5,13 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+/**
+ * An unlimited supply of letter tiles. [cite: 46, 760]
+ * * In this "Scribble" version, the bag never runs out of tiles.
+ * This class acts as a generator that randomly picks letters from a
+ * predefined pool (including blank tiles) and creates new Tile objects
+ * whenever a player needs to draw.
+ */
 public class TileBag {
     private static final String LETTER_pool =
             "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ  ";

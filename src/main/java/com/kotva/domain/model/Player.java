@@ -1,7 +1,13 @@
 package com.kotva.domain.model;
 
 import com.kotva.mode.PlayerController;
-
+/**
+ * Represents a participant in the Scrabble game.
+ * * This class holds all the personal data for a player, including their
+ * identity (ID and name), their current score, and their personal tile rack
+ * (the letters they currently hold). It also tracks if they are still active
+ * and what kind of controller (e.g., Human or AI) is making moves for them.
+ */
 public class Player {
     private String playerId;
     private String playerName;

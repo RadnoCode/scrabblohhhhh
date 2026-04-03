@@ -1,6 +1,12 @@
 package com.kotva.domain.model;
 
 import java.util.Objects;
+/**
+ * A specific coordinate (row and column) on the game board.
+ * * This class is immutable, meaning once a position is created, it cannot be changed.
+ * It properly overrides equals() and hashCode() so we can easily check if two
+ * positions point to the exact same spot, or use them safely in Lists and Maps.
+ */
 
     public class Position {
         private final int row;
