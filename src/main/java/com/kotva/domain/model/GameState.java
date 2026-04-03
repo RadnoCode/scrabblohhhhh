@@ -2,6 +2,13 @@ package com.kotva.domain.model;
 
 import java.util.List;
 
+/**
+ * The central hub for the current state of the game.
+ * * This class keeps track of everything happening in the match: the game board,
+ * the infinite tile bag, all the players, and whose turn it is right now.
+ * It also handles basic game flow, like moving to the next player (nextTurn)
+ * and dealing the starting 7 tiles to everyone (initialDraw).
+ */
 public class GameState {
     private Board board;
     private TileBag tileBag;
