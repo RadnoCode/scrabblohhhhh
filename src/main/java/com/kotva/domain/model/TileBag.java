@@ -1,14 +1,17 @@
 package com.kotva.domain.model;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
 public class TileBag {
     private static final String LETTER_pool =
-            "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ";
+            "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ  ";
     private final Random random = new Random();
 
-    private int getScoreForLetter(char letter) {
+     int getScoreForLetter(char letter) {
+
 
         switch (letter) {
             case 'A':
@@ -51,12 +54,12 @@ public class TileBag {
     }
 
     public Tile drawTile() {
+
         int index = random.nextInt(LETTER_pool.length());
         char c = LETTER_pool.charAt(index);
         int score = getScoreForLetter(c);
+        boolean isBlank = (c == ' ');
 
-        Tile tile = new Tile(UUID.randomUUID().toString(), c, score, false);
-
-        return tile;
+        return new Tile(UUID.randomUUID().toString(), c, score, isBlank);
     }
 }
