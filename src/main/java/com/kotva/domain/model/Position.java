@@ -1,6 +1,7 @@
 package com.kotva.domain.model;
 
 import java.util.Objects;
+//position是final吗
 
     public class Position {
         private final int row;

@@ -1,18 +1,36 @@
 package com.kotva.domain.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
 public class TileBag {
-    private static final String LETTER_pool =
+    private static final String LETTER_POOL =
             "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ  ";
     private final Random random = new Random();
+    private final List<Tile> tiles = new ArrayList<>();
+    private final Map<String, Tile> allTilesById = new HashMap<>();
 
-     int getScoreForLetter(char letter) {
+    public TileBag() {
+        initialize();
+    }
 
+    public void initialize() {
+        tiles.clear();
+        allTilesById.clear();
+        for (int i = 0; i < LETTER_POOL.length(); i++) {
+            char letter = LETTER_POOL.charAt(i);
+            boolean isBlank = (letter == ' ');
+            Tile tile = new Tile(UUID.randomUUID().toString(), letter, getScoreForLetter(letter), isBlank);
+            tiles.add(tile);
+            allTilesById.put(tile.getTileID(), tile);
+        }
+    }
 
+    private int getScoreForLetter(char letter) {
         switch (letter) {
             case 'A':
             case 'E':
@@ -53,13 +71,34 @@ public class TileBag {
         }
     }
 
+    public Tile drawRandomTile() {
+        if (isEmpty()) {
+            return null;
+        }
+
+        int index = random.nextInt(tiles.size());
+        return tiles.remove(index);
+    }
+
+    // Keep existing API used by current callers.
     public Tile drawTile() {
+        return drawRandomTile();
+    }
 
-        int index = random.nextInt(LETTER_pool.length());
-        char c = LETTER_pool.charAt(index);
-        int score = getScoreForLetter(c);
-        boolean isBlank = (c == ' ');
+    public boolean isEmpty() {
+        return tiles.isEmpty();
+    }
 
-        return new Tile(UUID.randomUUID().toString(), c, score, isBlank);
+    /**
+     * Finds a tile by tile id from all tiles created for this game.
+     *
+     * @param tileId The tile id to look up.
+     * @return The matching tile, or null if not found.
+     */
+    public Tile getTileById(String tileId) {
+        if (tileId == null) {
+            return null;
+        }
+        return allTilesById.get(tileId);
     }
 }
