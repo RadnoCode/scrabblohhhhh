@@ -60,11 +60,7 @@ public class Player {
         this.score += points;
     }
 
-    public PlayerController getController() {
-        return controller;
-    }
-
     public void setController(PlayerController controller) {
-        this.controller = new PlayerController(playerId,playerType);
+        this.controller = controller;
     }
 }
