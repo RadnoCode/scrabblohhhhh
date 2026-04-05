@@ -659,7 +659,7 @@ interface TurnCoordinator {
 
 管理当前玩家总时间与倒计时。
 
-方法
+方法 
 
 interface ClockService {
     void startTurnClock(GameSession session);
