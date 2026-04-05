@@ -88,34 +88,58 @@ public class RuleEngine {
 
         return null;
     }
-
     /**
-     * 盖章生效：将合法的落子正式写入棋盘，并扣除玩家手牌
+     * 盖章生效：根据玩家的具体动作（落子/跳过/认输），正式变更游戏状态
      *
      * @param state  当前游戏状态
      * @param action 玩家执行的动作
      */
     public void apply(GameState state, PlayerAction action) {
-        Board board = state.getBoard();
-        TileBag tileBag = state.getTileBag();
-        Rack rack = state.getCurrentPlayer().getRack();
 
-        for (DraftPlacement dp : action.draft().getPlacements()) {
-            String tileId = dp.getTileId();
-            Position pos = dp.getPosition();
+        // 1. 先拿到当前正在操作的玩家
+        com.kotva.domain.model.Player currentPlayer = state.getCurrentPlayer();
 
-            // 1. 将实体牌放置到棋盘对应的格子上
-            Tile realTile = tileBag.getTileById(tileId);
-            Cell cell = board.getCell(pos);
-            cell.setPlacedTile(realTile);
+        // 2. 根据玩家选择的动作类型，执行不同的状态变更
+        switch (action.type()) {
 
-            // 2. 从当前玩家的手牌架中扣除已使用的牌
-            for (RackSlot slot : rack.getSlots()) {
-                if (!slot.isEmpty() && slot.getTile().getTileID().equals(tileId)) {
-                    rack.setTileAt(slot.getIndex(), null);
-                    break;
+            case PLACE_TILE:
+                // --- 动作 A：正常落子 ---
+                Board board = state.getBoard();
+                TileBag tileBag = state.getTileBag();
+                Rack rack = currentPlayer.getRack();
+
+                for (DraftPlacement dp : action.draft().getPlacements()) {
+                    String tileId = dp.getTileId();
+                    Position pos = dp.getPosition();
+
+                    // 焊死在棋盘上
+                    Tile realTile = tileBag.getTileById(tileId);
+                    Cell cell = board.getCell(pos);
+                    cell.setPlacedTile(realTile);
+
+                    // 从手牌架扣除
+                    for (RackSlot slot : rack.getSlots()) {
+                        if (!slot.isEmpty() && slot.getTile().getTileID().equals(tileId)) {
+                            rack.setTileAt(slot.getIndex(), null);
+                            break;
+                        }
+                    }
                 }
-            }
+                //  关键点：只要有人正常落子，全场的“连续跳过计数器”必须清零！
+                state.resetPasses();
+                break;
+
+            case PASS_TURN:
+                // --- 动作 B：跳过当前回合 ---
+                // 只需要给跳过计数器 + 1
+                state.incrementPass();
+                break;
+
+            case LOSE:
+                // --- 动作 C：玩家认输或超时失败 ---
+                 currentPlayer.setActive(false);
+                break;
         }
     }
+
 }
