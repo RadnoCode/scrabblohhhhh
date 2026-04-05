@@ -100,8 +100,22 @@ public class Board {
                 }
             }
 
+        }
+        return true;
+    }
+    /**
+     * 判断棋盘是否已经全满（没有空位了）
+     */
+    public boolean isFull() {
+        for (int row = 0; row < Board.SIZE; row++) {
+            for (int col = 0; col < Board.SIZE; col++) {
+                Position pos = new Position(row, col);
+                Cell cell = this.getCell(pos);
 
-            //
+                if (cell.isEmpty()) {
+                    return false;
+                }
+            }
         }
         return true;
     }

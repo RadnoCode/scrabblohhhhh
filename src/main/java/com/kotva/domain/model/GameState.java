@@ -13,12 +13,13 @@ import com.kotva.application.result.GameEndReason;
  * and dealing the starting 7 tiles to everyone (initialDraw).
  */
 public class GameState {
-    private final Board board;  // The game board
-    private final TileBag tileBag;  // The infinite tile bag
-    private final List<Player> players;  // All players in the game, with their current state (rack, score, active status)
-    private int currentPlayerIndex;  // Index in the players list indicating whose turn it is
-    private boolean gameOver;  // Flag to indicate if the game has ended
-    private GameEndReason gameEndReason;  // Reason for game end, including    ALL_PLAYERS_PASSED, ONLY_ONE_PLAYER_REMAINING, TILE_BAG_EMPTY_AND_PLAYER_FINISHED, BOARD_FULL,NO_LEGAL_PLACEMENT_AVAILABLE, NORMAL_FINISH
+    private final Board board;
+    private final TileBag tileBag;
+    private final List<Player> players;
+    private int currentPlayerIndex;
+    private boolean gameOver;
+    private GameEndReason gameEndReason;
+    private int consecutivePasses; // 记录全场连续跳过的次数
 
     public GameState(List<Player> players) {
         this.players = List.copyOf(players);
@@ -28,6 +29,7 @@ public class GameState {
         this.currentPlayerIndex = 0;
         this.gameOver = false;
         this.gameEndReason = null;
+        this.consecutivePasses = 0;
     }
 
     public Board getBoard(){
@@ -131,5 +133,26 @@ public class GameState {
 
             }
         }
+    }
+
+    /**
+     * 获取当前连续跳过的总次数（给 EndEvaluator 裁判用的）
+     */
+    public int getConsecutivePasses() {
+        return consecutivePasses;
+    }
+
+    /**
+     * 当有玩家跳过时调用，次数 +1
+     */
+    public void incrementPass() {
+        this.consecutivePasses++;
+    }
+
+    /**
+     * 当有玩家正常下棋（或换牌）时调用，打断了跳过链，次数清零
+     */
+    public void resetPasses() {
+        this.consecutivePasses = 0;
     }
 }
