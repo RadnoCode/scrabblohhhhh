@@ -7,7 +7,12 @@ import java.util.Map;
 import com.kotva.application.preview.PreviewResult;
 
 /**
- * TurnDraft is a class that represents the current state of a player's turn in the drafting phase of the game. It keeps track of the tile placements the player is proposing, the original rack slots of those tiles, and any tile that is currently being dragged. It also holds the result of a move preview, which analyzes the proposed placements and provides feedback on their validity, estimated score, formed words, and any rule violations or messages. This allows the player to see the potential outcome of their proposed move before finalizing it.
+ * TurnDraft is a class that represents the current state of a player's turn in the drafting phase of the game. 
+ * It keeps track of the tile placements the player is proposing, the original rack slots of those tiles, and any tile that is currently being dragged. 
+ * It also holds the result of a move preview, which analyzes the proposed placements and provides feedback on their validity, estimated score, formed words, and any rule violations or messages. 
+ * This allows the player to see the potential outcome of their proposed move before finalizing it.
+ * it is used in GameSession to keep track of the current turn's draft, and it is updated as the player interacts with the UI to propose their move. 
+ * The TurnDraft is then submitted when the player finalizes their move, and the game logic processes it accordingly.
  */
 public class TurnDraft 
 {

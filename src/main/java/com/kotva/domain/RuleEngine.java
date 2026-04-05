@@ -40,16 +40,18 @@ public class RuleEngine {
         if (action.type() != com.kotva.policy.ActionType.PLACE_TILE) {
             return null;
         }
-
+        if(action.draft() == null && action.draft().getPlacements() == null){
+            return "No tiles placed";
+        }
         Board board = state.getBoard();
 
         // 提取本次落子的所有目标坐标
         List<Position> placements = new ArrayList<>();
-        if (action.draft() != null && action.draft().getPlacements() != null) {
+
             for (DraftPlacement dp : action.draft().getPlacements()) {
                 placements.add(dp.getPosition());
             }
-        }
+
 
         // --- 1. 基础物理规则校验 ---
         if (!MoveValidator.isStraightLine(placements)) {

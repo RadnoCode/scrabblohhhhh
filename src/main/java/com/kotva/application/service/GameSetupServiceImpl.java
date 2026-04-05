@@ -1,5 +1,4 @@
 package com.kotva.application.service;
-
 import com.kotva.application.session.GameConfig;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.PlayerConfig;
@@ -140,3 +139,4 @@ public class GameSetupServiceImpl implements GameSetupService {
         return normalizedName;
     }
 }
+
