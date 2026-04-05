@@ -10,7 +10,7 @@ import java.util.Set;
 //Load dict and provide a method to check a wor whether it is accepctable.
 public class DictionaryRepository {
     private DictionaryType loadedDictionaryType;
-    private HashSet<String> dictionary = Collections.emptySet();
+    private Set<String> dictionary = Collections.emptySet();
 
     public void loadDictionary(DictionaryType dictionaryType) {
         if (dictionaryType == null) {
@@ -25,7 +25,7 @@ public class DictionaryRepository {
         dictionary = new HashSet<>(new DictionaryLoader(dictionaryType).load());
     }
 
-    public HashSet<String> getDictionary() {
+    public Set<String> getDictionary() {
         ensureDictionaryLoaded();
         return dictionary;
     }

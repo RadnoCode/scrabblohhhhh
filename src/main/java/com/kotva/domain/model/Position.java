@@ -1,7 +1,6 @@
 package com.kotva.domain.model;
-//position是final吗
 
-    public class Position {
+ public class Position {
         private int row;
         private int col;
 
