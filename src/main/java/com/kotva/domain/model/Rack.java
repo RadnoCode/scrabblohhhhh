@@ -1,5 +1,8 @@
 package com.kotva.domain.model;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * A player's personal tile holder.
  * * This class represents the wooden rack where a player keeps their unplayed
@@ -21,4 +24,16 @@ public class Rack {
         slots[index].setTile(tile);
     }
 
+    public List<RackSlot> getSlots() {
+        return Arrays.asList(slots.clone());
+    }
+
+    public boolean isEmpty() {
+        for (RackSlot slot : slots) {
+            if (!slot.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

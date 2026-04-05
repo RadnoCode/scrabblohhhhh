@@ -1,5 +1,5 @@
 package com.kotva.application.preview;
-import com.kotva.domain.Position;
+import com.kotva.domain.model.Position;
 import com.kotva.policy.WordType;
 import java.util.List;
 

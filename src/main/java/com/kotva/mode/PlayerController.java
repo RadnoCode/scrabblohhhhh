@@ -13,7 +13,7 @@ public class PlayerController {
     private final String playerId;
     private final BlockingQueue<PlayerAction> actionQueue;
 
-    PlayerController(String playerId, PlayerType type) {
+    public PlayerController(String playerId, PlayerType type) {
         this.playerId = playerId;
         this.type = type;
         this.actionQueue = new LinkedBlockingQueue<>();
