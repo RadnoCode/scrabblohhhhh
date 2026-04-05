@@ -1,8 +1,9 @@
 package com.kotva.domain.model;
 
-import com.kotva.application.result.GameEndReason;
 import java.util.List;
 import java.util.Objects;
+
+import com.kotva.application.result.GameEndReason;
 
 /**
  * The central hub for the current state of the game.
