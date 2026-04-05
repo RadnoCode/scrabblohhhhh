@@ -8,7 +8,7 @@ package com.kotva.domain.model;
  */
 public class Tile {
     private final String tileID;
-    private final char letter;
+    private char letter;
     private final int score;
     private final boolean blank;
 

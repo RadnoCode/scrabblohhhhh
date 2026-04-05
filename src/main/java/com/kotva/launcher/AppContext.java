@@ -1,6 +1,11 @@
 package com.kotva.launcher;
 
-import com.kotva.application.GameSetupService;
+import com.kotva.application.service.GameSetupService;
+import com.kotva.application.service.GameApplicationService;
+import com.kotva.application.service.SettlementServiceImpl;
+import com.kotva.application.service.ClockService;
+import com.kotva.infrastructure.settings.SettingsRepository;
+
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 
 public class AppContext {
@@ -12,7 +17,8 @@ public class AppContext {
         this.settlementService = new SettlementService();
         this.dictionaryRepository = new DictionaryRepository();
         this.settingsRepository = new SettingsRepository();
-        this.audioManager = new AudioManager();
+        this.SettlementService = new SettlementServiceImpl();
+        //this.audioManager = new AudioManager();
     }
     private SceneNavigator sceneNavigator;
     private GameSetupService gameSetupService;
@@ -21,10 +27,10 @@ public class AppContext {
     private SettlementService settlementService;
     private DictionaryRepository dictionaryRepository;
     private SettingsRepository settingsRepository;
-    private AudioManager audioManager;
-    public AudioManager getAudioManager() {
-        return audioManager;
-    }
+    //TODO: Add audio service. private AudioManager audioManager; 
+    //public AudioManager getAudioManager() {
+    //    return audioManager;
+    //}
     public ClockService getClockService() {
         return clockService;
     }

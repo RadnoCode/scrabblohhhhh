@@ -1,6 +1,8 @@
 package com.kotva.domain.model;
 
 import com.kotva.mode.PlayerController;
+import com.kotva.policy.PlayerType;
+
 /**
  * Represents a participant in the Scrabble game.
  * * This class holds all the personal data for a player, including their
@@ -8,33 +10,56 @@ import com.kotva.mode.PlayerController;
  * (the letters they currently hold). It also tracks if they are still active
  * and what kind of controller (e.g., Human or AI) is making moves for them.
  */
+
 public class Player {
-    private String playerId;
-    private String playerName;
+    private final String playerId;
+    private final String playerName;
     private int score;
-    private Rack rack;
+    private final Rack rack;
     private boolean active;
     private PlayerController controller;
+    private final PlayerType playerType;
+    private long clockTimeRemaining;
 
-    public Player(String playerId, String playerName){
+    public Player(String playerId, String playerName, PlayerType playerType) {
         this.playerId = playerId;
         this.playerName = playerName;
-        score = 0;
+        this.playerType = playerType;
+        this.score = 0;
         this.rack = new Rack();
         this.active = true;
     }
+
+    public long getClockTimeRemaining() {
+        return clockTimeRemaining;
+    }
+
+    public void updateClockTimeRemaining(long time) {
+        this.clockTimeRemaining = time;
+    }
+
     public boolean getActive() {
         return active;
     }
+
     public void setActive(boolean active) {
         this.active = active;
     }
+
     public String getPlayerId(){
         return playerId;
     }
 
     public String getPlayerName(){
         return playerName;
+    }
+
+    public PlayerType getPlayerType(){
+        return playerType;
+    }
+
+    public PlayerController getController() {
+        return controller;
     }
 
     public int getScore(){
@@ -47,10 +72,6 @@ public class Player {
 
     public void addScore(int points){
         this.score += points;
-    }
-
-    public PlayerController getController() {
-        return controller;
     }
 
     public void setController(PlayerController controller) {

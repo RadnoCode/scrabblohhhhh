@@ -1,7 +1,7 @@
 package com.kotva.application.session;
 
-import com.kotva.mode.DictionaryType;
 import com.kotva.mode.GameMode;
+import com.kotva.policy.DictionaryType;
 
 /**
  * GameConfig class encapsulates the configuration settings for a game session.
