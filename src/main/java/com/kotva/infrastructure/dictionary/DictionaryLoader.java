@@ -3,6 +3,7 @@ package com.kotva.infrastructure.dictionary;
 import com.kotva.policy.DictionaryType;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -19,7 +20,7 @@ public class DictionaryLoader {
         Path dictionaryPath = resolveDictionaryPath(dictionaryType);
         try {
             HashSet<String> dictionary = new HashSet<>();
-            for (String line : Files.readAllLines(dictionaryPath)) {
+            for (String line : Files.readAllLines(dictionaryPath, StandardCharsets.UTF_8)) {
                 String word = line.trim().toUpperCase(Locale.ROOT);
                 if (!word.isEmpty()) {
                     dictionary.add(word);

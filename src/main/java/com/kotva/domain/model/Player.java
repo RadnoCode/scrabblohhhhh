@@ -2,6 +2,7 @@ package com.kotva.domain.model;
 
 import com.kotva.mode.PlayerController;
 import com.kotva.policy.PlayerType;
+import java.util.Objects;
 
 /**
  * Represents a participant in the Scrabble game.
@@ -19,7 +20,7 @@ public class Player {
     private boolean active;
     private PlayerController controller;
     private final PlayerType playerType;
-    private long clockTimeRemaining;
+    private PlayerClock clock;
 
     public Player(String playerId, String playerName, PlayerType playerType) {
         this.playerId = playerId;
@@ -28,14 +29,7 @@ public class Player {
         this.score = 0;
         this.rack = new Rack();
         this.active = true;
-    }
-
-    public long getClockTimeRemaining() {
-        return clockTimeRemaining;
-    }
-
-    public void updateClockTimeRemaining(long time) {
-        this.clockTimeRemaining = time;
+        this.clock = PlayerClock.disabled();
     }
 
     public boolean getActive() {
@@ -76,5 +70,13 @@ public class Player {
 
     public void setController(PlayerController controller) {
         this.controller = controller;
+    }
+
+    public PlayerClock getClock() {
+        return clock;
+    }
+
+    public void setClock(PlayerClock clock) {
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null.");
     }
 }

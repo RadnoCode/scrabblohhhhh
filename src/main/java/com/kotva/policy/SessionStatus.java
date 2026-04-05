@@ -1,4 +1,4 @@
-package com.kotva.application.session;
+package com.kotva.policy;
 
 public enum SessionStatus {
     WAITING_FOR_PLAYERS,

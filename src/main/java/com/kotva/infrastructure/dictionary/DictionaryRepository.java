@@ -21,8 +21,9 @@ public class DictionaryRepository {
             return;
         }
 
+        Set<String> loadedDictionary = new HashSet<>(new DictionaryLoader(dictionaryType).load());
         loadedDictionaryType = dictionaryType;
-        dictionary = new HashSet<>(new DictionaryLoader(dictionaryType).load());
+        dictionary = loadedDictionary;
     }
 
     public Set<String> getDictionary() {
@@ -43,7 +44,7 @@ public class DictionaryRepository {
     }
 
     private void ensureDictionaryLoaded() {
-        if (loadedDictionaryType == null || dictionary.isEmpty()) {
+        if (loadedDictionaryType == null) {
             throw new IllegalStateException("No dictionary has been loaded.");
         }
     }

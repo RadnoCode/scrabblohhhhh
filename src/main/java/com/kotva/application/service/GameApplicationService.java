@@ -20,5 +20,7 @@ public interface GameApplicationService {
 
     void confirmHotSeatHandoff(GameSession session);
 
+    GameSessionSnapshot tickClock(GameSession session, long elapsedMillis);
+
     GameSessionSnapshot getSessionSnapshot(GameSession session);
 }

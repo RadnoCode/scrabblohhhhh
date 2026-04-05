@@ -2,38 +2,47 @@ package com.kotva.application.session;
 
 import com.kotva.mode.GameMode;
 import com.kotva.policy.DictionaryType;
+import java.util.List;
+import java.util.Objects;
 
-/**
- * GameConfig class encapsulates the configuration settings for a game session.
- * It includes the game mode, number of players, dictionary type, and whether time limit is enabled.
- */
 public class GameConfig {
-    private final GameMode gameMode; //game mode: HOT_SEAT, HUMAN_VS_AI, LAN_MULTIPLAYER
-    private final int platerCount; //number of players  
-    private final DictionaryType dictionaryType; //type of dictionary: EN, AM
-    private final boolean isTimeLimitEnabled; //whether time limit is enabled
-   
-    public GameConfig(GameMode gameMode, int platerCount, DictionaryType dictionaryType, boolean isTimeLimitEnabled) {
-        this.gameMode = gameMode;
-        this.platerCount = platerCount;
-        this.dictionaryType = dictionaryType;
-        this.isTimeLimitEnabled = isTimeLimitEnabled;
+    private final GameMode gameMode;
+    private final List<PlayerConfig> players;
+    private final DictionaryType dictionaryType;
+    private final TimeControlConfig timeControlConfig;
+
+    public GameConfig(
+            GameMode gameMode,
+            List<PlayerConfig> players,
+            DictionaryType dictionaryType,
+            TimeControlConfig timeControlConfig) {
+        this.gameMode = Objects.requireNonNull(gameMode, "gameMode cannot be null.");
+        this.players = List.copyOf(Objects.requireNonNull(players, "players cannot be null."));
+        this.dictionaryType = Objects.requireNonNull(dictionaryType, "dictionaryType cannot be null.");
+        this.timeControlConfig = timeControlConfig;
     }
 
     public GameMode getGameMode() {
         return gameMode;
     }
 
-    public int getPlaterCount() {
-        return platerCount;
+    public List<PlayerConfig> getPlayers() {
+        return players;
+    }
+
+    public int getPlayerCount() {
+        return players.size();
     }
 
     public DictionaryType getDictionaryType() {
         return dictionaryType;
     }
 
-    public boolean isTimeLimitEnabled() {
-        return isTimeLimitEnabled;
+    public TimeControlConfig getTimeControlConfig() {
+        return timeControlConfig;
     }
 
+    public boolean hasTimeControl() {
+        return timeControlConfig != null;
+    }
 }

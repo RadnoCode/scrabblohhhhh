@@ -5,13 +5,14 @@ import com.kotva.application.draft.TurnDraft;
 import com.kotva.application.service.SettlementService;
 import com.kotva.application.service.SettlementServiceImpl;
 import com.kotva.domain.model.GameState;
+import com.kotva.policy.SessionStatus;
 import java.util.Objects;
 
 public class GameSession {
     private final String sessionId;
     private final GameConfig config;
     private final GameState gameState;
-    private final TurnDraft turnDraft;
+    private TurnDraft turnDraft;
     private final RoundPassTracker roundPassTracker;
     private final SettlementService settlementService;
     private final TurnCoordinator turnCoordinator;
@@ -23,7 +24,7 @@ public class GameSession {
                 config,
                 gameState,
                 new TurnDraft(),
-                SessionStatus.WAITING_FOR_PLAYERS,
+                SessionStatus.IN_PROGRESS,
                 new SettlementServiceImpl());
     }
 
@@ -68,6 +69,10 @@ public class GameSession {
 
     public TurnDraft getTurnDraft() {
         return turnDraft;
+    }
+
+    public void resetTurnDraft() {
+        this.turnDraft = new TurnDraft();
     }
 
     public SessionStatus getSessionStatus() {
