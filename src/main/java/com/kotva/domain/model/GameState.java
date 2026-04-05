@@ -1,8 +1,9 @@
 package com.kotva.domain.model;
 
-import com.kotva.application.result.GameEndReason;
 import java.util.List;
 import java.util.Objects;
+
+import com.kotva.application.result.GameEndReason;
 
 /**
  * The central hub for the current state of the game.
@@ -12,12 +13,12 @@ import java.util.Objects;
  * and dealing the starting 7 tiles to everyone (initialDraw).
  */
 public class GameState {
-    private final Board board;
-    private final TileBag tileBag;
-    private final List<Player> players;
-    private int currentPlayerIndex;
-    private boolean gameOver;
-    private GameEndReason gameEndReason;
+    private final Board board;  // The game board
+    private final TileBag tileBag;  // The infinite tile bag
+    private final List<Player> players;  // All players in the game, with their current state (rack, score, active status)
+    private int currentPlayerIndex;  // Index in the players list indicating whose turn it is
+    private boolean gameOver;  // Flag to indicate if the game has ended
+    private GameEndReason gameEndReason;  // Reason for game end, including    ALL_PLAYERS_PASSED, ONLY_ONE_PLAYER_REMAINING, TILE_BAG_EMPTY_AND_PLAYER_FINISHED, BOARD_FULL,NO_LEGAL_PLACEMENT_AVAILABLE, NORMAL_FINISH
 
     public GameState(List<Player> players) {
         this.players = List.copyOf(players);

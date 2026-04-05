@@ -1,5 +1,9 @@
 package com.kotva.application.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 import com.kotva.application.preview.PreviewResult;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
@@ -8,9 +12,6 @@ import com.kotva.domain.model.Player;
 import com.kotva.domain.model.PlayerClock;
 import com.kotva.domain.model.Position;
 import com.kotva.policy.ClockPhase;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 public class GameApplicationServiceImpl implements GameApplicationService {
     private final ClockService clockService;
