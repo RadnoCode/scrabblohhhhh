@@ -5,12 +5,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotSame;
 
-import com.kotva.application.result.GameEndReason;
 import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.TimeControlConfig;
 import com.kotva.application.setup.NewGameRequest;
 import com.kotva.domain.model.Player;
+import com.kotva.domain.endgame.GameEndReason;
 import com.kotva.application.draft.TurnDraft;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.mode.GameMode;

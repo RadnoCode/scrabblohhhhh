@@ -44,7 +44,8 @@ public class AppContext {
         this.settingsRepository =
                 Objects.requireNonNull(settingsRepository, "settingsRepository cannot be null.");
         Random nonNullRandom = Objects.requireNonNull(random, "random cannot be null.");
-        this.gameApplicationService = new GameApplicationServiceImpl(this.clockService);
+        this.gameApplicationService =
+                new GameApplicationServiceImpl(this.clockService, this.dictionaryRepository);
         this.gameSetupService =
                 new GameSetupServiceImpl(this.dictionaryRepository, this.clockService, nonNullRandom);
     }

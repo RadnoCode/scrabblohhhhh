@@ -6,9 +6,9 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import com.kotva.application.result.BoardCellSnapshot;
-import com.kotva.application.result.GameEndReason;
 import com.kotva.application.result.PlayerSettlement;
 import com.kotva.application.result.SettlementResult;
+import com.kotva.domain.endgame.GameEndReason;
 import com.kotva.domain.model.GameState;
 import com.kotva.domain.model.Player;
 import com.kotva.domain.model.Tile;

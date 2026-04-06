@@ -1,1100 +1,952 @@
-# 当前代码库差距分析：离“可运行的 Scrabble 游戏”还差什么
+# 当前代码库全流程与 Gap Analysis
 
-## 范围与结论
+基于 `2026-04-06` 当前仓库真实代码整理。
 
-本文完全以当前代码为准，不以 `docs/` 中的理想架构为准。
+本次判断以 `src/main/java`、`src/test/java`、`pom.xml` 为准；架构文档只作为历史参考，不作为现状依据。
 
-结论先行：
+## 1. 结论先行
 
-1. 当前仓库还不是一个“能玩起来”的 Scrabble 游戏。
-2. 更严格地说，当前 `src/main/java` 甚至还不能完整通过主源码编译。
-3. 就算先修掉编译错误，当前也仍然缺少启动入口、UI、草稿编辑、预览、提交落子、得分结算、补牌、回合切换接线，因此依然不能开始一盘真实对局。
-4. 目前最完整、最接近“可运行链路”的部分是：
-   - 开局配置与创建 `GameSession`
-   - 牌袋、棋盘、玩家、时钟、字典加载
-   - 超时淘汰
-   - 赛后结算快照
-5. 当前代码更像是“领域对象 + 若干应用层骨架 + 若干未汇总的原型实现”，而不是一条已打通的游戏主流程。
+当前代码已经不再是“纯骨架”。
 
-一句话概括现状：
+现在已经存在一条真实的应用主链：
 
-> 现在能“在内存里创建一局游戏对象并推进时钟”，但还不能“启动界面、拖牌、预览、提交、计分并完成一整局 Scrabble”。
+- 开局配置与 `GameSession` 创建
+- 回合内 draft 编辑
+- preview 校验与估分
+- `submitDraft / passTurn / timeout`
+- domain action 执行
+- `TurnCoordinator` 回合推进
+- `EndGameChecker` 终局判定
+- `SettlementServiceImpl` 结算结果生成
 
----
+但它仍然**不是一个可以从启动入口直接玩起来的 Scrabble 游戏**。当前最关键的差距不再是“完全没主链”，而是下面这几类：
 
-## 1. 当前代码真实具备的能力
+- 启动层和表现层没有接通，`MainApp -> AppLauncher` 之后没有真正的游戏界面或控制器
+- 面向 UI 的会话快照过于贫瘠，拿不到棋盘、牌架、分数、draft、preview
+- 规则层仍有关键漏洞，尤其是“tile 所有权 / 连续性 / blank tile / 终局规则完整性”
+- `PlayerController` 现在只是转发器，不是真正区分 `LOCAL / AI / LAN` 的动作来源实现
+- 热座换手、结果导航、应用级编排还有占位符和断链
 
-### 1.1 启动层
+如果目标是“最小可玩 hot-seat Scrabble”，现在距离目标已经明显更近，但还没有到“可直接运行并交互”的程度。
 
-- `MainApp` 只是一个普通 `main` 方法，负责 new `AppContext` 和 `AppLauncher`。
-  - 代码位置：`src/main/java/com/kotva/launcher/MainApp.java:3-10`
-- `AppContext` 能创建几个核心服务对象：
-  - `GameSetupService`
-  - `GameApplicationService`
-  - `ClockService`
-  - `SettlementService`
+## 2. 本次检查的依据
+
+本次检查重点看了这些代码：
+
+- 启动与装配
+  - `src/main/java/com/kotva/launcher/MainApp.java`
+  - `src/main/java/com/kotva/launcher/AppLauncher.java`
+  - `src/main/java/com/kotva/launcher/AppContext.java`
+- 开局与会话
+  - `src/main/java/com/kotva/application/service/GameSetupServiceImpl.java`
+  - `src/main/java/com/kotva/application/session/GameSession.java`
+  - `src/main/java/com/kotva/application/session/GameSessionSnapshot.java`
+- 回合主链
+  - `src/main/java/com/kotva/application/service/GameApplicationServiceImpl.java`
+  - `src/main/java/com/kotva/application/TurnCoordinator.java`
+  - `src/main/java/com/kotva/application/RoundTracker.java`
+- draft / preview
+  - `src/main/java/com/kotva/application/draft/DraftManager.java`
+  - `src/main/java/com/kotva/application/draft/TurnDraft.java`
+  - `src/main/java/com/kotva/application/draft/TurnDraftActionMapper.java`
+  - `src/main/java/com/kotva/application/preview/PreviewResult.java`
+- domain 规则与终局
+  - `src/main/java/com/kotva/domain/RuleEngine.java`
+  - `src/main/java/com/kotva/domain/utils/MoveValidator.java`
+  - `src/main/java/com/kotva/domain/utils/WordExtractor.java`
+  - `src/main/java/com/kotva/domain/utils/ScoreCalculator.java`
+  - `src/main/java/com/kotva/domain/endgame/EndGameChecker.java`
+- 结算
+  - `src/main/java/com/kotva/application/service/SettlementServiceImpl.java`
+- 动作来源
+  - `src/main/java/com/kotva/mode/PlayerController.java`
+- 测试
+  - `src/test/java/com/kotva/application/service/GameApplicationServiceImplSubmitDraftTest.java`
+  - `src/test/java/com/kotva/application/TurnCoordinatorTest.java`
+  - `src/test/java/com/kotva/application/service/ClockServiceImplTest.java`
+  - `src/test/java/com/kotva/application/service/GameSetupServiceImplTest.java`
+  - `src/test/java/com/kotva/domain/endgame/EndGameCheckerTest.java`
+
+另外我还实际执行了构建验证：
+
+- `mvn test`
+
+结果不是单元测试失败，而是 Maven 当前绑定到了 JDK 17，而 `pom.xml` 要求 `maven.compiler.release=25`，因此编译阶段直接失败。
+
+## 3. 当前真实全流程
+
+### 3.1 启动与装配
+
+当前启动路径是：
+
+`MainApp.main()`  
+-> new `AppContext()`  
+-> new `AppLauncher(appContext)`  
+-> `AppLauncher.launch()`
+
+真实状态：
+
+- `MainApp` 只负责 new context 和调用 launcher
+- `AppContext` 会创建：
+  - `ClockServiceImpl`
+  - `SettlementServiceImpl`
   - `DictionaryRepository`
   - `SettingsRepository`
-  - 代码位置：`src/main/java/com/kotva/launcher/AppContext.java:16-74`
-
-这说明“依赖装配容器”是有雏形的。
-
-### 1.2 开局配置与会话创建
-
-`GameSetupServiceImpl` 是当前最完整的一段应用层代码。
-
-它已经能做到：
-
-- 校验 `NewGameRequest`
-- 只允许 `HOT_SEAT`
-- 限制 2 到 4 人
-- 校验玩家名非空且不重复
-- 加载字典
-- 创建 `Player`
-- 给每个玩家挂 `PlayerController`
-- 创建和初始化 `PlayerClock`
-- 随机打乱玩家顺序
-- 创建 `GameState`
-- 初始摸 7 张牌
-- 创建 `GameSession`
-- 如果有时间控制，则启动当前玩家时钟
-
-代码位置：
-
-- `src/main/java/com/kotva/application/service/GameSetupServiceImpl.java:25-141`
-
-所以如果只从纯内存对象角度看，“开一局局面”已经基本成立。
-
-### 1.3 领域模型基础
-
-当前已经具备以下核心领域对象：
-
-- `Board`
-  - 15x15 棋盘与奖励格布局
-  - `src/main/java/com/kotva/domain/model/Board.java:12-122`
-- `Cell`
-  - 单格和已放置 tile
-  - `src/main/java/com/kotva/domain/model/Cell.java`
-- `TileBag`
-  - 实际上是有限牌袋，不是无限牌袋
-  - `src/main/java/com/kotva/domain/model/TileBag.java:17-111`
-- `Tile`
-  - 含 blank tile 支持字段
-  - `src/main/java/com/kotva/domain/model/Tile.java`
-- `Rack` / `RackSlot`
-  - 玩家牌架
-  - `src/main/java/com/kotva/domain/model/Rack.java:12-39`
-  - `src/main/java/com/kotva/domain/model/RackSlot.java`
-- `Player`
-  - 玩家身份、分数、牌架、控制器、时钟
-  - `src/main/java/com/kotva/domain/model/Player.java`
-- `GameState`
-  - 棋盘、牌袋、玩家、当前玩家、游戏结束状态
-  - `src/main/java/com/kotva/domain/model/GameState.java:14-157`
-
-这部分说明：领域建模已经有基础，不是从零开始。
-
-### 1.4 时钟与超时淘汰
-
-`ClockServiceImpl` 当前完成度也比较高。
-
-已具备：
-
-- 启动当前玩家时钟
-- 主时间耗尽后进入读秒
-- 读秒归零后触发超时
-- 超时后将当前玩家淘汰
-- 只剩 1 名活跃玩家时结束游戏并结算
-- 多人局时推进到下一名活跃玩家并开启其时钟
-
-代码位置：
-
-- `src/main/java/com/kotva/application/service/ClockServiceImpl.java:12-103`
-
-对应地，`GameApplicationServiceImpl` 里只有两个真正可用的方法：
-
-- `tickClock`
-- `getSessionSnapshot`
-
-代码位置：
-
-- `src/main/java/com/kotva/application/service/GameApplicationServiceImpl.java:57-92`
-
-### 1.5 结算
-
-`SettlementServiceImpl` 能生成：
-
-- 排名
-- 结算文字
-- 棋盘快照
-
-代码位置：
-
-- `src/main/java/com/kotva/application/service/SettlementServiceImpl.java:20-127`
-
-`SettlementResult`、`PlayerSettlement`、`BoardSnapshot`、`BoardCellSnapshot` 这些 DTO 也都已经存在。
-
-### 1.6 字典加载与设置读写
-
-- `DictionaryRepository` 能加载词库并校验单词存在性
-  - `src/main/java/com/kotva/infrastructure/dictionary/DictionaryRepository.java`
-- `SettingsRepository` 能落盘和读取音量设置
-  - `src/main/java/com/kotva/infrastructure/settings/SettingsRepository.java`
-
-这说明基础设施层不全是空壳。
-
----
-
-## 2. 当前最关键的阻断：主源码无法完整编译
-
-我直接用 `javac --release 25` 编译了 `src/main/java`，结果失败。
-
-真实错误：
-
-- `src/main/java/com/kotva/application/service/SettlementServiceImpl.java:99`
-- `src/main/java/com/kotva/application/service/SettlementServiceImpl.java:101`
-
-原因：
-
-- `SettlementServiceImpl` 的 `switch (endReason)` 使用了不存在的枚举值：
-  - `NO_LEGAL_PLACEMENT_AVAILABLE`
-  - `NORMAL_FINISH`
-- 但 `GameEndReason` 当前只有：
-  - `ALL_PLAYERS_PASSED`
-  - `ONLY_ONE_PLAYER_REMAINING`
-  - `TILE_BAG_EMPTY_AND_PLAYER_FINISHED`
-  - `BOARD_FULL`
-  - `TARGET_SCORE_REACHED`
-
-对应源码：
-
-- `src/main/java/com/kotva/application/service/SettlementServiceImpl.java:92-102`
-- `src/main/java/com/kotva/application/result/GameEndReason.java:3-8`
+  - `GameApplicationServiceImpl`
+  - `GameSetupServiceImpl`
+- `AppLauncher.launch()` 目前是空方法
 
 这意味着：
 
-- 当前仓库首先不是“能玩”
-- 连“主源码完整可编译”都还没到
+- 依赖容器已经存在
+- 但从启动入口并不会创建对局，也不会打开 UI，也不会进入任何回合主链
 
-这是第一优先级阻断项。
+### 3.2 开局
 
----
+当前开局主链在 `GameSetupServiceImpl`。
 
-## 3. 从“能跑一个 Scrabble 游戏”角度看，还缺哪些能力
+真实流程：
 
-下面按真实运行链路拆。
+1. `buildConfig(NewGameRequest)`
+2. 校验模式、人数、字典、玩家名
+3. 只接受 `GameMode.HOT_SEAT`
+4. 把所有玩家都转成 `PlayerType.LOCAL`
+5. `startNewGame(request)`
+6. `createSession(config)`
+7. 加载字典
+8. 创建 `Player`
+9. 给每个 `Player` 挂一个 `PlayerController`
+10. 创建 `PlayerClock`
+11. 随机打乱玩家顺序
+12. 创建 `GameState`
+13. `initialDraw()` 初始抽 7 张
+14. 创建 `GameSession`
+15. `sessionStatus = IN_PROGRESS`
+16. 如果有时控，启动当前玩家时钟
 
-### 3.1 启动与导航链路没有打通
+这条链已经是可工作的，不再是空壳。
 
-当前实际启动链：
+### 3.3 回合内 draft 编辑
 
-`MainApp.main()`  
-→ `new AppContext()`  
-→ `new AppLauncher(appContext)`  
-→ `appLauncher.launch()`
+当前 draft 编辑主链是：
 
-但是 `AppLauncher.launch()` 是空的。
+`PlayerController`  
+-> `GameApplicationServiceImpl.place/move/remove/recall`  
+-> `DraftManager`  
+-> `refreshPreview(session)`
 
-代码位置：
-
-- `src/main/java/com/kotva/launcher/MainApp.java:5-9`
-- `src/main/java/com/kotva/launcher/AppLauncher.java:3-11`
-
-这意味着当前缺少：
-
-- 主窗口创建
-- 场景切换
-- 主菜单显示
-- 开局页显示
-- 游戏页显示
-- 结算页显示
-
-更直接地说：
-
-> 当前没有任何“游戏真的启动起来”的外层承载物。
-
-### 3.2 表现层几乎不存在
-
-表现层当前只有一个空控制器：
-
-- `src/main/java/com/kotva/presentation/controller/MainMenuController.java:1-5`
-
-并且仓库内没有：
-
-- FXML 文件
-- CSS
-- 游戏控制器
-- 棋盘组件
-- 牌架组件
-- 热座切换遮罩
-- 结果页控制器
-
-另外，`pom.xml` 里也没有 JavaFX 相关依赖，只有 JUnit。
-
-代码位置：
-
-- `pom.xml:20-27`
-
-因此从真实代码看，目前没有 UI，不是“UI 没接上服务”这么简单，而是：
-
-> UI 本身基本还没开始。
-
-### 3.3 交互主服务 `GameApplicationServiceImpl` 核心方法全未实现
-
-这是当前第二大阻断。
-
-以下方法全部直接 `throw new UnsupportedOperationException(...)`：
+四个编辑动作都已经实现：
 
 - `placeDraftTile`
 - `moveDraftTile`
 - `removeDraftTile`
 - `recallAllDraftTiles`
-- `submitDraft`
-- `passTurn`
 
-代码位置：
+`DraftManager` 当前只操作 `TurnDraft`：
 
-- `src/main/java/com/kotva/application/service/GameApplicationServiceImpl.java:22-50`
+- 改 placements
+- 清 dragging tile
+- 清 preview
 
-这意味着当前缺少全部实际操作入口：
+它不会直接改：
 
-- 拖牌到棋盘
-- 在棋盘上移动草稿牌
-- 从棋盘撤回一张草稿牌
-- 一键撤回本回合所有草稿牌
-- 提交草稿
-- 跳过回合
+- `Board`
+- `Rack`
+- `Score`
+- 当前玩家
+- 回合状态
 
-也就是说，虽然已经有 `GameSession`、`TurnDraft`、`PreviewResult` 等对象，但用户无法通过应用层真正操作它们。
+这部分边界现在是清楚的。
 
-### 3.4 草稿编辑链路没有完成
+### 3.4 Preview
 
-虽然有 `TurnDraft` 和 `DraftPlacement`：
+当前 preview 并不是独立服务实现，而是内嵌在 `GameApplicationServiceImpl.refreshPreview()`。
 
-- `src/main/java/com/kotva/application/draft/TurnDraft.java:17-50`
-- `src/main/java/com/kotva/application/draft/DraftPlacement.java:10-34`
+真实流程：
 
-但缺少一个完整可用的草稿编辑器。
+1. 当前 `TurnDraft`
+2. `TurnDraftActionMapper.toPlaceAction(...)`
+3. 生成 domain `PlayerAction`
+4. `RuleEngine.validateMove(...)`
+5. 如果非法：
+   - `PreviewResult(valid=false, estimatedScore=0, messages=[...])`
+6. 如果合法：
+   - `WordExtractor.extract(...)`
+   - `ScoreCalculator.calculate(...)`
+   - `PreviewResult(valid=true, estimatedScore=...)`
+7. 写回 `session.getTurnDraft().setPreviewResult(...)`
 
-`DraftManager` 当前只有一个空壳方法，而且还导入了另一套 `Position` 类型：
+也就是说，preview 和 submit 已经共享同一套 domain 输入模型了，这是这版代码的一个实质进展。
 
-- `src/main/java/com/kotva/application/draft/DraftManager.java:3-13`
-- 导入的是 `com.kotva.domain.Position`
-- 而其余大部分代码使用的是 `com.kotva.domain.model.Position`
+### 3.5 提交、pass、timeout
 
-当前仓库里确实存在两套 `Position`：
-
-- `src/main/java/com/kotva/domain/Position.java:1-10`
-- `src/main/java/com/kotva/domain/model/Position.java:1-20`
-
-这会带来两个问题：
-
-1. 草稿编辑层与领域层的位置对象不统一。
-2. 后续一旦真正接线，`DraftManager` 很容易成为类型不匹配源头。
-
-### 3.5 预览链路缺接口实现，也缺结果对象落地能力
-
-预览设计上有接口：
-
-- `MovePreviewService`
-  - `src/main/java/com/kotva/application/service/MovePreviewService.java:1-8`
-
-但没有任何实现类。
-
-另外，预览 DTO 也不完整：
-
-- `PreviewResult` 有字段和 getter，可以用
-  - `src/main/java/com/kotva/application/preview/PreviewResult.java:5-36`
-- `PreviewWord` 只有字段和 getter，没有构造器、没有 setter
-  - `src/main/java/com/kotva/application/preview/PreviewWord.java:6-24`
-- `BoardHighlight` 完全是空类
-  - `src/main/java/com/kotva/application/preview/BoardHighlight.java:1-5`
-
-这意味着：
-
-- 预览服务本身不存在
-- 预览结果即使想返回，也没有完整数据结构承载高亮细节
-- UI 侧也没有任何消费这些预览结果的控制器或组件
-
-### 3.6 提交落子链路没有打通
-
-从“玩家提交一手牌”到“正式改盘面”的主链，当前是断的。
-
-理想上应该是：
-
-`submitDraft(session)`  
-→ 读取 `TurnDraft`  
-→ 校验规则  
-→ 提取单词  
-→ 检查词典  
-→ 计算分数  
-→ 正式写入棋盘  
-→ 从牌架移除已出牌  
-→ 给玩家加分  
-→ 补牌  
-→ 判断是否结束  
-→ 切换回合  
-→ 返回结果给 UI
-
-当前实际情况：
-
-- `GameApplicationServiceImpl.submitDraft()` 未实现
-  - `src/main/java/com/kotva/application/service/GameApplicationServiceImpl.java:42-45`
-- `TurnCoordinator.applyAction()` 在 `PLACE_TILE` 分支里什么都没做
-  - `src/main/java/com/kotva/application/TurnCoordinator.java:89-106`
-- `RuleEngine` 虽然存在，但没人调用
-  - `src/main/java/com/kotva/domain/RuleEngine.java:25-145`
-- `ScoreCalculator` 虽然存在，但没人调用
-  - `src/main/java/com/kotva/domain/utils/ScoreCalculator.java:19-105`
-- `WordExtractor` 虽然存在，但只被 `RuleEngine` 内部用到
-  - `src/main/java/com/kotva/domain/utils/WordExtractor.java:17-178`
-
-换句话说：
-
-> 规则工具已经零散存在，但“提交动作”这条主流程还没有组装。
-
-### 3.7 玩家得分不会增长
-
-虽然 `Player` 有 `addScore(int points)`：
-
-- `src/main/java/com/kotva/domain/model/Player.java`
-
-但在主代码里没有任何地方调用它。
-
-搜索结果表明：
-
-- `addScore(...)` 只出现在测试里
-- 主代码没有一次真实加分
-
-这意味着当前游戏即使强行提交落子，也不会更新比分。
-
-### 3.8 不会补牌
-
-`RuleEngine.apply()` 当前会把已落子的牌从 `Rack` 删除：
-
-- `src/main/java/com/kotva/domain/RuleEngine.java:111-126`
-
-但不会在落子后从牌袋补回到 7 张。
-
-所以当前缺少标准 Scrabble 的核心行为之一：
-
-- 落子后补牌
-
-没有这个，游戏只能越下手牌越少，且多数后续逻辑会很快失真。
-
-### 3.9 Blank tile 只有字段，没有完整交互闭环
-
-当前代码里 blank tile 相关能力只有一半：
-
-- `Tile` 有 `assignedLetter`
-- `TilePlacement` 也有 `assignedLetter`
-- `WordExtractor` 和结算快照会读取 assigned letter
-
-但缺失点是：
-
-- `DraftPlacement` 不带 `assignedLetter`
-- 没有 UI 选择 blank 字母的入口
-- 主代码里没有任何地方调用 `Tile.setAssignedLetter(...)`
-
-实际搜索结果显示：
-
-- `setAssignedLetter(...)` 没有主流程调用者
-
-这意味着 blank tile 在当前代码里是“字段存在，但玩法没打通”。
-
-### 3.10 热座交接状态没有真正实现
-
-当前只保留了一个空方法：
-
-- `GameApplicationServiceImpl.confirmHotSeatHandoff(...)`
-  - `src/main/java/com/kotva/application/service/GameApplicationServiceImpl.java:52-55`
-
-但会话状态枚举只有：
-
-- `WAITING_FOR_PLAYERS`
-- `IN_PROGRESS`
-- `COMPLETED`
-
-代码位置：
-
-- `src/main/java/com/kotva/policy/SessionStatus.java`
-
-这说明当前没有以下机制：
-
-- 本回合结束后隐藏上家牌架
-- 显示“轮到下一位玩家”
-- 等下一位确认后再展示其牌架
-
-对于 `HOT_SEAT` 模式，这其实是必须补齐的交互层能力。
-
----
-
-## 4. 已有组件之间，哪些地方没接上
-
-这一节专门回答“各个组件之间哪里还需要链接”。
-
-## 4.1 启动容器和会话没有连到任何 UI
-
-当前已经有：
-
-- `AppContext`
-- `GameSetupService`
-- `GameApplicationService`
-- `SettlementService`
-
-但缺少：
-
-- `AppLauncher` 调起页面
-- 控制器调用 `GameSetupService.startNewGame(...)`
-- 控制器持有 `GameSession`
-- 控制器把事件转到 `GameApplicationService`
-
-所以第一条接线是：
-
-`AppLauncher`  
-→ `MainMenuController` / `GameSetupController` / `GameController` / `ResultController`
-
-而这几个控制器里，除 `MainMenuController` 外都还不存在。
-
-## 4.2 `GameSetupService` 和 `GameSession` 已接上，但 `GameSession` 又把服务重新 new 了一遍
-
-这是一个很关键但容易忽略的问题。
-
-`AppContext` 已经创建了一个 `SettlementService`：
-
-- `src/main/java/com/kotva/launcher/AppContext.java:24-50`
-
-但 `GameSetupServiceImpl.createSession(...)` 创建 `GameSession` 时，没有把这个 `SettlementService` 注进去：
-
-- `src/main/java/com/kotva/application/service/GameSetupServiceImpl.java:87-101`
-
-`GameSession` 内部又默认 new 了新的 `SettlementServiceImpl()`：
-
-- `src/main/java/com/kotva/application/session/GameSession.java:21-38`
-
-而 `SettlementServiceImpl` 默认又会挂一个 `NoOpSettlementNavigationPort`：
-
-- `src/main/java/com/kotva/application/service/SettlementServiceImpl.java:23-31`
-- `src/main/java/com/kotva/application/service/NoOpSettlementNavigationPort.java`
-
-这意味着：
-
-1. `AppContext` 里那份 `SettlementService` 实际没有进入会话。
-2. 真实游戏结束时，就算结算被触发，默认也不会导航到结果页。
-3. 会话对象与应用容器对象之间存在“服务实例分叉”。
-
-这是一个明确的接线缺口。
-
-## 4.3 `GameApplicationServiceImpl` 没有拿到它真正需要的依赖
-
-当前它只注入了一个 `ClockService`：
-
-- `src/main/java/com/kotva/application/service/GameApplicationServiceImpl.java:15-20`
-
-但如果它要完成真实游戏交互，至少还需要：
-
-- `MovePreviewService`
-- `RuleEngine`
-- `SettlementService`
-- 可能还需要 `DraftManager`
-- 可能还需要访问 `DictionaryRepository` 或由 `RuleEngine` 内部封装
-
-所以当前不仅方法未实现，连依赖注入图都没搭完。
-
-## 4.4 `TurnCoordinator` 和 `GameApplicationService` 是两条并行方案，没有汇总
-
-当前仓库里存在两套回合推进思路：
-
-### 方案 A：UI 驱动的 `GameApplicationService`
-
-接口定义看起来像拖放式 UI：
-
-- 放一张草稿牌
-- 移动草稿牌
-- 撤回草稿牌
-- 提交草稿
-- pass
-
-代码位置：
-
-- `src/main/java/com/kotva/application/service/GameApplicationService.java`
-
-### 方案 B：阻塞式 `TurnCoordinator + PlayerController Queue`
-
-`TurnCoordinator.startTurn()` 会直接调用：
-
-- 当前玩家的 `PlayerController.requestAction()`
-- 该方法内部会 `BlockingQueue.take()`
-
-代码位置：
-
-- `src/main/java/com/kotva/application/TurnCoordinator.java:33-58`
-- `src/main/java/com/kotva/mode/PlayerController.java:42-50`
-
-这套模型更像：
-
-- 本地控制器/AI/网络控制器往队列塞动作
-- 协调器阻塞等待动作
-
-问题在于：
-
-1. `GameApplicationServiceImpl` 没有调用 `TurnCoordinator`
-2. `TurnCoordinator` 也不读取 `GameSession.turnDraft`
-3. `TurnCoordinator` 的 `PLACE_TILE` 分支没有真正接规则引擎
-4. 如果 UI 线程直接调用 `startTurn()`，会被 `take()` 阻塞
-
-所以目前是“两套思路并存，但没有决定谁是主链”。
-
-这是全局最重要的架构断点之一。
-
-
-
-## 4.5 规则层存在，但完全没进入应用主流程
-
-`RuleEngine` 当前实现了两件事：
-
-- `validateMove(...)`
-- `apply(...)`
-
-代码位置：
-
-- `src/main/java/com/kotva/domain/RuleEngine.java:40-145`
-
-它内部确实会用到：
-
-- `MoveValidator`
-- `WordExtractor`
-- `DictionaryRepository`
-
-但现在 repo 里没有任何地方 new `RuleEngine`，也没有任何地方调用它。
-
-搜索结果显示：
-
-- `RuleEngine` 只有定义，没有调用者
-
-所以当前规则链路是“存在但悬空”的状态。
-
-## 4.6 Pass / 终局判定有三套并行机制
-
-当前仓库里至少有三套“pass / 终局”状态来源：
-
-### 第一套：`RoundTracker`
-
-- `src/main/java/com/kotva/application/RoundTracker.java:3-52`
-- 被 `TurnCoordinator` 使用
-
-### 第二套：`RoundPassTracker`
-
-- `src/main/java/com/kotva/application/session/RoundPassTracker.java:6-20`
-- 被 `GameSession` 持有
-- 但全仓库没人真正调用它的 `markPassed/reset/hasPassed`
-
-### 第三套：`GameState.consecutivePasses + EndEvaluator`
-
-- `src/main/java/com/kotva/domain/model/GameState.java:137-156`
-- `src/main/java/com/kotva/domain/utils/EndEvaluator.java:26-52`
-
-`EndEvaluator` 会基于：
-
-- 目标分
-- 棋盘满
-- 连续 pass
-- 只剩 1 人
-
-来判终局。
-
-但它当前没有任何调用者。
-
-这三个系统没有统一，意味着：
-
-- 回合统计
-- 全员 pass 结束
-- 游戏结束原因
-
-目前没有唯一真相源。
-
-## 4.7 时钟链和回合链没有合并
-
-时钟服务会在超时后：
-
-- 淘汰玩家
-- 必要时结算并设置 `SessionStatus.COMPLETED`
-- 或推进到下一个活跃玩家
-
-代码位置：
-
-- `src/main/java/com/kotva/application/service/ClockServiceImpl.java:72-97`
-
-但是：
-
-- `ClockServiceImpl` 不更新 `TurnCoordinator` 内部的 `gameEnded`
-- `TurnCoordinator` 也不调用 `ClockService.startTurnClock/stopTurnClock`
-- `GameApplicationService.passTurn/submitDraft` 都还没实现
-
-所以当前“计时推进”和“回合推进”是两条分离链。
-
-现实后果是：
-
-- 你很难保证超时、手动提交、pass、lose 使用的是同一套状态机。
-
-## 4.8 结算结果能生成，但没有导航出口
-
-当前结算链是：
-
-- `SettlementServiceImpl.settle(...)`
-- 内部调用 `settlementNavigationPort.showSettlement(result)`
-
-代码位置：
-
-- `src/main/java/com/kotva/application/service/SettlementServiceImpl.java:33-45`
-
-但默认导航端口是：
-
-- `NoOpSettlementNavigationPort`
-
-代码位置：
-
-- `src/main/java/com/kotva/application/service/NoOpSettlementNavigationPort.java`
-
-因此现在的结算实际上只能生成内存结果对象，不能驱动任何 UI 页面跳转。
-
----
-
-## 5. 即使接上线，当前规则实现本身也还不够构成完整 Scrabble
-
-这一节不是“没接线”，而是“底层逻辑本身还没做完”。
-
-### 5.1 缺少落子连续性规则
-
-`MoveValidator.isStraightLine(...)` 只检查是否同一行或同一列：
-
-- `src/main/java/com/kotva/domain/utils/MoveValidator.java:21-44`
-
-它没有检查：
-
-- 新放的 tile 是否连续
-- 如果中间有空位，是否由旧牌桥接
-
-这意味着当前可能接受“同一行但隔很远”的非法落子。
-
-### 5.2 第一手单字母和主词提取逻辑不可靠
-
-`WordExtractor.extract(...)` 的提词逻辑依赖“周围有邻居”才收集单词：
-
-- `src/main/java/com/kotva/domain/utils/WordExtractor.java:35-58`
-
-这会导致一些边界问题：
-
-- 第一手如果提交单字母，它不会形成 candidate word
-- 验证阶段可能因此绕过词典校验
-- 计分阶段也可能得到 0 分
-
-当前没有一个“必须产出 1 个主词”的保证。
-
-### 5.3 计分没有接入玩家分数，也缺 7 张满贯加成
-
-`ScoreCalculator` 只负责计算数值：
-
-- `src/main/java/com/kotva/domain/utils/ScoreCalculator.java:33-104`
-
-但当前缺少：
-
-- 调用它的应用层主流程
-- 把分数加到 `Player`
-- Bingo / 50 分奖励
-
-所以离真实 Scrabble 计分闭环还差一步甚至几步。
-
-### 5.4 落子后不会补牌
-
-这是最明显的游戏性缺失之一。
-
-当前没有任何地方在成功提交后：
-
-- 从牌袋抽新牌
-- 填回空的 `RackSlot`
-
-没有补牌，就不是一局正常 Scrabble。
-
-### 5.5 Blank tile 玩法未闭环
-
-如上所述，blank tile 只建了字段，没有完成以下流程：
-
-- 玩家选择 blank 代表哪个字母
-- 草稿对象记录这个选择
-- 提交时应用到真实 tile
-- 预览与计分统一使用该 assigned letter
-
-### 5.6 缺少换牌（exchange）功能
-
-当前动作类型只有：
+当前三类动作已经统一为 domain action：
 
 - `PLACE_TILE`
 - `PASS_TURN`
 - `LOSE`
 
-代码位置：
+统一分发入口在 `GameApplicationServiceImpl.executeAction(...)`。
 
-- `src/main/java/com/kotva/policy/ActionType.java`
+#### 提交 draft
 
-标准 Scrabble 的“换牌”当前完全没有建模。
+流程：
 
-如果你们的目标是最小可玩 hot-seat 版本，换牌不是第一优先级；
-但如果目标是“像 Scrabble 的完整对局”，这是缺失项。
+1. `submitDraft(session)`
+2. 取当前 active player
+3. `TurnDraft -> PlayerAction.place(...)`
+4. `executeAction(session, action)`
+5. `executePlace(...)`
+6. `RuleEngine.validateMove(...)`
+7. `WordExtractor.extract(...)`
+8. `ScoreCalculator.calculate(...)`
+9. `RuleEngine.apply(...)`
+10. `currentPlayer.addScore(...)`
+11. `refillRack(...)`
+12. `session.resetTurnDraft()`
+13. `clockService.stopTurnClock(session)`
+14. `session.getTurnCoordinator().onActionApplied(action)`
+15. 若未终局，`clockService.startTurnClock(session)`
+16. 返回 `SubmitDraftResult`
 
-### 5.7 AI / LAN 模式只是枚举存在
+#### pass
 
-`GameMode` 有：
+流程：
 
-- `HOT_SEAT`
-- `HUMAN_VS_AI`
-- `LAN_MULTIPLAYER`
+1. `passTurn(session)`
+2. `PlayerAction.pass(...)`
+3. `executeAction(session, action)`
+4. `executePass(...)`
+5. `RuleEngine.apply(...)`
+6. 清空 draft
+7. 停钟
+8. `TurnCoordinator.onActionApplied(action)`
+9. 未终局则开下一手钟
+10. 返回 `TurnTransitionResult`
 
-但 `GameSetupServiceImpl` 明确拒绝除 `HOT_SEAT` 之外的模式：
+#### timeout
 
-- `src/main/java/com/kotva/application/service/GameSetupServiceImpl.java:44-47`
+流程：
 
-`PlayerController` 里 AI / LAN 控制器也只有 TODO：
+1. `tickClock(session, elapsedMillis)`
+2. `clockService.tick(...)`
+3. 如果当前玩家 clock phase 变成 `TIMEOUT`
+4. `handleTimeoutIfNeeded(...)`
+5. `PlayerAction.lose(...)`
+6. `executeAction(session, action)`
+7. `executeLose(...)`
+8. `RuleEngine.apply(...)`
+9. 清 draft
+10. 停钟
+11. `TurnCoordinator.onActionApplied(action)`
+12. 未终局则推进下一位
 
-- `src/main/java/com/kotva/mode/PlayerController.java:60-73`
+这里最重要的结构性变化是：
 
-所以当前真正能朝“可玩”推进的模式只有 hot-seat，本地对战。
+- timeout 不再自己在 `ClockServiceImpl` 里直接结算整局
+- submit / pass / timeout 都会汇到统一 action 消费主链
 
----
+### 3.6 回合推进与终局
 
-## 6. 资源、构建与分发层面的实际问题
+当前回合推进在 `TurnCoordinator`。
 
-### 6.1 字典资源路径不符合常规打包方式
+真实逻辑：
 
-当前字典文件放在：
+1. 每次 action 执行完成后，调用 `onActionApplied(PlayerAction action)`
+2. `turnNumber++`
+3. `RoundTracker.recordTurn(action.type() == PASS_TURN)`
+4. 计算：
+   - `roundComplete`
+   - `allPassedInRound`
+5. 调 `EndGameChecker.evaluate(...)`
+6. 若命中终局：
+   - `gameState.markGameOver(reason)`
+   - `settlementService.settle(gameState, reason)`
+7. 若未终局：
+   - 如果 round complete，则 `roundTracker.startNewRound(...)`
+   - `gameState.advanceToNextActivePlayer()`
 
-- `src/resources/Dicts/British/CSW19.txt`
-- `src/resources/Dicts/North-America/NWL2018.txt`
+当前 live 的终局条件只有 3 条：
 
-但 Maven 默认资源目录是 `src/main/resources`。
+- `ALL_PLAYERS_PASSED`
+- `ONLY_ONE_PLAYER_REMAINING`
+- `TILE_BAG_EMPTY_AND_PLAYER_FINISHED`
 
-而 `pom.xml` 没有额外配置 `<resources>`：
+### 3.7 结算
 
-- `pom.xml:29-73`
+当前结算已经是完整可返回对象，不再只是概念接口。
 
-再加上 `DictionaryLoader` 用的是文件系统路径：
+`SettlementServiceImpl.settle(...)` 会生成：
 
-- `src/main/java/com/kotva/infrastructure/dictionary/DictionaryLoader.java:35-39`
+- `SettlementResult`
+- 排名
+- 终局 summary message
+- `BoardSnapshot`
 
-这带来两个后果：
+并且还会调用 `SettlementNavigationPort.showSettlement(result)`。
 
-1. 代码在仓库工作目录里运行时，也许还能找到字典文件。
-2. 一旦打 jar 或换工作目录，词典路径很可能失效。
+但注意：这条导航口现在默认接的是 `NoOpSettlementNavigationPort`，所以没有实际 UI 跳转。
 
-所以词典加载当前更像“开发目录运行可用”，不是“可分发运行”。
+## 4. 现在已经解决了什么
 
-### 6.2 `README.md` 是空的
+相比旧版 gap analysis，这些点已经不再属于“没做”：
 
-- 仓库根目录 `README.md` 长度为 0
+### 4.1 已经存在一条真实动作主链
 
-这不是游戏逻辑问题，但它意味着：
+当前已经有：
 
-- 没有运行说明
-- 没有构建说明
-- 没有玩法说明
-- 没有模块说明
+- draft 编辑
+- preview
+- submit
+- pass
+- timeout -> lose
+- turn transition
+- endgame
+- settlement
 
-对“可交付运行项目”来说，这也是明显缺口。
+这条链不是伪代码，而是已经写进主服务里的执行路径。
 
-### 6.3 没有 Maven Wrapper
+### 4.2 `GameApplicationServiceImpl` 已经不是空壳
 
-仓库内没有 `mvnw` / `mvnw.cmd`。
+之前最核心的缺口就是应用层主服务几乎空着。
+
+现在它已经承担了这些真实职责：
+
+- draft 编辑入口
+- preview 更新
+- action dispatch
+- 提交后计分、补牌、清 draft
+- pass
+- timeout 转 action
+- session snapshot
+
+### 4.3 `TurnCoordinator` 不再是第二套并行队列方案
+
+旧的阻塞式“拉动作”方案已经退出主链。
+
+现在的 `TurnCoordinator` 是：
+
+- 纯事件式
+- 只吃已经执行完的 action
+- 只负责回合推进和触发终局/结算
+
+### 4.4 终局规则已经下沉到 domain
+
+`EndGameChecker` 已经成为终局条件的真实入口。
+
+虽然规则还不完整，但“谁负责判断终局”这件事已经比之前清楚得多。
+
+### 4.5 测试已经覆盖到部分主链
+
+目前测试覆盖到的真实能力包括：
+
+- setup
+- submitDraft
+- draft editing
+- timeout
+- turn coordinator
+- endgame checker
+- settlement
+- dictionary smoke
+
+这说明当前仓库已经不是“完全无法验证”的状态。
+
+## 5. 现在还差什么
+
+下面这些才是当前代码距离“可运行 Scrabble”真正剩下的 gap。
+
+## 5.1 启动层和表现层仍然没有接通
+
+这是当前最大的外层阻断。
+
+### 已有
+
+- `MainApp`
+- `AppContext`
+- `AppLauncher`
+- 一个空的 `MainMenuController`
+
+### 缺失
+
+- 创建新游戏的 UI
+- 游戏主界面 controller
+- 棋盘与牌架渲染
+- 用户输入绑定到 `GameApplicationService`
+- 结果页或结算页
+- 导航与页面切换
+
+### 影响
+
+即使 service 层能跑，用户也无法从启动入口进入一盘真实对局。
+
+## 5.2 面向 UI 的会话快照严重不足
+
+`GameSessionSnapshot` 目前只提供：
+
+- session status
+- 当前玩家 id / name
+- 当前玩家时钟
+- 各玩家时钟
+
+它没有提供：
+
+- 棋盘状态
+- 玩家分数
+- 当前玩家牌架
+- 其他玩家牌数
+- 当前 draft placements
+- 当前 preview result
+- 当前终局原因
+- 当前轮到谁之外的更多对局状态
+
+### 影响
+
+即使现在接一个 UI，也拿不到足够信息去渲染主对局界面。
+
+换句话说，当前 `getSessionSnapshot()` 更像“clock overlay snapshot”，不是“game screen snapshot”。
+
+## 5.3 `PlayerController` 还不是“不同玩家类型的动作来源”
+
+你们前面已经专门讨论过这一点，当前代码确实只做到了“保留这个类型”，但还没有做出不同类型的真实行为。
+
+### 当前状态
+
+- `PlayerController.create(...)` 会分出：
+  - `LocalPlayerController`
+  - `LANPlayerController`
+  - `AIPlayerController`
+- 但三个子类都没有额外行为
+- 本质上只是同一个转发器的三个名字
+
+### 缺口
+
+- `LOCAL` 没有真正的 UI 绑定层
+- `AI` 没有选点 / 搜索 / 提交动作逻辑
+- `LAN` 没有网络协议、收发、同步层
+
+### 影响
+
+虽然 `PlayerController` 保留下来了，但“不同玩家类型的动作来源”并没有真正实现。
+
+## 5.4 draft 层仍然缺少关键约束
+
+`DraftManager` 目前只管改 `TurnDraft`，这是合理的；但它没有做任何和真实棋盘交互必须具备的约束。
+
+### 当前缺少的校验
+
+- tile 是否真的属于当前玩家 rack
+- 一个 tile 是否已经被放到当前 draft 中
+- 两个不同 tile 是否占了同一格
+- tile 是否已经在棋盘别处被使用
+- tile 是否已经在其他玩家 rack 中
+- blank tile 是否指定了字母
+- original rack slot 是否记录并回退
+
+### 直接后果
+
+当前 draft 可以构造出很多物理上不成立的状态，而这些状态直到提交时也未必会被挡住。
+
+## 5.5 Preview 仍然是“最小骨架”
+
+preview 主链是通了，但结果对象本身仍然很弱。
+
+### 当前 preview 能给出的内容
+
+- 是否合法
+- 估分
+- message 列表
+
+### 当前 preview 还给不出的内容
+
+- 形成的单词列表
+- 每个单词的分值贡献
+- 主词 / 副词区分
+- 棋盘高亮
+- 错误位置高亮
+
+原因很直接：
+
+- `PreviewResult.words` 目前总是空
+- `PreviewResult.highlights` 目前总是空
+- `BoardHighlight` 还是空类
+- `PreviewWord` 没有真正被构造和填充
+- `MovePreviewService` 只有接口没有实现，也没进入主流程
+
+### 影响
+
+当前 preview 只能做“合法/不合法 + 一个估分数字”，还不足以支撑真正的 Scrabble 出牌交互体验。
+
+## 5.6 规则层还存在关键漏洞
+
+这是当前离“真正可玩”最近的一批硬伤。
+
+### 5.6.1 缺少连续性校验
+
+`RuleEngine.validateMove(...)` 当前只检查：
+
+- 同一直线
+- 不与现有棋子重叠
+- 首手覆盖中心
+- 非首手连接已有棋子
+- 提取出来的单词是否在字典里
+
+它**没有检查新放下的多个 tile 之间是否连续**。
+
+这意味着像下面这种落子在当前实现里可能会被错误接受：
+
+- `(7,7)` 放 `A`
+- `(7,9)` 放 `T`
+- `(7,8)` 留空
+
+这是一个关键规则漏洞。
+
+### 5.6.2 可能接受“不形成单词”的提交
+
+当前 `WordExtractor.extract(...)` 是基于相邻 tile 去提词。
+
+因此以下情况很危险：
+
+- 首手只放一个单 tile 在中心
+- 新放 tiles 之间不连续
+- 最终没有提取出任何 candidate word
+
+在这种情况下，`validateMove(...)` 可能返回 `null`，因为它只会对“提取出来的词”做字典检查，而不会强制要求“必须形成至少一个合法词”。
+
+### 5.6.3 没有校验 tile 所有权
+
+这是另一个非常严重的漏洞。
+
+当前 action 里只有 `tileId`，而 `RuleEngine.apply(...)` 会：
+
+1. 用 `tileBag.getTileById(tileId)` 找到 tile
+2. 直接把这个 tile 放到棋盘
+3. 再去当前玩家 rack 里尝试删除同 id tile
+
+问题是它没有先验证：
+
+- 这个 tile 是否确实在当前玩家 rack 里
+
+因此如果传入一个合法存在但不属于当前玩家的 `tileId`，当前代码可能仍会把它放到棋盘上。
+
+### 5.6.4 没有校验 tile 唯一使用
+
+`TileBag` 通过 `allTilesById` 保存了对所有生成 tile 的全局引用。
 
 这意味着：
 
-- 项目构建依赖开发者本机自行安装 Maven
-- 可复现构建体验较差
+- 即使某 tile 已经被抽走
+- 即使某 tile 已经在棋盘上
+- 只要知道它的 id，就还能从 `getTileById()` 拿到它
 
-这不是核心玩法缺失，但属于工程完成度缺失。
+当前没有全局校验去阻止“同一 tile 对象被重复用于多个位置”。
 
----
+### 5.6.5 没有处理 blank tile 指定字母的提交流程
 
-## 7. 测试覆盖告诉了我们什么
+虽然 `Tile` 支持：
 
-当前测试主要覆盖四类：
+- `isBlank()`
+- `assignedLetter`
 
-1. `GameSetupServiceImplTest`
-2. `ClockServiceImplTest`
-3. `SettlementServiceImplTest`
-4. `TurnCoordinatorTest`
-5. `DictionaryRepositorySmokeTest`
-6. 一个模板 `AppTest`
+但当前主链没有：
 
-这说明团队当前主要在验证：
+- draft 阶段指定 blank 字母
+- action 中携带 assigned letter
+- apply 时写入 assigned letter
+- preview / score / word extraction 的完整 blank 交互
 
-- 能否开局
-- 时钟是否走
-- 结算是否能出
-- `TurnCoordinator` 的局部骨架行为
+### 5.6.6 计分规则不完整
 
-但当前明显没有测试覆盖：
+当前 `ScoreCalculator` 还缺少：
 
-- UI 启动
-- 拖牌与草稿编辑
-- 预览生成
-- 真实单词校验闭环
-- 真实计分闭环
-- 落子后补牌
-- blank tile
-- 多回合完整对局
-- 打包后词典加载
+- 7 tile bingo / full rack bonus
+- 终局时剩余牌罚分与奖励
+- 更完整的主词/副词拆分呈现
 
-特别注意：
+此外，由于 `WordExtractor` 本身存在提词边界问题，计分的正确性也会受连带影响。
 
-`TurnCoordinatorTest` 测的是一个“骨架版 turn loop”，不是“真实 Scrabble 提交流程”。
+## 5.7 终局规则还不是完整 Scrabble
 
-例如：
+虽然终局判断已经有真实入口，但 live 规则只有 3 条。
 
-- 测试里没有真正提交有效 `DraftPlacement`
-- 没有真正写棋盘
-- 没有真正计分
+### 当前 live 规则
 
-所以当前测试通过，并不代表游戏能玩。
+- 全员 pass
+- 只剩 1 个 active player
+- 牌袋空且当前行动者清空 rack
 
----
+### 当前未接入主流程的规则
 
-## 8. 当前代码更接近哪一种完成度
+- `BOARD_FULL`
+- `TARGET_SCORE_REACHED`
+- `NO_LEGAL_PLACEMENT_AVAILABLE`
+- `NORMAL_FINISH`
 
-我会把当前完成度分成三层：
+这些 reason 在枚举或 legacy 逻辑里存在，但没有进入当前主链。
 
-### 8.1 已经比较实的部分
+### 额外问题
 
-- `GameSetupServiceImpl`
-- `ClockServiceImpl`
-- `DictionaryRepository`
-- `SettingsRepository`
-- `Board` / `GameState` / `Player` / `TileBag`
-- `SettlementServiceImpl`
+当前仓库里还同时保留着旧终局机制：
 
-### 8.2 有骨架但未集成的部分
+- `GameState.consecutivePasses`
+- `EndEvaluator`
+- `RoundPassTracker`
 
-- `RuleEngine`
-- `MoveValidator`
-- `WordExtractor`
-- `ScoreCalculator`
-- `TurnCoordinator`
-- `TurnDraft`
-- `PreviewResult`
+现在真正起作用的是：
 
-### 8.3 仍属于占位符/草稿的部分
+- `RoundTracker`
+- `EndGameChecker`
 
+所以当前终局判定虽然已经有主线，但仓库里仍然存在**遗留并行机制**。
+
+## 5.8 结算仍然是“展示对象完整，规则不完整”
+
+`SettlementServiceImpl` 现在能生成：
+
+- 终局 reason message
+- ranking
+- board snapshot
+
+这部分已经不是 gap。
+
+但它还不是完整 Scrabble 结算，因为没有：
+
+- 剩余 rack 分值扣减
+- 清空 rack 玩家获得他人剩余牌总分
+- 终局后得分修正逻辑
+
+当前 ranking 基本就是：
+
+- 按当前 `Player.score` 排序
+
+如果按 Scrabble 规则，这还不够。
+
+## 5.9 hot-seat 交接还没真正实现
+
+`confirmHotSeatHandoff(GameSession session)` 现在是 no-op。
+
+这意味着当前虽然 setup 只支持 `HOT_SEAT`，但 hot-seat 最关键的 UI/状态切换动作其实还没实现。
+
+### 缺少的东西
+
+- 交接前锁屏/遮挡
+- 交接确认状态
+- 交接后 reveal 当前玩家 rack
+- 防止上一位继续操作
+
+### 影响
+
+目前只是“逻辑上轮到下一个人”，还不是完整 hot-seat 体验。
+
+## 5.10 `GameSession` 的 wiring 仍有一个实际断点
+
+`AppContext` 自己持有一个 `SettlementService`。
+
+但 `GameSetupServiceImpl.createSession(...)` 创建 `GameSession` 时，用的是：
+
+- `new GameSession(sessionId, config, gameState)`
+
+而这个 `GameSession` 默认又会：
+
+- `new SettlementServiceImpl()`
+
+这意味着当前 live session **不会继承 `AppContext` 里那份 settlement service / navigation port 配置**。
+
+### 影响
+
+如果你想在 `AppContext` 里注入自定义 `SettlementNavigationPort`，当前对局 session 不会自动用上。
+
+这不是规则问题，而是一个真实 wiring gap。
+
+## 5.11 文档和代码已经再次出现偏差
+
+当前仓库里仍然保留着一些过期结构或说明：
+
+- `docs/dataflow.md` 仍然描述旧的阻塞式 `TurnCoordinator.startTurn()` / `PlayerController.requestAction()` 模型
+- `MovePreviewService` 仍是旧分层接口，但当前 preview 已经直接并入 `GameApplicationServiceImpl`
+- `domain.Position` 是遗留重复类，主链实际用的是 `domain.model.Position`
+- `TilePlacement` 也是遗留模型，主链实际用的是 `ActionPlacement`
+
+这说明当前代码虽然比之前更完整了，但**重构后的结构还没完成彻底收口**。
+
+## 5.12 AI / LAN 仍然只是占位
+
+当前仓库里这些概念都存在：
+
+- `GameMode.HUMAN_VS_AI`
+- `GameMode.LAN_MULTIPLAYER`
+- `PlayerType.AI`
+- `PlayerType.LAN`
+- `AIPlayerController`
+- `LANPlayerController`
+
+但真实情况是：
+
+- `GameSetupServiceImpl.buildConfig(...)` 直接拒绝非 `HOT_SEAT`
+- `AIPlayerController` / `LANPlayerController` 没有独立行为
+- 没有 AI 搜索器、网络协议、同步机制、消息收发
+
+所以这两种模式目前仍然是名义支持，不是功能支持。
+
+## 5.13 构建与资源层还有实际问题
+
+### 5.13.1 Maven 现在不能直接构建
+
+我实际运行了：
+
+```powershell
+mvn test
+```
+
+结果失败于编译插件：
+
+- `pom.xml` 要求 `maven.compiler.release=25`
+- 但 Maven 当前绑定到的是 `Java 17`
+
+具体表现是：
+
+- `java -version` 指向 `25.0.2`
+- `mvn -version` 显示 Maven runtime 仍在 `C:\DevTools\Scoop\apps\openjdk17\current`
+
+这属于真实的构建阻断。
+
+### 5.13.2 字典资源不是标准 classpath 资源
+
+`DictionaryLoader` 现在直接读：
+
+- `src/resources/Dicts/North-America/NWL2018.txt`
+- `src/resources/Dicts/British/CSW19.txt`
+
+而不是从 `src/main/resources` / classpath 读取。
+
+这意味着：
+
+- IDE 内本地运行还能工作
+- 打 jar 或换工作目录后，路径很可能失效
+
+### 5.13.3 `README.md` 仍然是空的
+
+这会直接影响：
+
+- 开发者理解入口
+- 本地运行指引
+- 构建环境说明
+
+## 6. 测试覆盖告诉了我们什么
+
+当前测试说明：
+
+### 已被测试覆盖的
+
+- setup 基本合法性
+- new game 初始抽牌
+- timed game clock 进入 byo-yomi
+- timeout -> lose -> end game
+- draft editing 不直接改棋盘
+- submit draft 合法/非法基本路径
+- pass turn 基本路径
+- turn coordinator 的 3 条 live end condition
+- settlement 的排名和棋盘快照
+- dictionary repository smoke
+
+### 尚未被测试覆盖的
+
+- 启动层与 `AppContext` 装配
 - `AppLauncher`
 - `MainMenuController`
-- `GameApplicationServiceImpl` 的大多数方法
-- `MovePreviewService` 实现
-- `DraftManager`
-- `BoardHighlight`
-- `SubmitDraftResult`
-- `TurnTransitionResult`
-- AI / LAN 控制器
-- `AudioManager`
+- hot-seat handoff
+- AI / LAN
+- 非法 tileId / 非本玩家 rack tile 的作弊路径
+- 重复占位 / 重复 tileId
+- gapped placement
+- blank tile
+- 终局计分修正
+- session snapshot 是否足够支撑 UI
 
-所以当前项目不能理解成“只差 UI”。
+这意味着现在的测试足以证明“主链部分存在”，但还不足以证明“游戏可玩”。
 
-更准确地说，它现在处于：
+## 7. 当前代码的完成度判断
 
-> 游戏核心对象已经成型，但交互主流程和若干关键规则闭环还没完成。
+### 7.1 已经比较实的部分
 
----
+- 对局创建
+- 初始发牌
+- 字典加载
+- action 模型
+- submit/pass/timeout 统一消费
+- turn coordination
+- endgame 基础判断
+- settlement result 生成
 
-## 9. 如果目标是“先做出一个最小可玩的 Hot-seat Scrabble”，最少还要补哪些东西
+### 7.2 有主链但不够完整的部分
 
-这一节只谈“最小可玩”，不包含 AI / LAN / 豪华 UI。
+- draft editing
+- preview
+- score calculation
+- time control
+- hot-seat 模式
 
-### 第一阶段：先让代码重新可编译
+### 7.3 仍然属于占位/未接通的部分
 
-必须先做：
+- 启动后可视化对局
+- game controller / board UI
+- AI
+- LAN
+- hot-seat handoff
+- settlement navigation
 
-1. 修正 `SettlementServiceImpl` 与 `GameEndReason` 的枚举不一致。
-2. 决定终局原因集合到底以哪份为准。
+## 8. 如果目标是“最小可玩 Hot-seat Scrabble”，现在最少还要补什么
 
-### 第二阶段：确定唯一主流程
+我建议按下面顺序补，不要并行扩散。
 
-必须做一个架构选择：
+### 第一步：先修外层运行入口
 
-1. 要么以 `GameApplicationService + TurnDraft + UI 拖放` 为主
-2. 要么以 `TurnCoordinator + PlayerController Queue` 为主
+目标：
 
-我基于当前代码更建议：
+- 从 `MainApp` 真正能进入一盘对局
 
-1. 把 `GameApplicationService` 作为唯一 UI 入口
-2. 让 `TurnCoordinator` 退化为内部回合切换器，或者直接被 `GameApplicationService` 吸收
-3. 不要把阻塞式 `requestAction()` 作为主 UI 方案
+至少要补：
 
-原因很简单：
+- game screen controller
+- 新游戏入口
+- `AppLauncher.launch()` 真正创建并挂载 UI
 
-- 现在你们已经有 `TurnDraft`
-- 也已经有 `PreviewResult`
-- 这更适合图形界面拖放玩法
+### 第二步：补完整的 game snapshot / UI 读模型
 
-### 第三阶段：补齐草稿编辑与预览
+目标：
 
-至少需要：
+- UI 能一次性拿到渲染整局所需的状态
 
-1. 统一只保留一套 `Position`
-2. 实现 `DraftManager` 或直接在 `GameApplicationServiceImpl` 中维护 `TurnDraft`
-3. 实现 `MovePreviewServiceImpl`
-4. 补齐 `PreviewWord` / `BoardHighlight`
-5. 让以下方法可用：
-   - `placeDraftTile`
-   - `moveDraftTile`
-   - `removeDraftTile`
-   - `recallAllDraftTiles`
+至少要补：
 
-### 第四阶段：补齐“提交一手牌”闭环
+- board snapshot
+- player scores
+- current rack
+- opponents tile counts
+- draft placements
+- preview result
+- current end status
 
-至少需要：
+### 第三步：补规则硬伤
 
-1. `submitDraft(session)` 读取草稿
-2. 调 `RuleEngine.validateMove(...)`
-3. 调 `WordExtractor`
-4. 调 `ScoreCalculator`
-5. 正式写入 `Board`
-6. 从 `Rack` 移除用掉的 tile
-7. 给当前玩家 `addScore(...)`
-8. 从 `TileBag` 补牌
-9. 清空当前 `TurnDraft`
-10. 判断终局
-11. 切换到下一位玩家
-12. 启动下一位玩家时钟
-13. 返回一个真正有内容的 `SubmitDraftResult`
+目标：
 
-### 第五阶段：补齐 pass / hot-seat / 结算切页
+- 防止当前实现接受物理上不成立的动作
 
-至少需要：
+优先修：
 
-1. `passTurn(session)` 真正记录 pass
-2. 统一只保留一套 pass 统计机制
-3. 为 hot-seat 加交接状态
-4. 让 `SettlementService` 使用真正的导航端口，而不是 `NoOpSettlementNavigationPort`
-5. `SubmitDraftResult` / `TurnTransitionResult` 能携带：
-   - 是否结束
-   - 当前玩家是谁
-   - 下一个玩家是谁
-   - 结算结果
-   - 是否需要热座遮罩
+- tile 必须属于当前玩家 rack
+- tile 不能重复使用
+- draft 内不能重复占同一格
+- placements 必须连续
+- 必须形成至少一个合法词
+- blank tile 指派字母链路
 
-### 第六阶段：补最小 UI
+### 第四步：补 hot-seat 交接
 
-最小可玩并不需要华丽页面，但至少要有：
+目标：
 
-1. 开局页
-2. 游戏页
-3. 结果页
-4. 棋盘显示
-5. 牌架显示
-6. 当前玩家信息
-7. 分数显示
-8. 时钟显示
-9. 提交 / 撤回 / pass 按钮
-10. 热座切换遮罩
+- 当前唯一支持的模式真的可玩
 
----
+至少要补：
 
-## 10. 如果不做 AI/LAN，只冲“最小可玩本地热座”，我建议的真实接线顺序
+- `confirmHotSeatHandoff`
+- 交接前后 UI 状态
+- rack 可见性切换
 
-下面是按当前代码最顺的施工顺序，不是理想化顺序。
+### 第五步：补结算细则和导航
 
-1. 修编译错误：统一 `GameEndReason`。
-2. 删除或冻结第二套方案：决定 `GameApplicationService` 才是唯一入口。
-3. 统一位置对象：删掉 `com.kotva.domain.Position` 或至少停止使用它。
-4. 实现 `MovePreviewServiceImpl`，把 `RuleEngine/WordExtractor/ScoreCalculator` 接进去。
-5. 实现 `GameApplicationServiceImpl` 的 6 个核心方法。
-6. 在提交成功后补齐：
-   - 写盘
-   - 加分
-   - 补牌
-   - 清草稿
-   - 切玩家
-   - 切时钟
-7. 统一 pass/终局机制，只保留一套。
-8. 改 `GameSession`，不要内部偷 new `SettlementServiceImpl()`，而是从 `AppContext` 注入。
-9. 实现最小 `AppLauncher + GameController + ResultController`。
-10. 把字典移动到 `src/main/resources` 或明确配置 Maven resources。
+目标：
 
----
+- 对局结束后结果正确且能展示
 
-## 11. 我对“当前离可运行 Scrabble 还差多少”的判断
+至少要补：
 
-如果以 100% 代表“玩家可以启动程序，开一局 hot-seat Scrabble，拖牌、预览、提交、计分、补牌、pass、超时、结算，全流程能跑”，那我对当前代码的判断大概是：
+- 终局计分修正
+- `SettlementNavigationPort` 真接 UI
+- `GameSession` / `AppContext` 的 settlement wiring
 
-- 领域对象与部分服务骨架：40%
-- 真正打通的用户流程：10% 以下
-- 整体项目到“最小可玩 hot-seat”：还差主要工程量
+## 9. 我对当前距离“可运行 Scrabble”的判断
 
-更具体一点：
+如果以 0 到 10 粗略估计：
 
-- “能创建一局内存状态”这一块已经有了。
-- “能真正玩一局”这一块目前还没有形成主链。
+- 之前那版代码大概在 `2/10`
+- 当前这版大概已经到 `5.5/10` 到 `6/10`
 
-所以答案不是“只差几根线”。
+原因是：
 
-更准确地说是：
+- 内核主链已经成型
+- 但外层可玩性和关键规则完整性还没到位
 
-> 现在已经有不少零件，但主传动轴、仪表盘和点火系统都还没装完。
+换句话说，当前更像：
 
----
+- “一个已经有真实回合主链的 Scrabble 引擎雏形”
 
-## 12. 最终判断
+而不是：
+
+- “一个已经能完整跑起来的 Scrabble 产品”
+
+## 10. 最终判断
 
 ### 当前已经完成的核心
 
-- 局面初始化
-- 玩家与牌架建模
-- 棋盘建模
-- 牌袋建模
-- 字典读取
-- 时钟推进与超时淘汰
-- 结算结果对象
+- 开局配置与 session 创建
+- 玩家、牌架、棋盘、牌袋建模
+- 字典加载
+- draft -> preview -> action -> apply 的主链
+- submit / pass / timeout 三类动作统一消费
+- turn coordinator 与基础终局判断
+- settlement result 生成
 
 ### 当前最关键的阻断
 
-- 主源码编译失败
-- 启动器为空
-- UI 基本不存在
-- `GameApplicationServiceImpl` 核心操作未实现
-- 规则链路没接入主流程
-- 提交后不计分、不补牌、不切回合
-- 结算导航未打通
-- pass / 终局状态机有三套并行实现
+- 没有真正的启动后可交互 UI
+- session snapshot 不足以驱动 UI
+- 规则层存在关键漏洞，特别是 tile 所有权与连续性
+- hot-seat handoff 没有实现
+- AI / LAN 仍是占位
 
-### 团队最需要先统一的事
+### 当前最需要先统一的事
 
-不是先写更多类，而是先统一这三个问题：
+不是再讨论抽象分层，而是明确下面两件事：
 
-1. 以哪条主流程为准：`GameApplicationService` 还是 `TurnCoordinator`
-2. 以哪套终局/回合统计为准：`RoundTracker`、`RoundPassTracker` 还是 `EndEvaluator`
-3. 以哪套数据投影给 UI：直接读 `GameSession/GameState`，还是扩展 snapshot/result DTO
+1. 先只冲“最小可玩 hot-seat”
+2. 先补 UI snapshot 与规则硬伤，再谈 AI / LAN
 
-如果这三个问题不先统一，继续往下写代码会越来越散。
+如果这两个优先级不统一，代码会继续出现“主链能跑一点，但产品形态永远起不来”的状态。
 
----
+## 11. 本次检查中最关键的源码锚点
 
-## 附：本次检查中最关键的源码锚点
-
-- 启动但不真正 launch：`src/main/java/com/kotva/launcher/AppLauncher.java:3-11`
-- 容器有服务，但没有 UI 注入出口：`src/main/java/com/kotva/launcher/AppContext.java:16-74`
-- 真正可用的开局服务：`src/main/java/com/kotva/application/service/GameSetupServiceImpl.java:25-141`
-- 交互主服务核心方法全未实现：`src/main/java/com/kotva/application/service/GameApplicationServiceImpl.java:22-50`
-- `GameSession` 内部自建 `SettlementServiceImpl`：`src/main/java/com/kotva/application/session/GameSession.java:21-56`
-- `TurnCoordinator` 的 `PLACE_TILE` 分支未接规则引擎：`src/main/java/com/kotva/application/TurnCoordinator.java:89-106`
-- 规则引擎存在但无调用者：`src/main/java/com/kotva/domain/RuleEngine.java:25-145`
-- 三套 pass / 终局机制：
-  - `src/main/java/com/kotva/application/RoundTracker.java:3-52`
-  - `src/main/java/com/kotva/application/session/RoundPassTracker.java:6-20`
-  - `src/main/java/com/kotva/domain/utils/EndEvaluator.java:12-53`
-- 编译阻断枚举不一致：
-  - `src/main/java/com/kotva/application/service/SettlementServiceImpl.java:92-102`
-  - `src/main/java/com/kotva/application/result/GameEndReason.java:3-8`
-- 字典路径依赖源码目录：
-  - `src/main/java/com/kotva/infrastructure/dictionary/DictionaryLoader.java:19-39`
-- 表现层基本空缺：
-  - `src/main/java/com/kotva/presentation/controller/MainMenuController.java:1-5`
-  - 仓库内无 FXML
-- `pom.xml` 只有 JUnit，无 UI 运行时依赖：`pom.xml:20-27`
-
+- 启动入口
+  - `src/main/java/com/kotva/launcher/MainApp.java`
+  - `src/main/java/com/kotva/launcher/AppLauncher.java`
+- 开局
+  - `src/main/java/com/kotva/application/service/GameSetupServiceImpl.java`
+- 会话
+  - `src/main/java/com/kotva/application/session/GameSession.java`
+  - `src/main/java/com/kotva/application/session/GameSessionSnapshot.java`
+- 应用主链
+  - `src/main/java/com/kotva/application/service/GameApplicationServiceImpl.java`
+- 回合协调
+  - `src/main/java/com/kotva/application/TurnCoordinator.java`
+  - `src/main/java/com/kotva/application/RoundTracker.java`
+- draft / preview
+  - `src/main/java/com/kotva/application/draft/DraftManager.java`
+  - `src/main/java/com/kotva/application/draft/TurnDraft.java`
+  - `src/main/java/com/kotva/application/preview/PreviewResult.java`
+- domain action / rule
+  - `src/main/java/com/kotva/domain/action/PlayerAction.java`
+  - `src/main/java/com/kotva/domain/RuleEngine.java`
+  - `src/main/java/com/kotva/domain/utils/MoveValidator.java`
+  - `src/main/java/com/kotva/domain/utils/WordExtractor.java`
+  - `src/main/java/com/kotva/domain/utils/ScoreCalculator.java`
+- 终局
+  - `src/main/java/com/kotva/domain/endgame/EndGameChecker.java`
+- 结算
+  - `src/main/java/com/kotva/application/service/SettlementServiceImpl.java`
+- 动作来源
+  - `src/main/java/com/kotva/mode/PlayerController.java`
+- 过期/遗留并行机制
+  - `src/main/java/com/kotva/domain/utils/EndEvaluator.java`
+  - `src/main/java/com/kotva/application/session/RoundPassTracker.java`
+  - `src/main/java/com/kotva/domain/Position.java`
+  - `src/main/java/com/kotva/domain/model/TilePlacement.java`

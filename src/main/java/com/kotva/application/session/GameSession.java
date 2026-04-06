@@ -1,30 +1,39 @@
 package com.kotva.application.session;
 
-import java.util.Objects;
-
+import com.kotva.application.TurnCoordinator;
 import com.kotva.application.draft.TurnDraft;
 import com.kotva.application.service.SettlementService;
 import com.kotva.application.service.SettlementServiceImpl;
 import com.kotva.domain.model.GameState;
 import com.kotva.policy.SessionStatus;
+import java.util.Objects;
 
 public class GameSession {
-    private final String sessionId;  
+    private final String sessionId;
     private final GameConfig config;
-    private final GameState gameState; 
+    private final GameState gameState;
     private TurnDraft turnDraft;
     private SessionStatus sessionStatus;
-    private final RoundPassTracker roundPassTracker;
     private final SettlementService settlementService;
+    private final TurnCoordinator turnCoordinator;
 
     public GameSession(String sessionId, GameConfig config, GameState gameState) {
+        this(sessionId, config, gameState, new SettlementServiceImpl());
+    }
+
+    public GameSession(
+            String sessionId,
+            GameConfig config,
+            GameState gameState,
+            SettlementService settlementService) {
         this.sessionId = Objects.requireNonNull(sessionId, "sessionId cannot be null.");
         this.config = Objects.requireNonNull(config, "config cannot be null.");
         this.gameState = Objects.requireNonNull(gameState, "gameState cannot be null.");
         this.turnDraft = new TurnDraft();
         this.sessionStatus = SessionStatus.WAITING_FOR_PLAYERS;
-        this.roundPassTracker = new RoundPassTracker();
-        this.settlementService = new SettlementServiceImpl();
+        this.settlementService =
+                Objects.requireNonNull(settlementService, "settlementService cannot be null.");
+        this.turnCoordinator = new TurnCoordinator(gameState, this.settlementService);
     }
 
     public String getSessionId() {
@@ -59,12 +68,11 @@ public class GameSession {
         this.sessionStatus = Objects.requireNonNull(sessionStatus, "sessionStatus cannot be null.");
     }
 
-    public RoundPassTracker getRoundPassTracker() {
-        return roundPassTracker;
-    }
-
     public SettlementService getSettlementService() {
         return settlementService;
     }
 
+    public TurnCoordinator getTurnCoordinator() {
+        return turnCoordinator;
+    }
 }

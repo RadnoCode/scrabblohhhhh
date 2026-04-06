@@ -1,4 +1,4 @@
-package com.kotva.policy;
+package com.kotva.domain.action;
 
 public enum ActionType {
     PLACE_TILE,
