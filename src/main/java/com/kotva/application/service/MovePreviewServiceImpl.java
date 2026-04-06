@@ -3,11 +3,15 @@ package com.kotva.application.service;
 import java.util.List;
 import java.util.Objects;
 
-import com.kotva.application.PlayerAction;
+import com.kotva.application.draft.DraftPlacement;
 import com.kotva.application.draft.TurnDraft;
+import com.kotva.application.draft.TurnDraftActionMapper;
+import com.kotva.application.preview.BoardHighlight;
+import com.kotva.application.preview.HighlightType;
 import com.kotva.application.preview.PreviewResult;
 import com.kotva.application.session.GameSession;
 import com.kotva.domain.RuleEngine;
+import com.kotva.domain.action.PlayerAction;
 import com.kotva.domain.model.GameState;
 import com.kotva.domain.model.Player;
 import com.kotva.domain.utils.CandidateWord;
@@ -33,29 +37,26 @@ public class MovePreviewServiceImpl implements MovePreviewService
         Objects.requireNonNull(session, "session cannot be null.");
         GameState gameState = session.getGameState();
         Player currentPlayer = gameState.requireCurrentActivePlayer();
-        TurnDraft turnDraft = session.getTurnDraft();  //fetch current turn draft from session
+        TurnDraft turnDraft = session.getTurnDraft();
 
-        // creeate a PlayerAction based on the current turn draft for validation
-        String playerId = currentPlayer.getPlayerId();
-        TurnDraft draft = turnDraft;
-        PlayerAction action = PlayerAction.place(playerId, draft);
+        PlayerAction action =
+            TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), turnDraft);
 
-        //get validation result from rule engine; if valid, also get estimated score and messages for frontend display
         String validationMessage = validateSafely(gameState, action);
 
         // according to the RuleEngine contract, validationMessage is null when the move is valid; if not valid, it contains a user-friendly message describing why
         boolean valid = validationMessage == null;
 
-        // estimate the score for this move if it's valid; if not valid, estimated score is 0
-        int estimatedScore = valid ? calculateEstimatedScore(gameState, turnDraft) : 0;
+        int estimatedScore = valid ? calculateEstimatedScore(gameState, action) : 0;
 
-        // formulate messsage from raw validation message; if valid, messages list is empty; if not valid, messages list contains one user-friendly message
         List<String> messages = valid
                 ? List.of()
                 : List.of(mapToUserFriendlyMessage(validationMessage));
 
-        // todo: words and highlights are not implemented yet, will be added in the next iteration; for now just return empty list
-        return new PreviewResult(valid, estimatedScore, List.of(), List.of(), messages);
+        List<BoardHighlight> highlights = buildHighlights(turnDraft, valid);
+        
+        // todo: word list
+        return new PreviewResult(valid, estimatedScore, List.of(), highlights, messages);
     }
 
     
@@ -70,10 +71,10 @@ public class MovePreviewServiceImpl implements MovePreviewService
         }
     }
 
-    private int calculateEstimatedScore(GameState gameState, TurnDraft turnDraft) {
+    private int calculateEstimatedScore(GameState gameState, PlayerAction action) {
         List<CandidateWord> words =
-                WordExtractor.extract(turnDraft, gameState.getTileBag(), gameState.getBoard());
-        return ScoreCalculator.calculate(words, gameState, turnDraft);
+                WordExtractor.extract(action, gameState.getTileBag(), gameState.getBoard());
+        return ScoreCalculator.calculate(words, gameState, action);
     }
 
 
@@ -81,14 +82,49 @@ public class MovePreviewServiceImpl implements MovePreviewService
         if (rawMessage == null || rawMessage.isBlank()) {
             return "Invalid placement.";
         }
-
-        // 示例：把 Invalid word: XXX 映射成需求里的文案风格
+        
         if (rawMessage.startsWith("Invalid word:")) {
             String word = rawMessage.substring("Invalid word:".length()).trim();
-            return word + " It is not a word";
+            return word + " is not a valid word.";
         }
 
-        // 其他消息先原样透传
         return rawMessage;
     }
+
+    private List<BoardHighlight> buildHighlights(
+            TurnDraft turnDraft, 
+            boolean valid
+        ) {
+
+        List<BoardHighlight> highlights = new java.util.ArrayList<>();
+    
+        // if turnDraft or placements are null, return empty highlights (but this should not happen in normal flow, as the UI should always provide a TurnDraft with placements when calling preview)
+        if (turnDraft == null || turnDraft.getPlacements() == null) {
+            return highlights;
+        }
+
+        for (DraftPlacement placement : turnDraft.getPlacements()) {
+            if (placement == null || placement.getPosition() == null) {
+                continue;
+            }
+
+            highlights.add(new BoardHighlight(
+                    placement.getPosition(),
+                    HighlightType.NEW_TILE));
+    
+            if (valid) {
+                highlights.add(new BoardHighlight(
+                        placement.getPosition(),
+                        HighlightType.VALID_TILE));
+            } else {
+                highlights.add(new BoardHighlight(
+                        placement.getPosition(),
+                        HighlightType.INVALID_TILE
+                        ));
+            }
+        }
+    
+        return highlights;
+    }
+
 }
