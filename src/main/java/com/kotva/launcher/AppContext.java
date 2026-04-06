@@ -1,17 +1,21 @@
 package com.kotva.launcher;
 
-import com.kotva.application.service.GameApplicationService;
-import com.kotva.application.service.GameApplicationServiceImpl;
+import java.util.Objects;
+import java.util.Random;
+
+import com.kotva.application.draft.DraftManager;
 import com.kotva.application.service.ClockService;
 import com.kotva.application.service.ClockServiceImpl;
+import com.kotva.application.service.GameApplicationService;
+import com.kotva.application.service.GameApplicationServiceImpl;
 import com.kotva.application.service.GameSetupService;
 import com.kotva.application.service.GameSetupServiceImpl;
+import com.kotva.application.service.MovePreviewService;
+import com.kotva.application.service.MovePreviewServiceImpl;
 import com.kotva.application.service.SettlementService;
 import com.kotva.application.service.SettlementServiceImpl;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.infrastructure.settings.SettingsRepository;
-import java.util.Objects;
-import java.util.Random;
 
 public class AppContext {
     private final GameSetupService gameSetupService;
@@ -44,7 +48,9 @@ public class AppContext {
         this.settingsRepository =
                 Objects.requireNonNull(settingsRepository, "settingsRepository cannot be null.");
         Random nonNullRandom = Objects.requireNonNull(random, "random cannot be null.");
-        this.gameApplicationService = new GameApplicationServiceImpl(this.clockService);
+        MovePreviewService movePreviewService = new MovePreviewServiceImpl(this.dictionaryRepository);
+        this.gameApplicationService =
+            new GameApplicationServiceImpl(this.clockService, new DraftManager(), movePreviewService);
         this.gameSetupService =
                 new GameSetupServiceImpl(this.dictionaryRepository, this.clockService, nonNullRandom);
     }

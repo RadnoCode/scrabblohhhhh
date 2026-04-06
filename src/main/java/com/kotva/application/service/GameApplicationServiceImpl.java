@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.kotva.application.draft.DraftManager;
 import com.kotva.application.preview.PreviewResult;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
@@ -15,29 +16,57 @@ import com.kotva.policy.ClockPhase;
 
 public class GameApplicationServiceImpl implements GameApplicationService {
     private final ClockService clockService;
+    private final DraftManager draftManager;
+    private final MovePreviewService movePreviewService;
 
     public GameApplicationServiceImpl(ClockService clockService) {
+        this(clockService, new DraftManager(), null);
+    }
+
+    public GameApplicationServiceImpl(
+            ClockService clockService,
+            DraftManager draftManager,
+            MovePreviewService movePreviewService) {
         this.clockService = Objects.requireNonNull(clockService, "clockService cannot be null.");
+        this.draftManager = Objects.requireNonNull(draftManager, "draftManager cannot be null.");
+        this.movePreviewService = movePreviewService;
     }
 
     @Override
     public PreviewResult placeDraftTile(GameSession session, String tileId, Position position) {
-        throw new UnsupportedOperationException("placeDraftTile is not implemented yet.");
+        Objects.requireNonNull(session, "session cannot be null.");
+        Objects.requireNonNull(tileId, "tileId cannot be null.");
+        Objects.requireNonNull(position, "position cannot be null.");
+
+        draftManager.placeTile(session.getTurnDraft(), tileId, position);
+        return previewAndStore(session);
     }
 
     @Override
     public PreviewResult moveDraftTile(GameSession session, String tileId, Position newPosition) {
-        throw new UnsupportedOperationException("moveDraftTile is not implemented yet.");
+        Objects.requireNonNull(session, "session cannot be null.");
+        Objects.requireNonNull(tileId, "tileId cannot be null.");
+        Objects.requireNonNull(newPosition, "newPosition cannot be null.");
+
+        draftManager.moveTile(session.getTurnDraft(), tileId, newPosition);
+        return previewAndStore(session);
     }
 
     @Override
     public PreviewResult removeDraftTile(GameSession session, String tileId) {
-        throw new UnsupportedOperationException("removeDraftTile is not implemented yet.");
+        Objects.requireNonNull(session, "session cannot be null.");
+        Objects.requireNonNull(tileId, "tileId cannot be null.");
+
+        draftManager.removeTile(session.getTurnDraft(), tileId);
+        return previewAndStore(session);
     }
 
     @Override
     public PreviewResult recallAllDraftTiles(GameSession session) {
-        throw new UnsupportedOperationException("recallAllDraftTiles is not implemented yet.");
+        Objects.requireNonNull(session, "session cannot be null.");
+
+        draftManager.recallAllTiles(session.getTurnDraft());
+        return previewAndStore(session);
     }
 
     @Override
@@ -90,5 +119,20 @@ public class GameApplicationServiceImpl implements GameApplicationService {
                 currentClock.getByoYomiRemainingMillis(),
                 currentPhase,
                 playerClockSnapshots);
+    }
+
+    private PreviewResult previewAndStore(GameSession session) {
+        PreviewResult previewResult;
+        if (movePreviewService == null) {
+            previewResult = new PreviewResult(true, 0, List.of(), List.of(), List.of());
+        } else {
+            previewResult = movePreviewService.preview(session);
+            if (previewResult == null) {
+                throw new IllegalStateException("movePreviewService returned null preview result.");
+            }
+        }
+
+        session.getTurnDraft().setPreviewResult(previewResult);
+        return previewResult;
     }
 }

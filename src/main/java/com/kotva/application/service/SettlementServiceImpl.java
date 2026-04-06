@@ -99,6 +99,7 @@ public class SettlementServiceImpl implements SettlementService {
             case NO_LEGAL_PLACEMENT_AVAILABLE ->
                     "Game ended because no legal placement was available.";
             case NORMAL_FINISH -> "Game ended normally.";
+            
         };
     }
 
