@@ -1,12 +1,9 @@
 package com.kotva.application.service;
 
-import com.kotva.application.result.GameEndReason;
 import com.kotva.application.session.GameSession;
-import com.kotva.domain.model.GameState;
 import com.kotva.domain.model.Player;
 import com.kotva.domain.model.PlayerClock;
 import com.kotva.policy.ClockPhase;
-import com.kotva.policy.SessionStatus;
 import java.util.Objects;
 
 public class ClockServiceImpl implements ClockService {
@@ -77,23 +74,9 @@ public class ClockServiceImpl implements ClockService {
             return;
         }
 
-        GameState gameState = session.getGameState();
         clock.setMainTimeRemainingMillis(0L);
         clock.setByoYomiRemainingMillis(0L);
         clock.setPhase(ClockPhase.TIMEOUT);
-        currentPlayer.setActive(false);
-        session.resetTurnDraft();// Avoid potential commit of stale draft after player is eliminated.
-
-        if (gameState.getActivePlayerCount() <= 1) {
-            gameState.markGameOver(GameEndReason.ONLY_ONE_PLAYER_REMAINING);
-            session.getSettlementService()
-                    .settle(gameState, GameEndReason.ONLY_ONE_PLAYER_REMAINING);
-            session.setSessionStatus(SessionStatus.COMPLETED);
-            return;
-        }
-
-        gameState.advanceToNextActivePlayer();
-        startTurnClock(session);
     }
 
     private Player requireCurrentPlayer(GameSession session) {
@@ -101,4 +84,3 @@ public class ClockServiceImpl implements ClockService {
         return session.getGameState().requireCurrentActivePlayer();
     }
 }
-

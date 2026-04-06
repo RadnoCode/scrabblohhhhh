@@ -1,9 +1,11 @@
-package com.kotva.application.result;
+package com.kotva.domain.endgame;
 
 public enum GameEndReason {
     ALL_PLAYERS_PASSED,
     ONLY_ONE_PLAYER_REMAINING,
     TILE_BAG_EMPTY_AND_PLAYER_FINISHED,
     BOARD_FULL,
-    TARGET_SCORE_REACHED
+    TARGET_SCORE_REACHED,
+    NO_LEGAL_PLACEMENT_AVAILABLE,
+    NORMAL_FINISH
 }

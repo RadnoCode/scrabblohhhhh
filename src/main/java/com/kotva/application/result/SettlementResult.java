@@ -1,5 +1,6 @@
 package com.kotva.application.result;
 
+import com.kotva.domain.endgame.GameEndReason;
 import java.util.List;
 import java.util.Objects;
 

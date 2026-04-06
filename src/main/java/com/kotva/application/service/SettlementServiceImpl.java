@@ -2,15 +2,13 @@ package com.kotva.application.service;
 
 import com.kotva.application.result.BoardCellSnapshot;
 import com.kotva.application.result.BoardSnapshot;
-import com.kotva.application.result.GameEndReason;
+import com.kotva.application.result.BoardSnapshotFactory;
 import com.kotva.application.result.PlayerSettlement;
 import com.kotva.application.result.SettlementResult;
+import com.kotva.domain.endgame.GameEndReason;
 import com.kotva.domain.model.Board;
-import com.kotva.domain.model.Cell;
 import com.kotva.domain.model.GameState;
 import com.kotva.domain.model.Player;
-import com.kotva.domain.model.Position;
-import com.kotva.domain.model.Tile;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -40,7 +38,7 @@ public class SettlementServiceImpl implements SettlementService {
                         endReason,
                         buildRankings(gameState),
                         buildSummaryMessages(gameState, endReason),
-                        buildBoardSnapshot(gameState.getBoard()));
+                        BoardSnapshotFactory.fromBoard(gameState.getBoard()));
         settlementNavigationPort.showSettlement(result);
         return result;
     }
@@ -96,33 +94,11 @@ public class SettlementServiceImpl implements SettlementService {
             case TILE_BAG_EMPTY_AND_PLAYER_FINISHED ->
                     "Game ended because the tile bag was empty and a player emptied their rack.";
             case BOARD_FULL -> "Game ended because the board became full.";
+            case TARGET_SCORE_REACHED -> "Game ended because the target score was reached.";
             case NO_LEGAL_PLACEMENT_AVAILABLE ->
                     "Game ended because no legal placement was available.";
             case NORMAL_FINISH -> "Game ended normally.";
             
         };
-    }
-
-    private BoardSnapshot buildBoardSnapshot(Board board) {
-        List<BoardCellSnapshot> cells = new ArrayList<>(Board.SIZE * Board.SIZE);
-        for (int row = 0; row < Board.SIZE; row++) {
-            for (int col = 0; col < Board.SIZE; col++) {
-                Cell cell = board.getCell(new Position(row, col));
-                Tile placedTile = cell.getPlacedTile();
-                Character letter = null;
-                boolean blank = false;
-                if (placedTile != null) {
-                    blank = placedTile.isBlank();
-                    letter =
-                            placedTile.getAssignedLetter() != null
-                                    ? placedTile.getAssignedLetter()
-                                    : placedTile.getLetter();
-                }
-                cells.add(
-                        new BoardCellSnapshot(
-                                row, col, cell.getBonusType(), letter, blank));
-            }
-        }
-        return new BoardSnapshot(cells);
     }
 }
