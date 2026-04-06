@@ -2,13 +2,11 @@ package com.kotva.application.service;
 
 import com.kotva.application.draft.DraftManager;
 import com.kotva.application.draft.TurnDraftActionMapper;
-import com.kotva.application.draft.DraftManager;
 import com.kotva.application.preview.PreviewResult;
 import com.kotva.application.result.SettlementResult;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.session.GameSessionSnapshotFactory;
-import com.kotva.application.session.PlayerClockSnapshot;
 import com.kotva.domain.RuleEngine;
 import com.kotva.domain.action.PlayerAction;
 import com.kotva.domain.model.Player;
@@ -22,7 +20,6 @@ import com.kotva.domain.utils.WordExtractor;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.policy.ClockPhase;
 import com.kotva.policy.SessionStatus;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -31,27 +28,36 @@ public class GameApplicationServiceImpl implements GameApplicationService {
     private final DraftManager draftManager;
     private final MovePreviewService movePreviewService;
     private final DictionaryRepository dictionaryRepository;
-    private final DraftManager draftManager;
 
     public GameApplicationServiceImpl(ClockService clockService) {
-        this(clockService, new DraftManager(), null);
+        this(clockService, new DictionaryRepository());
+    }
+
+    public GameApplicationServiceImpl(
+            ClockService clockService, DictionaryRepository dictionaryRepository) {
+        this(clockService, dictionaryRepository, new DraftManager(), null);
     }
 
     public GameApplicationServiceImpl(
             ClockService clockService,
             DraftManager draftManager,
             MovePreviewService movePreviewService) {
-        this(clockService, new DictionaryRepository());
+        this(clockService, new DictionaryRepository(), draftManager, movePreviewService);
     }
 
-    public GameApplicationServiceImpl(
-            ClockService clockService, DictionaryRepository dictionaryRepository) {
+    private GameApplicationServiceImpl(
+            ClockService clockService,
+            DictionaryRepository dictionaryRepository,
+            DraftManager draftManager,
+            MovePreviewService movePreviewService) {
         this.clockService = Objects.requireNonNull(clockService, "clockService cannot be null.");
-        this.draftManager = Objects.requireNonNull(draftManager, "draftManager cannot be null.");
-        this.movePreviewService = movePreviewService;
         this.dictionaryRepository =
                 Objects.requireNonNull(dictionaryRepository, "dictionaryRepository cannot be null.");
-        this.draftManager = new DraftManager();
+        this.draftManager = Objects.requireNonNull(draftManager, "draftManager cannot be null.");
+        this.movePreviewService =
+                movePreviewService != null
+                        ? movePreviewService
+                        : new MovePreviewServiceImpl(this.dictionaryRepository);
     }
 
     @Override
@@ -135,37 +141,15 @@ public class GameApplicationServiceImpl implements GameApplicationService {
 
     private PreviewResult refreshPreview(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
-        String validationMessage = validateDraft(session);
-        PreviewResult previewResult;
-        if (validationMessage != null) {
-            previewResult = new PreviewResult(false, 0, List.of(), List.of(), List.of(validationMessage));
-        } else {
-            Player currentPlayer = requireCurrentPlayer(session);
-            PlayerAction action =
-                    TurnDraftActionMapper.toPlaceAction(
-                            currentPlayer.getPlayerId(), session.getTurnDraft());
-            int estimatedScore =
-                    ScoreCalculator.calculate(
-                            WordExtractor.extract(
-                                    action,
-                                    session.getGameState().getTileBag(),
-                                    session.getGameState().getBoard()),
-                            session.getGameState(),
-                            action);
-            previewResult = new PreviewResult(true, estimatedScore, List.of(), List.of(), List.of());
+        ensureDictionaryLoaded(session);
+
+        PreviewResult previewResult = movePreviewService.preview(session);
+        if (previewResult == null) {
+            throw new IllegalStateException("movePreviewService returned null preview result.");
         }
 
         session.getTurnDraft().setPreviewResult(previewResult);
         return previewResult;
-    }
-
-    private String validateDraft(GameSession session) {
-        ensureDictionaryLoaded(session);
-        RuleEngine ruleEngine = new RuleEngine(dictionaryRepository);
-        Player currentPlayer = requireCurrentPlayer(session);
-        PlayerAction action =
-                TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), session.getTurnDraft());
-        return ruleEngine.validateMove(session.getGameState(), action);
     }
 
     private ActionDispatchResult executeAction(GameSession session, PlayerAction action) {

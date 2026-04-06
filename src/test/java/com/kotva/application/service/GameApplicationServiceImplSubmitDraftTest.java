@@ -28,6 +28,7 @@ import com.kotva.mode.GameMode;
 import com.kotva.policy.DictionaryType;
 import com.kotva.policy.PlayerType;
 import com.kotva.policy.SessionStatus;
+import com.kotva.policy.WordType;
 import java.util.List;
 import java.util.Set;
 import org.junit.Test;
@@ -183,11 +184,13 @@ public class GameApplicationServiceImplSubmitDraftTest {
         PreviewResult placed = service.placeDraftTile(session, tile.getTileID(), new Position(7, 7));
         assertTrue(placed.isValid());
         assertEquals(0, placed.getEstimatedScore());
+        assertFalse(placed.getHighlights().isEmpty());
         assertEquals(1, session.getTurnDraft().getPlacements().size());
         assertNotNull(session.getTurnDraft().getPreviewResult());
 
         PreviewResult moved = service.moveDraftTile(session, tile.getTileID(), new Position(0, 0));
         assertFalse(moved.isValid());
+        assertFalse(moved.getHighlights().isEmpty());
         assertEquals("First word shall sit on the center", moved.getMessages().get(0));
         assertEquals(1, session.getTurnDraft().getPlacements().size());
 
@@ -205,6 +208,34 @@ public class GameApplicationServiceImplSubmitDraftTest {
         assertEquals("p1", session.getGameState().requireCurrentActivePlayer().getPlayerId());
         assertEquals(0, session.getTurnCoordinator().getTurnNumber());
         assertEquals(0, settlementService.callCount);
+    }
+
+    @Test
+    public void draftPreviewBuildsMainWordFromContiguousDraftPlacements() {
+        RecordingSettlementService settlementService = new RecordingSettlementService();
+        GameSession session = createInProgressSession(settlementService);
+        GameApplicationServiceImpl service =
+                new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
+        Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
+        TileBag tileBag = session.getGameState().getTileBag();
+        Tile tileA = drawTileWithLetter(tileBag, 'A');
+        Tile tileT = drawTileWithLetter(tileBag, 'T');
+        currentPlayer.getRack().setTileAt(0, tileA);
+        currentPlayer.getRack().setTileAt(1, tileT);
+
+        service.placeDraftTile(session, tileA.getTileID(), new Position(7, 7));
+        PreviewResult preview = service.placeDraftTile(session, tileT.getTileID(), new Position(7, 8));
+
+        assertTrue(preview.isValid());
+        assertEquals(4, preview.getEstimatedScore());
+        assertEquals(1, preview.getWordList().size());
+        assertEquals("AT", preview.getWordList().get(0).getWord());
+        assertEquals(WordType.MAIN_WORD, preview.getWordList().get(0).getWordType());
+        assertEquals(2, preview.getWordList().get(0).getCoveredPositions().size());
+        assertEquals(7, preview.getWordList().get(0).getCoveredPositions().get(0).getRow());
+        assertEquals(7, preview.getWordList().get(0).getCoveredPositions().get(0).getCol());
+        assertEquals(7, preview.getWordList().get(0).getCoveredPositions().get(1).getRow());
+        assertEquals(8, preview.getWordList().get(0).getCoveredPositions().get(1).getCol());
     }
 
     @Test

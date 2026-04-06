@@ -11,6 +11,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
+import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.session.TimeControlConfig;
 import com.kotva.application.setup.NewGameRequest;

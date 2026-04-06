@@ -23,6 +23,7 @@ import com.kotva.mode.GameMode;
 import com.kotva.policy.DictionaryType;
 import com.kotva.policy.PlayerType;
 import com.kotva.policy.SessionStatus;
+import com.kotva.policy.WordType;
 import java.util.List;
 import java.util.Set;
 import org.junit.Test;
@@ -35,9 +36,12 @@ public class GameSessionSnapshotTest {
                 new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
         Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
         Tile tileA = drawTileWithLetter(session.getGameState().getTileBag(), 'A');
+        Tile tileT = drawTileWithLetter(session.getGameState().getTileBag(), 'T');
         currentPlayer.getRack().setTileAt(0, tileA);
+        currentPlayer.getRack().setTileAt(1, tileT);
 
-        PreviewResult preview = service.placeDraftTile(session, tileA.getTileID(), new Position(7, 7));
+        service.placeDraftTile(session, tileA.getTileID(), new Position(7, 7));
+        PreviewResult preview = service.placeDraftTile(session, tileT.getTileID(), new Position(7, 8));
         assertTrue(preview.isValid());
 
         GameSessionSnapshot snapshot = service.getSessionSnapshot(session);
@@ -52,10 +56,18 @@ public class GameSessionSnapshotTest {
         assertEquals(2, snapshot.getPlayers().size());
         assertEquals(225, snapshot.getBoardSnapshot().getCells().size());
         assertEquals(7, snapshot.getCurrentRackTiles().size());
-        assertEquals(1, snapshot.getDraftPlacements().size());
+        assertEquals(2, snapshot.getDraftPlacements().size());
         assertNotNull(snapshot.getPreview());
         assertTrue(snapshot.getPreview().isValid());
-        assertEquals(0, snapshot.getPreview().getEstimatedScore());
+        assertEquals(4, snapshot.getPreview().getEstimatedScore());
+        assertEquals(1, snapshot.getPreview().getWords().size());
+        assertEquals("AT", snapshot.getPreview().getWords().get(0).getWord());
+        assertEquals(WordType.MAIN_WORD, snapshot.getPreview().getWords().get(0).getWordType());
+        assertEquals(2, snapshot.getPreview().getWords().get(0).getCoveredPositions().size());
+        assertEquals(4, snapshot.getPreview().getHighlights().size());
+        assertTrue(
+                snapshot.getPreview().getHighlights().stream()
+                        .allMatch(highlight -> highlight.getRow() == 7 && highlight.getCol() >= 7 && highlight.getCol() <= 8));
         assertNull(snapshot.getSettlementResult());
 
         GamePlayerSnapshot firstPlayer =
@@ -64,7 +76,7 @@ public class GameSessionSnapshotTest {
                         .findFirst()
                         .orElseThrow();
         assertTrue(firstPlayer.isCurrentTurn());
-        assertEquals(1, firstPlayer.getRackTileCount());
+        assertEquals(2, firstPlayer.getRackTileCount());
         assertEquals(tileA.getTileID(), snapshot.getCurrentRackTiles().get(0).getTileId());
         assertTrue(
                 snapshot.getBoardSnapshot().getCells().stream()
