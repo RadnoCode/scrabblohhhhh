@@ -12,5 +12,4 @@ public record RemoteCommandResult(
         boolean gameEnded,
         SettlementResult settlementResult,
         GameSessionSnapshot snapshot) {
-
 }
