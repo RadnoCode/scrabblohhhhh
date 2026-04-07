@@ -176,11 +176,11 @@ public class GameApplicationServiceImpl implements GameApplicationService {
             return ActionDispatchResult.failure(validationMessage, currentPlayer.getPlayerId());
         }
 
+
         List<CandidateWord> words =
                 WordExtractor.extract(
                         action, session.getGameState().getTileBag(), session.getGameState().getBoard());
         int awardedScore = ScoreCalculator.calculate(words, session.getGameState(), action);
-
         ruleEngine.apply(session.getGameState(), action);
         currentPlayer.addScore(awardedScore);
         refillRack(currentPlayer, session.getGameState().getTileBag());
@@ -190,6 +190,7 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         SettlementResult settlementResult = session.getTurnCoordinator().onActionApplied(action);
         return completeTransition(session, awardedScore, "Draft submitted.", settlementResult);
     }
+
 
     private ActionDispatchResult executePass(GameSession session, PlayerAction action) {
         RuleEngine ruleEngine = new RuleEngine(dictionaryRepository);
@@ -201,6 +202,7 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         return completeTransition(session, 0, "Turn passed.", settlementResult);
     }
 
+
     private ActionDispatchResult executeLose(GameSession session, PlayerAction action) {
         RuleEngine ruleEngine = new RuleEngine(dictionaryRepository);
         ruleEngine.apply(session.getGameState(), action);
@@ -209,6 +211,11 @@ public class GameApplicationServiceImpl implements GameApplicationService {
 
         SettlementResult settlementResult = session.getTurnCoordinator().onActionApplied(action);
         return completeTransition(session, 0, "Player lost the turn.", settlementResult);
+    }
+
+    //提供LAN上传完整Aciton的执行接口。
+    public ActionDispatchResult executeRemoteCommand(GameSession session, PlayerAction action) {
+        return executeAction(session, action);
     }
 
     private ActionDispatchResult completeTransition(

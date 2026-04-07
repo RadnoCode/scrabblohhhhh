@@ -68,22 +68,4 @@ public class PlayerController {
     private GameApplicationService requireService(GameApplicationService service) {
         return Objects.requireNonNull(service, "service cannot be null.");
     }
-
-    private static final class LocalPlayerController extends PlayerController {
-        private LocalPlayerController(String playerId) {
-            super(playerId, PlayerType.LOCAL);
-        }
-    }
-
-    private static final class LANPlayerController extends PlayerController {
-        private LANPlayerController(String playerId) {
-            super(playerId, PlayerType.LAN);
-        }
-    }
-
-    private static final class AIPlayerController extends PlayerController {
-        private AIPlayerController(String playerId) {
-            super(playerId, PlayerType.AI);
-        }
-    }
 }
