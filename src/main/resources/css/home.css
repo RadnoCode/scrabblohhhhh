@@ -1,0 +1,11 @@
+.home-root {
+    -fx-background-color: -app-background;
+}
+
+.home-content-box {
+    -fx-alignment: center;
+}
+
+.home-button-column {
+    -fx-padding: 10 0 0 0;
+}

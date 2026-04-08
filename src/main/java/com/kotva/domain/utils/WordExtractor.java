@@ -22,8 +22,6 @@ public final class WordExtractor {
         return extract(draft, null, board);
     }
 
-    // 引入 Board 参数。因为提词不仅要看玩家刚刚放下的 draft 新牌，
-    // 还必须顺藤摸瓜，把棋盘上连着的 Cell 里的老牌也一起扫出来，否则没法和老词接龙。
     public static List<CandidateWord> extract(TurnDraft draft, TileBag tileBag, Board board) {
         if (draft == null || draft.getPlacements() == null || draft.getPlacements().isEmpty()) {
             return Collections.emptyList();
@@ -40,7 +38,6 @@ public final class WordExtractor {
             int row = placement.getPosition().getRow();
             int col = placement.getPosition().getCol();
 
-            // 横向扫描
             if (hasTileAt(row, col - 1, draftTileByPoint, board) || hasTileAt(row, col + 1, draftTileByPoint, board)) {
                 CandidateWord hWord = collectHorizontalWord(row, col, draftTileByPoint, board, tileBag);
                 if (hWord.getWord().length() >= 2) {
@@ -48,7 +45,6 @@ public final class WordExtractor {
                 }
             }
 
-            // 纵向扫描
             if (hasTileAt(row - 1, col, draftTileByPoint, board) || hasTileAt(row + 1, col, draftTileByPoint, board)) {
                 CandidateWord vWord = collectVerticalWord(row, col, draftTileByPoint, board, tileBag);
                 if (vWord.getWord().length() >= 2) {
@@ -72,18 +68,13 @@ public final class WordExtractor {
         return index;
     }
 
-    // 统一的坐标探测雷达。
-    // 无论是 draft 里的新牌，还是 Board 上的老牌，只要这个坐标有实体字母，就返回 true。
     private static boolean hasTileAt(int row, int col, Map<String, DraftPlacement> index, Board board) {
-        // 越界保护
         if (row < 0 || row >= Board.SIZE || col < 0 || col >= Board.SIZE) {
             return false;
         }
-        // 1. 查新牌
         if (index.containsKey(toPointKey(row, col))) {
             return true;
         }
-        // 2. 查老牌（调用了 Cell 的 isEmpty 方法）
         if (board != null) {
             Cell cell = board.getCell(new Position(row, col));
             return cell != null && !cell.isEmpty();
@@ -91,9 +82,6 @@ public final class WordExtractor {
         return false;
     }
 
-    // 为什么不返回 List<DraftPlacement> 而是直接返回 CandidateWord？
-    // 因为老牌是 Cell 里的 Tile，没法强转成 DraftPlacement！
-    // 既然收集列表会引发类型冲突，咱们干脆在扫描时直接把字母抠出来拼成 String，一步到位。
     private static CandidateWord collectHorizontalWord(int row, int col, Map<String, DraftPlacement> index, Board board, TileBag tileBag) {
         int left = col;
         while (hasTileAt(row, left - 1, index, board)) {
@@ -130,20 +118,15 @@ public final class WordExtractor {
         return new CandidateWord(wordBuilder.toString(), new Position(top, col), new Position(bottom, col));
     }
 
-    // 统一获取字母的方法
-    // 负责把新牌的字面值，和 Board 老牌的字面值统一提取成字符串。
     private static String getLetterAt(int row, int col, Map<String, DraftPlacement> index, Board board, TileBag tileBag) {
         String key = toPointKey(row, col);
-        // 如果是新下的牌
         if (index.containsKey(key)) {
             return resolveLetter(index.get(key), tileBag);
         }
-        // 如果是棋盘上的老牌
         if (board != null) {
             Cell cell = board.getCell(new Position(row, col));
             if (cell != null && !cell.isEmpty()) {
                 Tile oldTile = cell.getPlacedTile();
-                // 兼容空白牌(Blank Tile)的逻辑
                 if (oldTile.isBlank() && oldTile.getAssignedLetter() != null) {
                     return String.valueOf(oldTile.getAssignedLetter());
                 }

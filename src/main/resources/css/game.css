@@ -1,0 +1,49 @@
+.game-root {
+    -fx-background-color: -app-background;
+}
+
+.game-content-box {
+    -fx-alignment: center;
+}
+
+.game-side-column {
+    -fx-alignment: top_center;
+}
+
+.game-board-column {
+    -fx-alignment: center;
+}
+
+.game-timer-row {
+    -fx-alignment: center;
+}
+
+.game-board-shell {
+    -fx-padding: 0;
+}
+
+.game-board-cell {
+    -fx-background-color: rgba(226, 219, 206, 0.90);
+    -fx-background-radius: 11;
+    -fx-border-color: transparent;
+    -fx-border-width: 1;
+    -fx-border-radius: 11;
+}
+
+.game-board-cell-hover {
+    -fx-border-color: rgba(255, 255, 255, 0.96);
+}
+
+.game-board-draft-tile {
+    -fx-effect: dropshadow(gaussian, rgba(87, 106, 140, 0.16), 8, 0.10, 0, 2);
+}
+
+.game-drag-floating-tile {
+    -fx-effect: dropshadow(gaussian, rgba(61, 73, 96, 0.22), 14, 0.18, 0, 4);
+    -fx-opacity: 0.96;
+}
+
+.game-placeholder-panel {
+    -fx-background-color: rgba(226, 219, 206, 0.82);
+    -fx-background-radius: 30;
+}

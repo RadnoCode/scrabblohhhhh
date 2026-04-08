@@ -1,3 +1,7 @@
+/**
+ * 包作用：应用层测试包，负责验证动作协调与回合推进逻辑。
+ * 包含类：TurnCoordinatorTest。
+ */
 package com.kotva.application;
 
 import static org.junit.Assert.assertEquals;
@@ -17,7 +21,16 @@ import com.kotva.policy.PlayerType;
 import java.util.List;
 import org.junit.Test;
 
+/**
+ * 类作用：测试回合协调器的终局判断与轮次推进逻辑。
+ * 包含方法：loseDoesNotEndGameWhenMultipleActivePlayersRemain、loseEndsGameWhenOnlyOneActivePlayerRemains、allPlayersPassingEndsGameAtRoundBoundary、emptyTileBagAndEmptyRackEndsGameAfterPlaceTileAction、createPlayer。
+ * 继承/实现：无。
+ * 引用类：TurnDraft 用于保存当前回合草稿数据；GameEndReason 用于标识对局结束原因；GameState 用于访问或更新当前对局状态；Player 用于访问玩家对象、分数、行动权或牌架；Tile 用于访问字牌字母、分值和空白牌状态；PlayerController 用于接收并产出玩家动作；PlayerType 用于区分玩家控制器类型；Test 用于标记测试方法。
+ */
 public class TurnCoordinatorTest {
+    /**
+     * 方法作用：测试方法：验证 loseDoesNotEndGameWhenMultipleActivePlayersRemain 对应的业务场景。
+     */
     @Test
     public void loseDoesNotEndGameWhenMultipleActivePlayersRemain() {
         RecordingSettlementService settlementService = new RecordingSettlementService();
@@ -35,6 +48,9 @@ public class TurnCoordinatorTest {
         assertEquals(0, settlementService.callCount);
     }
 
+    /**
+     * 方法作用：测试方法：验证 loseEndsGameWhenOnlyOneActivePlayerRemains 对应的业务场景。
+     */
     @Test
     public void loseEndsGameWhenOnlyOneActivePlayerRemains() {
         RecordingSettlementService settlementService = new RecordingSettlementService();
@@ -52,6 +68,9 @@ public class TurnCoordinatorTest {
         assertEquals(1, settlementService.callCount);
     }
 
+    /**
+     * 方法作用：测试方法：验证 allPlayersPassingEndsGameAtRoundBoundary 对应的业务场景。
+     */
     @Test
     public void allPlayersPassingEndsGameAtRoundBoundary() {
         RecordingSettlementService settlementService = new RecordingSettlementService();
@@ -72,6 +91,9 @@ public class TurnCoordinatorTest {
         assertEquals(1, settlementService.callCount);
     }
 
+    /**
+     * 方法作用：测试方法：验证 emptyTileBagAndEmptyRackEndsGameAfterPlaceTileAction 对应的业务场景。
+     */
     @Test
     public void emptyTileBagAndEmptyRackEndsGameAfterPlaceTileAction() {
         RecordingSettlementService settlementService = new RecordingSettlementService();
@@ -94,15 +116,27 @@ public class TurnCoordinatorTest {
         assertNotNull(coordinator.getSettlementResult());
     }
 
+    /**
+     * 方法作用：创建一个测试用玩家对象。
+     */
     private Player createPlayer(String playerId, String playerName) {
         Player player = new Player(playerId, playerName, PlayerType.LOCAL);
         player.setController(new PlayerController(playerId, PlayerType.LOCAL));
         return player;
     }
 
+    /**
+     * 类作用：测试替身类，用于记录结算服务调用结果。
+     * 包含方法：settle。
+     * 继承/实现：实现 SettlementService。
+     * 引用类：当前类未直接导入其他自定义类。
+     */
     private static class RecordingSettlementService implements SettlementService {
         private int callCount;
 
+        /**
+         * 方法作用：根据终局状态生成并返回结算结果。
+         */
         @Override
         public SettlementResult settle(GameState gameState, GameEndReason endReason) {
             callCount++;

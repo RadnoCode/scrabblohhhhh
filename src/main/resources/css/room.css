@@ -1,0 +1,65 @@
+.room-root {
+    -fx-background-color: -app-background;
+}
+
+.room-search-box {
+    -fx-pref-width: 410px;
+    -fx-background-color: rgba(255, 255, 255, 0.70);
+    -fx-border-color: #9fb0cf;
+    -fx-border-width: 2;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 6 12 6 12;
+}
+
+.room-search-field {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -app-text;
+    -fx-font-size: 18px;
+    -fx-padding: 0;
+}
+
+.room-search-field:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.search-icon-lens,
+.search-icon-handle {
+    -fx-stroke: #8da2c8;
+    -fx-stroke-width: 2.2;
+}
+
+.search-icon-lens {
+    -fx-fill: transparent;
+}
+
+.room-panel-outline,
+.room-panel-inner-frame {
+    -fx-fill: rgba(255, 255, 255, 0.18);
+    -fx-stroke: #9fb0cf;
+    -fx-stroke-width: 2;
+}
+
+.room-panel-divider-line {
+    -fx-stroke: #9fb0cf;
+    -fx-stroke-width: 1.5;
+}
+
+.room-panel-cutout,
+.room-panel-divider-dot {
+    -fx-fill: -app-background;
+    -fx-stroke: #9fb0cf;
+    -fx-stroke-width: 2;
+}
+
+.room-panel {
+    -fx-cursor: hand;
+}
+
+.room-waiting-hint {
+    -fx-text-fill: rgba(79, 97, 132, 0.78);
+    -fx-font-size: 24px;
+    -fx-font-weight: 500;
+}

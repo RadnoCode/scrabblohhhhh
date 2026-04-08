@@ -1,0 +1,7 @@
+.root {
+    -app-background: linear-gradient(to bottom, #f7f3eb, #efe8dc);
+    -app-panel: rgba(255, 255, 255, 0.80);
+    -app-line: #8c98ac;
+    -app-text: #3d4960;
+    -app-shadow: rgba(43, 57, 80, 0.24);
+}

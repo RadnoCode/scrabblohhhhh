@@ -1,0 +1,85 @@
+package com.kotva.presentation.scene;
+
+import com.kotva.presentation.component.BackButton;
+import com.kotva.presentation.component.CardStackIconView;
+import com.kotva.presentation.component.RoomPanelView;
+import com.kotva.presentation.component.SearchIconView;
+import com.kotva.presentation.component.TitleBanner;
+import com.kotva.presentation.controller.RoomSearchController;
+import com.kotva.presentation.viewmodel.RoomViewModel;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+
+/**
+ * RoomSearchScene builds the online room search page.
+ */
+public class RoomSearchScene extends Scene {
+    private static final double DEFAULT_WIDTH = 1280;
+    private static final double DEFAULT_HEIGHT = 800;
+
+    public RoomSearchScene(RoomSearchController controller) {
+        super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        loadStyleSheets();
+    }
+
+    private static Parent createRoot(RoomSearchController controller) {
+        StackPane sceneRoot = new StackPane();
+        RoomViewModel viewModel = controller.getViewModel();
+
+        BorderPane root = new BorderPane();
+        root.getStyleClass().add("room-root");
+
+        TitleBanner titleBanner = new TitleBanner(viewModel.getTitleText());
+        BorderPane.setMargin(titleBanner, new Insets(60, 110, 30, 110));
+        root.setTop(titleBanner);
+
+        CardStackIconView cardStackIconView = new CardStackIconView();
+        cardStackIconView.setPrefSize(420, 320);
+
+        SearchIconView searchIconView = new SearchIconView();
+        TextField searchField = new TextField();
+        searchField.getStyleClass().add("room-search-field");
+        controller.bindSearchField(searchField);
+
+        HBox searchBox = new HBox(10, searchIconView, searchField);
+        searchBox.getStyleClass().add("room-search-box");
+        searchBox.setAlignment(Pos.CENTER_LEFT);
+
+        RoomPanelView roomPanelView = RoomPanelView.createSearchPanel();
+        controller.bindRoomPanelAction(roomPanelView);
+
+        VBox rightColumn = new VBox(18, searchBox, roomPanelView);
+        rightColumn.setAlignment(Pos.TOP_CENTER);
+
+        Region spacer = new Region();
+        spacer.setMinWidth(70);
+
+        HBox contentBox = new HBox(cardStackIconView, spacer, rightColumn);
+        contentBox.setAlignment(Pos.CENTER);
+        BorderPane.setMargin(contentBox, new Insets(20, 110, 90, 110));
+        root.setCenter(contentBox);
+
+        BackButton backButton = new BackButton();
+        controller.bindBackAction(backButton);
+        StackPane.setAlignment(backButton, Pos.TOP_LEFT);
+        StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
+
+        sceneRoot.getChildren().addAll(root, backButton);
+        return sceneRoot;
+    }
+
+    private void loadStyleSheets() {
+        getStylesheets().add(getClass().getResource("/css/base.css").toExternalForm());
+        getStylesheets().add(getClass().getResource("/css/theme.css").toExternalForm());
+        getStylesheets().add(getClass().getResource("/css/component.css").toExternalForm());
+        getStylesheets().add(getClass().getResource("/css/room.css").toExternalForm());
+    }
+}

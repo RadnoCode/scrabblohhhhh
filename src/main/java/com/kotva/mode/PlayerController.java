@@ -42,8 +42,6 @@ public class PlayerController {
     public PlayerAction requestAction() {
         try {
             return actionQueue.take();
-            // take() 不能在 UI 线程里调用，否则界面会卡死。
-            // 通常让 TurnCoordinator 在后台线程跑，UI 只负责 offer(action)。
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
