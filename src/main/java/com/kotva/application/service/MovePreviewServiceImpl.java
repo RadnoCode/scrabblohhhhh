@@ -24,6 +24,7 @@ import com.kotva.domain.utils.MoveValidator;
 import com.kotva.domain.utils.ScoreCalculator;
 import com.kotva.domain.utils.WordExtractor;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
+import com.kotva.policy.DictionaryType;
 import com.kotva.policy.WordType;
 
 /**
@@ -45,13 +46,26 @@ public class MovePreviewServiceImpl implements MovePreviewService
     @Override
     public PreviewResult preview(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
-        ensureDictionaryLoaded(session);
-        GameState gameState = session.getGameState();
+        return preview(session, session.getTurnDraft());
+    }
+
+    @Override
+    public PreviewResult preview(GameSession session, TurnDraft turnDraft) {
+        Objects.requireNonNull(session, "session cannot be null.");
+        return preview(session.getGameState(), session.getConfig().getDictionaryType(), turnDraft);
+    }
+
+    @Override
+    public PreviewResult preview(GameState gameState, DictionaryType dictionaryType, TurnDraft turnDraft) {
+        Objects.requireNonNull(gameState, "gameState cannot be null.");
+        Objects.requireNonNull(dictionaryType, "dictionaryType cannot be null.");
+        Objects.requireNonNull(turnDraft, "turnDraft cannot be null.");
+
+        ensureDictionaryLoaded(dictionaryType);
         Player currentPlayer = gameState.requireCurrentActivePlayer();
-        TurnDraft turnDraft = session.getTurnDraft();
 
         PlayerAction action =
-            TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), turnDraft);
+                TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), turnDraft);
 
         String validationMessage = validateSafely(gameState, action);
 
@@ -71,9 +85,9 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return new PreviewResult(valid, estimatedScore, words, highlights, messages);
     }
 
-    private void ensureDictionaryLoaded(GameSession session) {
-        if (dictionaryRepository.getLoadedDictionaryType() != session.getConfig().getDictionaryType()) {
-            dictionaryRepository.loadDictionary(session.getConfig().getDictionaryType());
+    private void ensureDictionaryLoaded(DictionaryType dictionaryType) {
+        if (dictionaryRepository.getLoadedDictionaryType() != dictionaryType) {
+            dictionaryRepository.loadDictionary(dictionaryType);
         }
     }
 

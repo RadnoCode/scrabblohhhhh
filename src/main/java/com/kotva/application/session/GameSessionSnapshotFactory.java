@@ -1,6 +1,7 @@
 package com.kotva.application.session;
 
 import com.kotva.application.draft.DraftPlacement;
+import com.kotva.application.draft.TurnDraft;
 import com.kotva.application.preview.BoardHighlight;
 import com.kotva.application.preview.PreviewResult;
 import com.kotva.application.preview.PreviewWord;
@@ -65,9 +66,34 @@ public final class GameSessionSnapshotFactory {
                 players,
                 BoardSnapshotFactory.fromBoard(session.getGameState().getBoard()),
                 buildCurrentRackTiles(currentPlayer),
-                buildDraftPlacements(session),
-                buildPreviewSnapshot(session),
+                buildDraftPlacements(session.getTurnDraft()),
+                buildPreviewSnapshot(session.getTurnDraft()),
                 session.getTurnCoordinator().getSettlementResult());
+    }
+
+    public static GameSessionSnapshot withLocalDraft(GameSessionSnapshot base, TurnDraft turnDraft) {
+        Objects.requireNonNull(base, "base snapshot cannot be null.");
+        Objects.requireNonNull(turnDraft, "turnDraft cannot be null.");
+
+        return new GameSessionSnapshot(
+                base.getSessionId(),
+                base.getGameMode(),
+                base.getSessionStatus(),
+                base.isGameEnded(),
+                base.getGameEndReason(),
+                base.getTurnNumber(),
+                base.getCurrentPlayerId(),
+                base.getCurrentPlayerName(),
+                base.getCurrentPlayerMainTimeRemainingMillis(),
+                base.getCurrentPlayerByoYomiRemainingMillis(),
+                base.getCurrentPlayerClockPhase(),
+                base.getPlayerClockSnapshots(),
+                base.getPlayers(),
+                base.getBoardSnapshot(),
+                base.getCurrentRackTiles(),
+                buildDraftPlacements(turnDraft),
+                buildPreviewSnapshot(turnDraft),
+                base.getSettlementResult());
     }
 
     private static List<RackTileSnapshot> buildCurrentRackTiles(Player player) {
@@ -86,9 +112,9 @@ public final class GameSessionSnapshotFactory {
         return currentRackTiles;
     }
 
-    private static List<DraftPlacementSnapshot> buildDraftPlacements(GameSession session) {
+    private static List<DraftPlacementSnapshot> buildDraftPlacements(TurnDraft turnDraft) {
         List<DraftPlacementSnapshot> draftPlacements = new ArrayList<>();
-        for (DraftPlacement placement : session.getTurnDraft().getPlacements()) {
+        for (DraftPlacement placement : turnDraft.getPlacements()) {
             draftPlacements.add(
                     new DraftPlacementSnapshot(
                             placement.getTileId(),
@@ -98,8 +124,8 @@ public final class GameSessionSnapshotFactory {
         return draftPlacements;
     }
 
-    private static PreviewSnapshot buildPreviewSnapshot(GameSession session) {
-        PreviewResult previewResult = session.getTurnDraft().getPreviewResult();
+    private static PreviewSnapshot buildPreviewSnapshot(TurnDraft turnDraft) {
+        PreviewResult previewResult = turnDraft.getPreviewResult();
         if (previewResult == null) {
             return null;
         }
