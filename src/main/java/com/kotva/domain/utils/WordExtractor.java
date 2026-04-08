@@ -2,53 +2,55 @@ package com.kotva.domain.utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-import com.kotva.application.draft.DraftPlacement;
-import com.kotva.application.draft.TurnDraft;
+import com.kotva.domain.action.ActionPlacement;
+import com.kotva.domain.action.PlayerAction;
+import com.kotva.domain.model.Board;
+import com.kotva.domain.model.Cell;
 import com.kotva.domain.model.Position;
 import com.kotva.domain.model.Tile;
 import com.kotva.domain.model.TileBag;
-import com.kotva.domain.model.Board;
-import com.kotva.domain.model.Cell;
 
 public final class WordExtractor {
     private WordExtractor() {
     }
 
-    public static List<CandidateWord> extract(TurnDraft draft, Board board) {
-        return extract(draft, null, board);
+    public static List<CandidateWord> extract(PlayerAction action, Board board) {
+        return extract(action, null, board);
     }
 
-    public static List<CandidateWord> extract(TurnDraft draft, TileBag tileBag, Board board) {
-        if (draft == null || draft.getPlacements() == null || draft.getPlacements().isEmpty()) {
+    public static List<CandidateWord> extract(PlayerAction action, TileBag tileBag, Board board) {
+        if (action == null || action.placements().isEmpty()) {
             return Collections.emptyList();
         }
 
-        Map<String, DraftPlacement> draftTileByPoint = buildIndex(draft.getPlacements());
+        Map<String, ActionPlacement> draftTileByPoint = buildIndex(action.placements());
         LinkedHashSet<CandidateWord> candidateWords = new LinkedHashSet<>();
 
-        for (DraftPlacement placement : draft.getPlacements()) {
-            if (placement == null || placement.getPosition() == null) {
-                continue;
-            }
+        for (ActionPlacement placement : action.placements()) {
+            Position position = placement.position();
+            int row = position.getRow();
+            int col = position.getCol();
 
-            int row = placement.getPosition().getRow();
-            int col = placement.getPosition().getCol();
-
-            if (hasTileAt(row, col - 1, draftTileByPoint, board) || hasTileAt(row, col + 1, draftTileByPoint, board)) {
-                CandidateWord hWord = collectHorizontalWord(row, col, draftTileByPoint, board, tileBag);
-                if (hWord.getWord().length() >= 2) {
-                    candidateWords.add(hWord);
+            if (hasTileAt(row, col - 1, draftTileByPoint, board)
+                    || hasTileAt(row, col + 1, draftTileByPoint, board)) {
+                CandidateWord horizontal =
+                        collectHorizontalWord(row, col, draftTileByPoint, board, tileBag);
+                if (horizontal.getWord().length() >= 2) {
+                    candidateWords.add(horizontal);
                 }
             }
 
-            if (hasTileAt(row - 1, col, draftTileByPoint, board) || hasTileAt(row + 1, col, draftTileByPoint, board)) {
-                CandidateWord vWord = collectVerticalWord(row, col, draftTileByPoint, board, tileBag);
-                if (vWord.getWord().length() >= 2) {
-                    candidateWords.add(vWord);
+            if (hasTileAt(row - 1, col, draftTileByPoint, board)
+                    || hasTileAt(row + 1, col, draftTileByPoint, board)) {
+                CandidateWord vertical =
+                        collectVerticalWord(row, col, draftTileByPoint, board, tileBag);
+                if (vertical.getWord().length() >= 2) {
+                    candidateWords.add(vertical);
                 }
             }
         }
@@ -56,19 +58,17 @@ public final class WordExtractor {
         return new ArrayList<>(candidateWords);
     }
 
-    private static Map<String, DraftPlacement> buildIndex(List<DraftPlacement> placements) {
-        java.util.LinkedHashMap<String, DraftPlacement> index = new java.util.LinkedHashMap<>();
-        for (DraftPlacement placement : placements) {
-            if (placement == null || placement.getPosition() == null) {
-                continue;
-            }
-            Position position = placement.getPosition();
+    private static Map<String, ActionPlacement> buildIndex(List<ActionPlacement> placements) {
+        LinkedHashMap<String, ActionPlacement> index = new LinkedHashMap<>();
+        for (ActionPlacement placement : placements) {
+            Position position = placement.position();
             index.put(toPointKey(position.getRow(), position.getCol()), placement);
         }
         return index;
     }
 
-    private static boolean hasTileAt(int row, int col, Map<String, DraftPlacement> index, Board board) {
+    private static boolean hasTileAt(
+            int row, int col, Map<String, ActionPlacement> index, Board board) {
         if (row < 0 || row >= Board.SIZE || col < 0 || col >= Board.SIZE) {
             return false;
         }
@@ -82,7 +82,8 @@ public final class WordExtractor {
         return false;
     }
 
-    private static CandidateWord collectHorizontalWord(int row, int col, Map<String, DraftPlacement> index, Board board, TileBag tileBag) {
+    private static CandidateWord collectHorizontalWord(
+            int row, int col, Map<String, ActionPlacement> index, Board board, TileBag tileBag) {
         int left = col;
         while (hasTileAt(row, left - 1, index, board)) {
             left--;
@@ -94,13 +95,15 @@ public final class WordExtractor {
         }
 
         StringBuilder wordBuilder = new StringBuilder();
-        for (int c = left; c <= right; c++) {
-            wordBuilder.append(getLetterAt(row, c, index, board, tileBag));
+        for (int currentCol = left; currentCol <= right; currentCol++) {
+            wordBuilder.append(getLetterAt(row, currentCol, index, board, tileBag));
         }
-        return new CandidateWord(wordBuilder.toString(), new Position(row, left), new Position(row, right));
+        return new CandidateWord(
+                wordBuilder.toString(), new Position(row, left), new Position(row, right));
     }
 
-    private static CandidateWord collectVerticalWord(int row, int col, Map<String, DraftPlacement> index, Board board, TileBag tileBag) {
+    private static CandidateWord collectVerticalWord(
+            int row, int col, Map<String, ActionPlacement> index, Board board, TileBag tileBag) {
         int top = row;
         while (hasTileAt(top - 1, col, index, board)) {
             top--;
@@ -112,17 +115,20 @@ public final class WordExtractor {
         }
 
         StringBuilder wordBuilder = new StringBuilder();
-        for (int r = top; r <= bottom; r++) {
-            wordBuilder.append(getLetterAt(r, col, index, board, tileBag));
+        for (int currentRow = top; currentRow <= bottom; currentRow++) {
+            wordBuilder.append(getLetterAt(currentRow, col, index, board, tileBag));
         }
-        return new CandidateWord(wordBuilder.toString(), new Position(top, col), new Position(bottom, col));
+        return new CandidateWord(
+                wordBuilder.toString(), new Position(top, col), new Position(bottom, col));
     }
 
-    private static String getLetterAt(int row, int col, Map<String, DraftPlacement> index, Board board, TileBag tileBag) {
+    private static String getLetterAt(
+            int row, int col, Map<String, ActionPlacement> index, Board board, TileBag tileBag) {
         String key = toPointKey(row, col);
         if (index.containsKey(key)) {
             return resolveLetter(index.get(key), tileBag);
         }
+
         if (board != null) {
             Cell cell = board.getCell(new Position(row, col));
             if (cell != null && !cell.isEmpty()) {
@@ -136,19 +142,15 @@ public final class WordExtractor {
         return "";
     }
 
-    private static String resolveLetter(DraftPlacement placement, TileBag tileBag) {
-        if (placement == null || placement.getTileId() == null) {
-            return "";
-        }
+    private static String resolveLetter(ActionPlacement placement, TileBag tileBag) {
         if (tileBag == null) {
-            return placement.getTileId();
+            return placement.tileId();
         }
 
-        Tile tile = tileBag.getTileById(placement.getTileId());
+        Tile tile = tileBag.getTileById(placement.tileId());
         if (tile == null) {
-            return placement.getTileId();
+            return placement.tileId();
         }
-
         if (tile.isBlank() && tile.getAssignedLetter() != null) {
             return String.valueOf(tile.getAssignedLetter());
         }

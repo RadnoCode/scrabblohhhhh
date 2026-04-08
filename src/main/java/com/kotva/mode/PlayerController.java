@@ -1,22 +1,34 @@
 package com.kotva.mode;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Objects;
 
-import com.kotva.application.PlayerAction;
-import com.kotva.application.draft.TurnDraft;
+import com.kotva.application.preview.PreviewResult;
+import com.kotva.application.service.GameApplicationService;
+import com.kotva.application.service.SubmitDraftResult;
+import com.kotva.application.service.TurnTransitionResult;
+import com.kotva.application.session.GameSession;
+import com.kotva.domain.model.Position;
 import com.kotva.policy.PlayerType;
 
-//Generate actions from UI, network, or AI offer a queue to TurnCoordinator.
+// Action source adapter for a player. It forwards player-intent events into the application service.
 public class PlayerController {
     private final PlayerType type;
     private final String playerId;
-    private final BlockingQueue<PlayerAction> actionQueue;
 
     public PlayerController(String playerId, PlayerType type) {
-        this.playerId = playerId;
-        this.type = type;
-        this.actionQueue = new LinkedBlockingQueue<>();
+        this.playerId = Objects.requireNonNull(playerId, "playerId cannot be null.");
+        this.type = Objects.requireNonNull(type, "type cannot be null.");
+    }
+
+    public static PlayerController create(String playerId, PlayerType type) {
+        Objects.requireNonNull(playerId, "playerId cannot be null.");
+        Objects.requireNonNull(type, "type cannot be null.");
+
+        return switch (type) {
+            case LOCAL -> new LocalPlayerController(playerId);
+            case LAN -> new LANPlayerController(playerId);
+            case AI -> new AIPlayerController(playerId);
+        };
     }
 
     public String getPlayerId() {
@@ -27,46 +39,34 @@ public class PlayerController {
         return type;
     }
 
-    public void onSubmit(TurnDraft draft) {
-        actionQueue.offer(PlayerAction.place(playerId, draft));
+    public PreviewResult placeDraftTile(
+            GameApplicationService service, GameSession session, String tileId, Position position) {
+        return requireService(service).placeDraftTile(session, tileId, position);
     }
 
-    public void onPass() {
-        actionQueue.offer(PlayerAction.pass(playerId));
+    public PreviewResult moveDraftTile(
+            GameApplicationService service, GameSession session, String tileId, Position newPosition) {
+        return requireService(service).moveDraftTile(session, tileId, newPosition);
     }
 
-    public void onLose() {
-        actionQueue.offer(PlayerAction.lose(playerId));
+    public PreviewResult removeDraftTile(
+            GameApplicationService service, GameSession session, String tileId) {
+        return requireService(service).removeDraftTile(session, tileId);
     }
 
-    public PlayerAction requestAction() {
-        try {
-            return actionQueue.take();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
+    public PreviewResult recallAllDraftTiles(GameApplicationService service, GameSession session) {
+        return requireService(service).recallAllDraftTiles(session);
     }
-}
 
-class LocalPlayerController extends PlayerController {
-    LocalPlayerController(String playerId) {
-        super(playerId, PlayerType.LOCAL);
+    public SubmitDraftResult submitDraft(GameApplicationService service, GameSession session) {
+        return requireService(service).submitDraft(session);
     }
-}
 
-class LANPlayerController extends PlayerController {
-    // todo: implement network communication to receive actions from remote player
-    // and offer to the queue.
-    LANPlayerController(String playerId) {
-        super(playerId, PlayerType.LAN);
+    public TurnTransitionResult passTurn(GameApplicationService service, GameSession session) {
+        return requireService(service).passTurn(session);
     }
-}
 
-class AIPlayerController extends PlayerController {
-    // todo: implement AI logic, maybe with a separate thread to generate actions
-    // and offer to the queue.
-    AIPlayerController(String playerId) {
-        super(playerId, PlayerType.AI);
+    private GameApplicationService requireService(GameApplicationService service) {
+        return Objects.requireNonNull(service, "service cannot be null.");
     }
 }

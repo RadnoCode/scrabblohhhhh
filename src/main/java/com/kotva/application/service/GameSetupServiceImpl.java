@@ -114,7 +114,7 @@ public class GameSetupServiceImpl implements GameSetupService {
             String playerId = "player-" + (index + 1);
             Player player =
                     new Player(playerId, playerConfig.getPlayerName(), playerConfig.getPlayerType());
-            player.setController(new PlayerController(playerId, playerConfig.getPlayerType()));
+            player.setController(PlayerController.create(playerId, playerConfig.getPlayerType()));
             player.setClock(createPlayerClock(timeControlConfig));
             players.add(player);
         }

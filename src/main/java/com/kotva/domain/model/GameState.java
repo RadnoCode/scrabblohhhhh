@@ -1,16 +1,9 @@
 package com.kotva.domain.model;
 
-import com.kotva.application.result.GameEndReason;
+import com.kotva.domain.endgame.GameEndReason;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * The central hub for the current state of the game.
- * * This class keeps track of everything happening in the match: the game board,
- * the infinite tile bag, all the players, and whose turn it is right now.
- * It also handles basic game flow, like moving to the next player (nextTurn)
- * and dealing the starting 7 tiles to everyone (initialDraw).
- */
 public class GameState {
     private final Board board;
     private final TileBag tileBag;
@@ -21,7 +14,6 @@ public class GameState {
 
     public GameState(List<Player> players) {
         this.players = List.copyOf(players);
-        //TODO: Add a method to initialize players based on game config. Controller, id,and list.
         this.board = new Board();
         this.tileBag = new TileBag();
         this.currentPlayerIndex = 0;
@@ -29,11 +21,11 @@ public class GameState {
         this.gameEndReason = null;
     }
 
-    public Board getBoard(){
+    public Board getBoard() {
         return board;
     }
 
-    public TileBag getTileBag(){
+    public TileBag getTileBag() {
         return tileBag;
     }
 
@@ -41,7 +33,7 @@ public class GameState {
         return players;
     }
 
-    public int getCurrentPlayerIndex(){
+    public int getCurrentPlayerIndex() {
         return currentPlayerIndex;
     }
 
@@ -66,7 +58,7 @@ public class GameState {
         throw new IllegalStateException("No active player found in player list.");
     }
 
-    public void advanceToNextActivePlayer(){
+    public void advanceToNextActivePlayer() {
         if (!hasActivePlayers()) {
             return;
         }
@@ -104,7 +96,7 @@ public class GameState {
         return null;
     }
 
-    public void nextTurn(){
+    public void nextTurn() {
         advanceToNextActivePlayer();
     }
 
@@ -121,13 +113,11 @@ public class GameState {
         return gameEndReason;
     }
 
-    public void initialDraw(){
-        for(int i = 0;i<players.size();i++){
-            Player player = players.get(i);
-            for(int j=0;j<7;j++){
+    public void initialDraw() {
+        for (Player player : players) {
+            for (int slotIndex = 0; slotIndex < 7; slotIndex++) {
                 Tile newTile = tileBag.drawTile();
-                player.getRack().setTileAt(j, newTile);
-
+                player.getRack().setTileAt(slotIndex, newTile);
             }
         }
     }

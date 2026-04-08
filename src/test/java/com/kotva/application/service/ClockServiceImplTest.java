@@ -4,28 +4,29 @@
  */
 package com.kotva.application.service;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
-import com.kotva.application.result.GameEndReason;
-import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.session.GameSession;
+import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.session.TimeControlConfig;
 import com.kotva.application.setup.NewGameRequest;
 import com.kotva.domain.model.Player;
+import com.kotva.domain.endgame.GameEndReason;
 import com.kotva.application.draft.TurnDraft;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.mode.GameMode;
 import com.kotva.policy.ClockPhase;
 import com.kotva.policy.DictionaryType;
 import com.kotva.policy.SessionStatus;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import org.junit.Test;
 
 /**
  * 类作用：测试计时服务实现的关键行为。
