@@ -24,6 +24,7 @@ public class GameSessionSnapshot {
     private final List<PlayerClockSnapshot> playerClockSnapshots;
     private final List<GamePlayerSnapshot> players;
     private final BoardSnapshot boardSnapshot;
+    private final List<BoardCellRenderSnapshot> boardCells;
     private final List<RackTileSnapshot> currentRackTiles;
     private final List<DraftPlacementSnapshot> draftPlacements;
     private final PreviewSnapshot preview;
@@ -44,6 +45,7 @@ public class GameSessionSnapshot {
             List<PlayerClockSnapshot> playerClockSnapshots,
             List<GamePlayerSnapshot> players,
             BoardSnapshot boardSnapshot,
+            List<BoardCellRenderSnapshot> boardCells,
             List<RackTileSnapshot> currentRackTiles,
             List<DraftPlacementSnapshot> draftPlacements,
             PreviewSnapshot preview,
@@ -67,6 +69,7 @@ public class GameSessionSnapshot {
                                 playerClockSnapshots, "playerClockSnapshots cannot be null."));
         this.players = List.copyOf(Objects.requireNonNull(players, "players cannot be null."));
         this.boardSnapshot = Objects.requireNonNull(boardSnapshot, "boardSnapshot cannot be null.");
+        this.boardCells = List.copyOf(Objects.requireNonNull(boardCells, "boardCells cannot be null."));
         this.currentRackTiles =
                 List.copyOf(
                         Objects.requireNonNull(currentRackTiles, "currentRackTiles cannot be null."));
@@ -131,6 +134,10 @@ public class GameSessionSnapshot {
 
     public BoardSnapshot getBoardSnapshot() {
         return boardSnapshot;
+    }
+
+    public List<BoardCellRenderSnapshot> getBoardCells() {
+        return boardCells;
     }
 
     public List<RackTileSnapshot> getCurrentRackTiles() {

@@ -10,7 +10,6 @@ import java.util.Objects;
  * mutable domain objects to the presentation layer.
  */
 public class GameViewModel {
-    private static final int DEFAULT_PLAYER_SLOT_COUNT = 4;
     private static final int DEFAULT_RACK_SLOT_COUNT = 7;
 
     private final String titleText;
@@ -120,6 +119,7 @@ public class GameViewModel {
             this.currentTurn = currentTurn;
             this.active = active;
         }
+
         public String getPlayerName() {
             return playerName;
         }
@@ -183,11 +183,26 @@ public class GameViewModel {
         private final BoardCoordinate coordinate;
         private final TileModel tile;
         private final boolean draft;
+        private final boolean previewValid;
+        private final boolean previewInvalid;
+        private final boolean mainWordHighlighted;
+        private final boolean crossWordHighlighted;
 
-        public BoardTileModel(BoardCoordinate coordinate, TileModel tile, boolean draft) {
+        public BoardTileModel(
+                BoardCoordinate coordinate,
+                TileModel tile,
+                boolean draft,
+                boolean previewValid,
+                boolean previewInvalid,
+                boolean mainWordHighlighted,
+                boolean crossWordHighlighted) {
             this.coordinate = Objects.requireNonNull(coordinate, "coordinate cannot be null.");
             this.tile = Objects.requireNonNull(tile, "tile cannot be null.");
             this.draft = draft;
+            this.previewValid = previewValid;
+            this.previewInvalid = previewInvalid;
+            this.mainWordHighlighted = mainWordHighlighted;
+            this.crossWordHighlighted = crossWordHighlighted;
         }
 
         public BoardCoordinate getCoordinate() {
@@ -200,6 +215,22 @@ public class GameViewModel {
 
         public boolean isDraft() {
             return draft;
+        }
+
+        public boolean isPreviewValid() {
+            return previewValid;
+        }
+
+        public boolean isPreviewInvalid() {
+            return previewInvalid;
+        }
+
+        public boolean isMainWordHighlighted() {
+            return mainWordHighlighted;
+        }
+
+        public boolean isCrossWordHighlighted() {
+            return crossWordHighlighted;
         }
     }
 }
