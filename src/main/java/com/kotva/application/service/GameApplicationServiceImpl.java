@@ -51,13 +51,12 @@ public class GameApplicationServiceImpl implements GameApplicationService {
             DraftManager draftManager,
             MovePreviewService movePreviewService) {
         this.clockService = Objects.requireNonNull(clockService, "clockService cannot be null.");
-        this.dictionaryRepository =
-                Objects.requireNonNull(dictionaryRepository, "dictionaryRepository cannot be null.");
+        this.dictionaryRepository = Objects.requireNonNull(dictionaryRepository,
+                "dictionaryRepository cannot be null.");
         this.draftManager = Objects.requireNonNull(draftManager, "draftManager cannot be null.");
-        this.movePreviewService =
-                movePreviewService != null
-                        ? movePreviewService
-                        : new MovePreviewServiceImpl(this.dictionaryRepository);
+        this.movePreviewService = movePreviewService != null
+                ? movePreviewService
+                : new MovePreviewServiceImpl(this.dictionaryRepository);
     }
 
     @Override
@@ -91,8 +90,7 @@ public class GameApplicationServiceImpl implements GameApplicationService {
     @Override
     public SubmitDraftResult submitDraft(GameSession session) {
         Player currentPlayer = requireCurrentPlayer(session);
-        PlayerAction action =
-                TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), session.getTurnDraft());
+        PlayerAction action = TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), session.getTurnDraft());
         ActionDispatchResult result = executeAction(session, action);
         return new SubmitDraftResult(
                 result.success,
@@ -106,8 +104,7 @@ public class GameApplicationServiceImpl implements GameApplicationService {
     @Override
     public TurnTransitionResult passTurn(GameSession session) {
         Player currentPlayer = requireCurrentPlayer(session);
-        ActionDispatchResult result =
-                executeAction(session, PlayerAction.pass(currentPlayer.getPlayerId()));
+        ActionDispatchResult result = executeAction(session, PlayerAction.pass(currentPlayer.getPlayerId()));
         return new TurnTransitionResult(
                 result.success,
                 result.message,
@@ -176,10 +173,8 @@ public class GameApplicationServiceImpl implements GameApplicationService {
             return ActionDispatchResult.failure(validationMessage, currentPlayer.getPlayerId());
         }
 
-
-        List<CandidateWord> words =
-                WordExtractor.extract(
-                        action, session.getGameState().getTileBag(), session.getGameState().getBoard());
+        List<CandidateWord> words = WordExtractor.extract(
+                action, session.getGameState().getTileBag(), session.getGameState().getBoard());
         int awardedScore = ScoreCalculator.calculate(words, session.getGameState(), action);
         ruleEngine.apply(session.getGameState(), action);
         currentPlayer.addScore(awardedScore);
@@ -191,7 +186,6 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         return completeTransition(session, awardedScore, "Draft submitted.", settlementResult);
     }
 
-
     private ActionDispatchResult executePass(GameSession session, PlayerAction action) {
         RuleEngine ruleEngine = new RuleEngine(dictionaryRepository);
         ruleEngine.apply(session.getGameState(), action);
@@ -201,7 +195,6 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         SettlementResult settlementResult = session.getTurnCoordinator().onActionApplied(action);
         return completeTransition(session, 0, "Turn passed.", settlementResult);
     }
-
 
     private ActionDispatchResult executeLose(GameSession session, PlayerAction action) {
         RuleEngine ruleEngine = new RuleEngine(dictionaryRepository);
@@ -213,7 +206,6 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         return completeTransition(session, 0, "Player lost the turn.", settlementResult);
     }
 
-    //提供LAN上传完整Aciton的执行接口。
     public ActionDispatchResult executeRemoteCommand(GameSession session, PlayerAction action) {
         return executeAction(session, action);
     }

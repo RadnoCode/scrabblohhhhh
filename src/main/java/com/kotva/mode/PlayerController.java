@@ -26,7 +26,7 @@ public class PlayerController {
 
         return switch (type) {
             case LOCAL -> new LocalPlayerController(playerId);
-            case LAN -> new LANPlayerController(playerId);
+            case LAN -> throw new IllegalArgumentException("LAN player type is not supported on this branch.");
             case AI -> new AIPlayerController(playerId);
         };
     }
