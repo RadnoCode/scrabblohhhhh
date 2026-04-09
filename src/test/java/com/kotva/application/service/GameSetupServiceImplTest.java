@@ -114,16 +114,17 @@ public class GameSetupServiceImplTest {
                                         DictionaryType.AM,
                                         null)));
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                        service.buildConfig(
-                                new NewGameRequest(
-                                        GameMode.HUMAN_VS_AI,
-                                        2,
-                                        List.of("Alice", "Bob"),
-                                        DictionaryType.AM,
-                                        null)));
+        GameConfig localAiConfig =
+                service.buildConfig(
+                        new NewGameRequest(
+                                GameMode.HUMAN_VS_AI,
+                                2,
+                                List.of("Alice", "Bob"),
+                                DictionaryType.AM,
+                                null));
+        assertEquals(GameMode.HUMAN_VS_AI, localAiConfig.getGameMode());
+        assertEquals(PlayerType.LOCAL, localAiConfig.getPlayers().get(0).getPlayerType());
+        assertEquals(PlayerType.AI, localAiConfig.getPlayers().get(1).getPlayerType());
     }
 
     /**
