@@ -61,8 +61,8 @@ public class DraftManager {
             throw new IllegalArgumentException("TurnDraft and tileId must not be null");
         }
         turnDraft.getPlacements().removeIf(placement -> tileId.equals(placement.getTileId()));
-
     }
+
 
     /**
      * Recalls all tiles from the player's current turn draft.

@@ -11,6 +11,7 @@ public class Tile {
     private char letter;
     private final int score;
     private final boolean blank;
+    private boolean fixed;
 
     private Character assignedLetter;
 
@@ -33,12 +34,19 @@ public class Tile {
     public boolean isBlank() {
         return blank;
     }
+    public boolean isFixed() {
+        return fixed;
+    }
     public Character getAssignedLetter() {
         return assignedLetter;
     }
 
     public void clearAssignedLetter() {
         this.assignedLetter = null;
+    }
+
+    public void markFixed() {
+        this.fixed = true;
     }
 
     /**
@@ -52,7 +60,7 @@ public class Tile {
             throw new IllegalStateException("Cannot assign a letter to a non-blank tile.");
         }
 
-        if (this.assignedLetter != null) {
+        if (this.fixed) {
             throw new IllegalStateException("This blank tile has already been assigned a letter.");
         }
 

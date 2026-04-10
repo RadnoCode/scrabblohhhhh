@@ -85,6 +85,9 @@ public class RuleEngine {
                     Tile realTile = tileBag.getTileById(tileId);
                     Cell cell = board.getCell(pos);
                     cell.setPlacedTile(realTile);
+                    if (realTile != null && realTile.isBlank()) {
+                        realTile.markFixed();
+                    }
 
                     for (RackSlot slot : rack.getSlots()) {
                         if (!slot.isEmpty() && slot.getTile().getTileID().equals(tileId)) {

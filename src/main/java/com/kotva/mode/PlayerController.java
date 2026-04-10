@@ -40,7 +40,9 @@ public class PlayerController {
     public PlayerType getType() {
         return type;
     }
-
+    public void assignLettertoBlank(GameApplicationService service, GameSession session, String tileId, char assignedLetter) {
+        requireService(service).assignLettertoBlank(session, tileId, assignedLetter);
+    }
     public PreviewResult placeDraftTile(
             GameApplicationService service, GameSession session, String tileId, Position position) {
         return requireService(service).placeDraftTile(session, tileId, position);
