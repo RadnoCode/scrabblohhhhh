@@ -1,26 +1,15 @@
 package com.kotva;
 
-import com.kotva.presentation.fx.SceneNavigator;
-import javafx.application.Application;
-import javafx.stage.Stage;
+import com.kotva.launcher.AppLauncher;
 
 /**
- * FrontEndLauncher is a dedicated JavaFX entry point under main sources.
- * The javafx-maven-plugin can run this class directly with `mvn javafx:run`.
- *
- * It is separated from the existing launcher code so we do not need to
- * change the current project startup flow while the front-end is still evolving.
+ * Compatibility launcher kept for existing scripts that still target the old
+ * front-end entry class. The real startup flow now lives in AppLauncher.
  */
-public class FrontEndLauncher extends Application {
-    @Override
-    public void start(Stage stage) {
-        SceneNavigator navigator = new SceneNavigator(stage);
-        navigator.showHome();
-        stage.setMinWidth(1100);
-        stage.setMinHeight(720);
-    }
+public final class FrontEndLauncher {
+    private FrontEndLauncher() {}
 
     public static void main(String[] args) {
-        launch(args);
+        AppLauncher.main(args);
     }
 }

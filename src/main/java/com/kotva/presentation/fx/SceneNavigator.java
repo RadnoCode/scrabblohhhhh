@@ -42,9 +42,9 @@ public class SceneNavigator {
     private PageType currentPage;
     private GameController gameController;
 
-    public SceneNavigator(Stage stage) {
-        this.stage = stage;
-        this.appContext = new AppContext();
+    public SceneNavigator(Stage stage, AppContext appContext) {
+        this.stage = java.util.Objects.requireNonNull(stage, "stage cannot be null.");
+        this.appContext = java.util.Objects.requireNonNull(appContext, "appContext cannot be null.");
         this.history = new ArrayDeque<>();
     }
 
