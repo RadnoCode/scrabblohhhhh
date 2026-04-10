@@ -1,11 +1,14 @@
 package com.kotva.presentation.controller;
 
+import com.kotva.ai.AiMove;
+import com.kotva.application.service.AiSessionRuntime;
 import com.kotva.application.service.GameApplicationService;
 import com.kotva.application.session.BoardCellRenderSnapshot;
 import com.kotva.application.session.GamePlayerSnapshot;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.session.RackTileSnapshot;
+import com.kotva.domain.model.Player;
 import com.kotva.domain.model.Position;
 import com.kotva.launcher.AppContext;
 import com.kotva.mode.PlayerController;
@@ -23,6 +26,7 @@ import com.kotva.presentation.viewmodel.GameViewModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import javafx.application.Platform;
 import javafx.util.Duration;
 
 /**
@@ -42,6 +46,7 @@ public class GameController implements GameActionPort {
     private GameRenderer renderer;
     private GameSession session;
     private long lastTickNanos;
+    private AiSessionRuntime aiSessionRuntime;
 
     public GameController(SceneNavigator navigator, GameLaunchContext launchContext) {
         Objects.requireNonNull(navigator, "navigator cannot be null.");
@@ -83,7 +88,9 @@ public class GameController implements GameActionPort {
 
     private void startGameFromLaunchContext() {
         stopPolling();
+        shutdownAiSupport();
         session = appContext.getGameSetupService().startNewGame(launchContext.getRequest());
+        initializeAiSupport();
 
         GameSessionSnapshot firstSnapshot = gameApplicationService.getSessionSnapshot(session);
         renderSnapshot(firstSnapshot);
@@ -129,6 +136,7 @@ public class GameController implements GameActionPort {
         viewModel.setRackTiles(buildRackTiles(snapshot));
         draftState.syncSnapshot(viewModel.getRackTiles(), viewModel.getBoardTiles());
         renderer.render(viewModel);
+        syncAiTurn(snapshot);
     }
 
     private List<GameViewModel.PlayerCardModel> buildPlayerCards(GameSessionSnapshot snapshot) {
@@ -225,6 +233,12 @@ public class GameController implements GameActionPort {
         }
     }
 
+    public void shutdown() {
+        stopPolling();
+        shutdownAiSupport();
+        session = null;
+    }
+
     private PlayerController requireCurrentPlayerController() {
         Objects.requireNonNull(session, "session cannot be null.");
         return Objects.requireNonNull(
@@ -259,8 +273,110 @@ public class GameController implements GameActionPort {
         return displayLetter == null ? "" : String.valueOf(displayLetter);
     }
 
+    private void initializeAiSupport() {
+        if (session == null) {
+            aiSessionRuntime = null;
+            return;
+        }
+        aiSessionRuntime = appContext.getAiSessionRuntimeFactory().create(session.getConfig());
+    }
+
+    private void shutdownAiSupport() {
+        if (aiSessionRuntime != null) {
+            aiSessionRuntime.close();
+            aiSessionRuntime = null;
+        }
+    }
+
+    private void syncAiTurn(GameSessionSnapshot snapshot) {
+        if (aiSessionRuntime == null) {
+            return;
+        }
+
+        if (session == null || snapshot.getSessionStatus() != SessionStatus.IN_PROGRESS) {
+            shutdownAiSupport();
+            return;
+        }
+
+        Player currentPlayer = resolveCurrentPlayer();
+        if (currentPlayer == null || !requireCurrentPlayerController().supportsAutomatedTurn()) {
+            aiSessionRuntime.cancelPending();
+            return;
+        }
+
+        aiSessionRuntime.requestTurnIfIdle(
+                session,
+                requireCurrentPlayerController(),
+                completion -> Platform.runLater(() -> handleAiMoveCompleted(completion)));
+    }
+
+    private void handleAiMoveCompleted(AiSessionRuntime.TurnCompletion completion) {
+        if (session == null
+                || aiSessionRuntime == null
+                || session.getSessionStatus() != SessionStatus.IN_PROGRESS) {
+            return;
+        }
+
+        Player currentPlayer = resolveCurrentPlayer();
+        if (currentPlayer == null
+                || !aiSessionRuntime.matchesCurrentTurn(
+                        completion,
+                        session,
+                        currentPlayer,
+                        requireCurrentPlayerController())) {
+            return;
+        }
+
+        if (completion.error() != null) {
+            disableAiSupport("AI move request failed.", completion.error());
+            return;
+        }
+
+        try {
+            tickClockBeforeActionIfNeeded();
+            aiSessionRuntime.applyTurn(
+                    requireCurrentPlayerController(),
+                    gameApplicationService,
+                    session,
+                    completion);
+            refreshSnapshotAfterAction();
+        } catch (RuntimeException exception) {
+            disableAiSupport("Failed to apply AI move.", exception);
+        }
+    }
+
+    private void disableAiSupport(String message, Throwable error) {
+        System.err.println(message);
+        if (error != null) {
+            error.printStackTrace(System.err);
+        }
+        shutdownAiSupport();
+        refreshFromCurrentSession();
+    }
+
+    private Player resolveCurrentPlayer() {
+        if (session == null || !session.getGameState().hasActivePlayers()) {
+            return null;
+        }
+        return session.getGameState().requireCurrentActivePlayer();
+    }
+
+    private boolean isAiTurnLocked() {
+        if (aiSessionRuntime == null
+                || session == null
+                || session.getSessionStatus() != SessionStatus.IN_PROGRESS) {
+            return false;
+        }
+
+        Player currentPlayer = resolveCurrentPlayer();
+        return currentPlayer != null && requireCurrentPlayerController().supportsAutomatedTurn();
+    }
+
     @Override
     public void onDraftTilePlaced(String tileId, Position position) {
+        if (isAiTurnLocked()) {
+            return;
+        }
         Objects.requireNonNull(tileId, "tileId cannot be null.");
         Objects.requireNonNull(position, "position cannot be null.");
         tickClockBeforeActionIfNeeded();
@@ -270,6 +386,9 @@ public class GameController implements GameActionPort {
 
     @Override
     public void onDraftTileMoved(String tileId, Position position) {
+        if (isAiTurnLocked()) {
+            return;
+        }
         Objects.requireNonNull(tileId, "tileId cannot be null.");
         Objects.requireNonNull(position, "position cannot be null.");
         tickClockBeforeActionIfNeeded();
@@ -279,6 +398,9 @@ public class GameController implements GameActionPort {
 
     @Override
     public void onDraftTileRemoved(String tileId) {
+        if (isAiTurnLocked()) {
+            return;
+        }
         Objects.requireNonNull(tileId, "tileId cannot be null.");
         tickClockBeforeActionIfNeeded();
         requireCurrentPlayerController().removeDraftTile(gameApplicationService, session, tileId);
@@ -287,6 +409,9 @@ public class GameController implements GameActionPort {
 
     @Override
     public void onRecallAllDraftTilesRequested() {
+        if (isAiTurnLocked()) {
+            return;
+        }
         tickClockBeforeActionIfNeeded();
         requireCurrentPlayerController().recallAllDraftTiles(gameApplicationService, session);
         refreshSnapshotAfterAction();
@@ -294,6 +419,9 @@ public class GameController implements GameActionPort {
 
     @Override
     public void onSubmitDraftRequested() {
+        if (isAiTurnLocked()) {
+            return;
+        }
         tickClockBeforeActionIfNeeded();
         requireCurrentPlayerController().submitDraft(gameApplicationService, session);
         refreshSnapshotAfterAction();
@@ -301,6 +429,9 @@ public class GameController implements GameActionPort {
 
     @Override
     public void onSkipTurnRequested() {
+        if (isAiTurnLocked()) {
+            return;
+        }
         tickClockBeforeActionIfNeeded();
         requireCurrentPlayerController().passTurn(gameApplicationService, session);
         refreshSnapshotAfterAction();

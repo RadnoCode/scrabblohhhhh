@@ -1,8 +1,10 @@
 package com.kotva.launcher;
 
+import com.kotva.ai.QuackleNativeBridge;
 import java.util.Objects;
 import java.util.Random;
 
+import com.kotva.application.service.AiSessionRuntimeFactory;
 import com.kotva.application.service.ClockService;
 import com.kotva.application.service.ClockServiceImpl;
 import com.kotva.application.service.GameApplicationService;
@@ -21,6 +23,8 @@ public class AppContext {
     private final SettlementService settlementService;
     private final DictionaryRepository dictionaryRepository;
     private final SettingsRepository settingsRepository;
+    private final QuackleNativeBridge quackleNativeBridge;
+    private final AiSessionRuntimeFactory aiSessionRuntimeFactory;
 
     public AppContext() {
         this(
@@ -45,6 +49,8 @@ public class AppContext {
         this.settingsRepository =
                 Objects.requireNonNull(settingsRepository, "settingsRepository cannot be null.");
         Random nonNullRandom = Objects.requireNonNull(random, "random cannot be null.");
+        this.quackleNativeBridge = new QuackleNativeBridge();
+        this.aiSessionRuntimeFactory = new AiSessionRuntimeFactory(this.quackleNativeBridge);
         this.gameApplicationService =
                 new GameApplicationServiceImpl(this.clockService, this.dictionaryRepository);
         this.gameSetupService =
@@ -73,5 +79,13 @@ public class AppContext {
 
     public SettlementService getSettlementService() {
         return settlementService;
+    }
+
+    public QuackleNativeBridge getQuackleNativeBridge() {
+        return quackleNativeBridge;
+    }
+
+    public AiSessionRuntimeFactory getAiSessionRuntimeFactory() {
+        return aiSessionRuntimeFactory;
     }
 }

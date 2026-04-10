@@ -3,6 +3,7 @@ package com.kotva.presentation.viewmodel;
 import com.kotva.application.session.TimeControlConfig;
 import com.kotva.application.setup.NewGameRequest;
 import com.kotva.mode.GameMode;
+import com.kotva.policy.AiDifficulty;
 import com.kotva.policy.DictionaryType;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,7 @@ public class GameLaunchContext {
     private final String languageLabel;
     private final String playerCountLabel;
     private final String difficultyLabel;
+    private final AiDifficulty aiDifficulty;
 
     public GameLaunchContext(
             NewGameRequest request,
@@ -29,13 +31,15 @@ public class GameLaunchContext {
             String gameTimeLabel,
             String languageLabel,
             String playerCountLabel,
-            String difficultyLabel) {
+            String difficultyLabel,
+            AiDifficulty aiDifficulty) {
         this.request = Objects.requireNonNull(request, "request cannot be null.");
         this.modeLabel = Objects.requireNonNull(modeLabel, "modeLabel cannot be null.");
         this.gameTimeLabel = Objects.requireNonNull(gameTimeLabel, "gameTimeLabel cannot be null.");
         this.languageLabel = Objects.requireNonNull(languageLabel, "languageLabel cannot be null.");
         this.playerCountLabel = Objects.requireNonNull(playerCountLabel, "playerCountLabel cannot be null.");
         this.difficultyLabel = Objects.requireNonNull(difficultyLabel, "difficultyLabel cannot be null.");
+        this.aiDifficulty = aiDifficulty;
     }
 
     public static GameLaunchContext defaultContext() {
@@ -56,10 +60,12 @@ public class GameLaunchContext {
                 gameTimeLabel,
                 languageLabel,
                 playerCountLabel,
-                "--");
+                "--",
+                null);
     }
 
     public static GameLaunchContext forLocalAi(String gameTimeLabel, String languageLabel, String difficultyLabel) {
+        AiDifficulty aiDifficulty = AiDifficulty.fromSetupLabel(difficultyLabel);
         List<String> playerNames = List.of("Player", difficultyLabel + " Bot");
         return new GameLaunchContext(
                 new NewGameRequest(
@@ -67,12 +73,14 @@ public class GameLaunchContext {
                         2,
                         playerNames,
                         mapDictionaryType(languageLabel),
-                        mapTimeControl(gameTimeLabel)),
+                        mapTimeControl(gameTimeLabel),
+                        aiDifficulty),
                 "Local AI",
                 gameTimeLabel,
                 languageLabel,
                 "2",
-                difficultyLabel);
+                aiDifficulty.getSetupLabel(),
+                aiDifficulty);
     }
 
     public static GameLaunchContext forRoomCreate(String gameTimeLabel, String languageLabel, String playerCountLabel) {
@@ -94,7 +102,8 @@ public class GameLaunchContext {
                 gameTimeLabel,
                 languageLabel,
                 playerCountLabel,
-                "--");
+                "--",
+                null);
     }
 
     public NewGameRequest getRequest() {
@@ -119,6 +128,10 @@ public class GameLaunchContext {
 
     public String getDifficultyLabel() {
         return difficultyLabel;
+    }
+
+    public AiDifficulty getAiDifficulty() {
+        return aiDifficulty;
     }
 
     private static DictionaryType mapDictionaryType(String languageLabel) {
