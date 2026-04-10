@@ -40,6 +40,7 @@ public class SceneNavigator {
     private final Deque<PageType> history;
     private GameLaunchContext gameLaunchContext;
     private PageType currentPage;
+    private GameController gameController;
 
     public SceneNavigator(Stage stage) {
         this.stage = stage;
@@ -111,6 +112,7 @@ public class SceneNavigator {
             history.push(currentPage);
         }
 
+        releaseCurrentPage();
         currentPage = pageType;
 
         switch (pageType) {
@@ -148,10 +150,18 @@ public class SceneNavigator {
         GameController controller = new GameController(this, gameLaunchContext != null
                 ? gameLaunchContext
                 : GameLaunchContext.defaultContext());
+        gameController = controller;
         GameScene scene = new GameScene(controller);
         stage.setTitle("Scrabble Game");
         stage.setScene(scene);
         stage.show();
+    }
+
+    private void releaseCurrentPage() {
+        if (currentPage == PageType.GAME && gameController != null) {
+            gameController.shutdown();
+            gameController = null;
+        }
     }
 
     private void showSettingsScene() {

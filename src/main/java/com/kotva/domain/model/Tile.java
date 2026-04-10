@@ -37,6 +37,10 @@ public class Tile {
         return assignedLetter;
     }
 
+    public void clearAssignedLetter() {
+        this.assignedLetter = null;
+    }
+
     /**
      * Assigns a specific letter to a blank tile.
      *

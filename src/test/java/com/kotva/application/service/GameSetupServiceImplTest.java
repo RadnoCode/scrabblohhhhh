@@ -17,6 +17,7 @@ import com.kotva.domain.model.Player;
 import com.kotva.domain.model.RackSlot;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.mode.GameMode;
+import com.kotva.policy.AiDifficulty;
 import com.kotva.policy.ClockPhase;
 import com.kotva.policy.DictionaryType;
 import com.kotva.policy.PlayerType;
@@ -114,6 +115,17 @@ public class GameSetupServiceImplTest {
                                         DictionaryType.AM,
                                         null)));
 
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        service.buildConfig(
+                                new NewGameRequest(
+                                        GameMode.HUMAN_VS_AI,
+                                        2,
+                                        List.of("Alice", "Bob"),
+                                        DictionaryType.AM,
+                                        null)));
+
         GameConfig localAiConfig =
                 service.buildConfig(
                         new NewGameRequest(
@@ -121,10 +133,12 @@ public class GameSetupServiceImplTest {
                                 2,
                                 List.of("Alice", "Bob"),
                                 DictionaryType.AM,
-                                null));
+                                null,
+                                AiDifficulty.HARD));
         assertEquals(GameMode.HUMAN_VS_AI, localAiConfig.getGameMode());
         assertEquals(PlayerType.LOCAL, localAiConfig.getPlayers().get(0).getPlayerType());
         assertEquals(PlayerType.AI, localAiConfig.getPlayers().get(1).getPlayerType());
+        assertEquals(AiDifficulty.HARD, localAiConfig.getAiDifficulty());
     }
 
     /**

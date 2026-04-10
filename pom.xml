@@ -17,6 +17,7 @@
     <maven.compiler.release>25</maven.compiler.release>
     <javafx.version>25</javafx.version>
     <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version>
+    <ffm.native.access.option>--enable-native-access=ALL-UNNAMED</ffm.native.access.option>
   </properties>
 
   <dependencies>
@@ -51,8 +52,14 @@
         <configuration>
           <mainClass>com.kotva.FrontEndLauncher</mainClass>
           <options>
-            <option>--enable-native-access=javafx.graphics</option>
+            <option>${ffm.native.access.option}</option>
           </options>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>${ffm.native.access.option}</argLine>
         </configuration>
       </plugin>
     </plugins>
