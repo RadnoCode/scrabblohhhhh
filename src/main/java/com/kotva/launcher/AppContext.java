@@ -1,10 +1,6 @@
 package com.kotva.launcher;
 
-import com.kotva.ai.QuackleNativeBridge;
-import java.util.Objects;
-import java.util.Random;
-
-import com.kotva.application.service.AiSessionRuntimeFactory;
+import com.kotva.application.runtime.GameRuntimeFactory;
 import com.kotva.application.service.ClockService;
 import com.kotva.application.service.ClockServiceImpl;
 import com.kotva.application.service.GameApplicationService;
@@ -15,16 +11,15 @@ import com.kotva.application.service.SettlementService;
 import com.kotva.application.service.SettlementServiceImpl;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.infrastructure.settings.SettingsRepository;
+import java.util.Objects;
+import java.util.Random;
 
 public class AppContext {
-    private final GameSetupService gameSetupService;
-    private final GameApplicationService gameApplicationService;
     private final ClockService clockService;
     private final SettlementService settlementService;
     private final DictionaryRepository dictionaryRepository;
     private final SettingsRepository settingsRepository;
-    private final QuackleNativeBridge quackleNativeBridge;
-    private final AiSessionRuntimeFactory aiSessionRuntimeFactory;
+    private final GameRuntimeFactory gameRuntimeFactory;
 
     public AppContext() {
         this(
@@ -49,12 +44,13 @@ public class AppContext {
         this.settingsRepository =
                 Objects.requireNonNull(settingsRepository, "settingsRepository cannot be null.");
         Random nonNullRandom = Objects.requireNonNull(random, "random cannot be null.");
-        this.quackleNativeBridge = new QuackleNativeBridge();
-        this.aiSessionRuntimeFactory = new AiSessionRuntimeFactory(this.quackleNativeBridge);
-        this.gameApplicationService =
+        GameApplicationService gameApplicationService =
                 new GameApplicationServiceImpl(this.clockService, this.dictionaryRepository);
-        this.gameSetupService =
+        GameSetupService gameSetupService =
                 new GameSetupServiceImpl(this.dictionaryRepository, this.clockService, nonNullRandom);
+        this.gameRuntimeFactory = new GameRuntimeFactory(
+                gameSetupService,
+                gameApplicationService);
     }
 
     public ClockService getClockService() {
@@ -65,14 +61,6 @@ public class AppContext {
         return dictionaryRepository;
     }
 
-    public GameApplicationService getGameApplicationService() {
-        return gameApplicationService;
-    }
-
-    public GameSetupService getGameSetupService() {
-        return gameSetupService;
-    }
-
     public SettingsRepository getSettingsRepository() {
         return settingsRepository;
     }
@@ -81,11 +69,7 @@ public class AppContext {
         return settlementService;
     }
 
-    public QuackleNativeBridge getQuackleNativeBridge() {
-        return quackleNativeBridge;
-    }
-
-    public AiSessionRuntimeFactory getAiSessionRuntimeFactory() {
-        return aiSessionRuntimeFactory;
+    public GameRuntimeFactory getGameRuntimeFactory() {
+        return gameRuntimeFactory;
     }
 }

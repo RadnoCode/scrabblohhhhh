@@ -1,6 +1,8 @@
 package com.kotva.mode;
 
 import com.kotva.ai.AiMove;
+import com.kotva.ai.AiMoveOptionSet;
+import com.kotva.application.service.AiTurnAttemptResult;
 import com.kotva.application.preview.PreviewResult;
 import com.kotva.application.service.AiTurnCoordinator;
 import com.kotva.application.service.GameApplicationService;
@@ -74,12 +76,12 @@ public class PlayerController {
         return false;
     }
 
-    public CompletableFuture<AiMove> requestAutomatedTurn(
+    public CompletableFuture<AiMoveOptionSet> requestAutomatedTurn(
             AiTurnCoordinator aiTurnCoordinator, GameSession session) {
         throw new UnsupportedOperationException("This player controller does not support automated turns.");
     }
 
-    public AiTurnCoordinator.ExecutionResult applyAutomatedTurn(
+    public AiTurnAttemptResult applyAutomatedTurn(
             AiTurnCoordinator aiTurnCoordinator,
             GameApplicationService gameApplicationService,
             GameSession session,

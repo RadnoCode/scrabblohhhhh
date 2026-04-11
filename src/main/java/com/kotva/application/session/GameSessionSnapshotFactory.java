@@ -26,6 +26,11 @@ public final class GameSessionSnapshotFactory {
     }
 
     public static GameSessionSnapshot fromSession(GameSession session) {
+        return fromSession(session, null);
+    }
+
+    public static GameSessionSnapshot fromSession(
+            GameSession session, AiRuntimeSnapshot aiRuntimeSnapshot) {
         Objects.requireNonNull(session, "session cannot be null.");
 
         Player currentPlayer = resolveSnapshotPlayer(session);
@@ -76,7 +81,8 @@ public final class GameSessionSnapshotFactory {
                 buildCurrentRackTiles(currentPlayer),
                 buildDraftPlacements(session),
                 previewSnapshot,
-                session.getTurnCoordinator().getSettlementResult());
+                session.getTurnCoordinator().getSettlementResult(),
+                aiRuntimeSnapshot);
     }
 
     private static List<RackTileSnapshot> buildCurrentRackTiles(Player player) {

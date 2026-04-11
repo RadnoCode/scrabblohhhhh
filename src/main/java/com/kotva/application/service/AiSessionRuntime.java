@@ -1,6 +1,7 @@
 package com.kotva.application.service;
 
 import com.kotva.ai.AiMove;
+import com.kotva.ai.AiMoveOptionSet;
 import com.kotva.application.session.GameSession;
 import com.kotva.domain.model.Player;
 import com.kotva.mode.PlayerController;
@@ -8,9 +9,9 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-public final class AiSessionRuntime implements AutoCloseable {
+public final class AiSessionRuntime implements AiTurnRuntime {
     private final AiTurnCoordinator aiTurnCoordinator;
-    private CompletableFuture<AiMove> pendingAiMove;
+    private CompletableFuture<AiMoveOptionSet> pendingAiMove;
     private long requestToken;
 
     public AiSessionRuntime(AiTurnCoordinator aiTurnCoordinator) {
@@ -25,7 +26,7 @@ public final class AiSessionRuntime implements AutoCloseable {
         Objects.requireNonNull(controller, "controller cannot be null.");
         Objects.requireNonNull(completionConsumer, "completionConsumer cannot be null.");
 
-        CompletableFuture<AiMove> future;
+        CompletableFuture<AiMoveOptionSet> future;
         long token;
         String expectedSessionId;
         String expectedPlayerId;
@@ -52,11 +53,13 @@ public final class AiSessionRuntime implements AutoCloseable {
         });
     }
 
+    @Override
     public synchronized void cancelPending() {
         requestToken++;
         pendingAiMove = null;
     }
 
+    @Override
     public synchronized boolean matchesCurrentTurn(
             TurnCompletion completion,
             GameSession session,
@@ -73,21 +76,17 @@ public final class AiSessionRuntime implements AutoCloseable {
                 && controller.supportsAutomatedTurn();
     }
 
-    public AiTurnCoordinator.ExecutionResult applyTurn(
+    @Override
+    public AiTurnAttemptResult applyMove(
             PlayerController controller,
             GameApplicationService gameApplicationService,
             GameSession session,
-            TurnCompletion completion) {
-        Objects.requireNonNull(completion, "completion cannot be null.");
-        if (completion.error() != null) {
-            throw new IllegalStateException("AI turn completion contains an error.", completion.error());
-        }
-
+            AiMove move) {
         return controller.applyAutomatedTurn(
                 aiTurnCoordinator,
                 gameApplicationService,
                 session,
-                completion.move());
+                Objects.requireNonNull(move, "move cannot be null."));
     }
 
     @Override
@@ -100,7 +99,7 @@ public final class AiSessionRuntime implements AutoCloseable {
             String expectedSessionId,
             String expectedPlayerId,
             long requestToken,
-            AiMove move,
+            AiMoveOptionSet moveOptions,
             Throwable error) {
         public TurnCompletion {
             expectedSessionId = Objects.requireNonNull(expectedSessionId, "expectedSessionId cannot be null.");

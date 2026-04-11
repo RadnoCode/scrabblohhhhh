@@ -17,9 +17,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class QuackleNativeBridge {
     private static final long ERROR_BUFFER_CAPACITY = 1024L;
+    private static final Set<Path> PRELOADED_NATIVE_DEPENDENCIES =
+            ConcurrentHashMap.newKeySet();
 
     private static final MemoryLayout BOARD_CELL_LAYOUT = MemoryLayout.structLayout(
             ValueLayout.JAVA_INT.withName("occupied"),
@@ -136,6 +140,10 @@ public final class QuackleNativeBridge {
         return dataDirectory;
     }
 
+    public void load() {
+        requireBindings();
+    }
+
     private Bindings requireBindings() {
         Bindings currentBindings = bindings;
         if (currentBindings != null) {
@@ -154,6 +162,7 @@ public final class QuackleNativeBridge {
                 throw new IllegalStateException("Quackle data directory does not exist: " + dataDirectory);
             }
 
+            preloadPlatformDependencies();
             Arena libraryArena = Arena.ofShared();
             SymbolLookup lookup = SymbolLookup.libraryLookup(libraryPath, libraryArena);
             Linker linker = Linker.nativeLinker();
@@ -181,6 +190,31 @@ public final class QuackleNativeBridge {
                                     ValueLayout.JAVA_LONG)));
             return bindings;
         }
+    }
+
+    private void preloadPlatformDependencies() {
+        if (!isWindows()) {
+            return;
+        }
+
+        Path nativeDirectory = libraryPath.getParent();
+        if (nativeDirectory == null || !Files.isDirectory(nativeDirectory)) {
+            return;
+        }
+
+        preloadDependencyIfPresent(nativeDirectory.resolve("libwinpthread-1.dll"));
+    }
+
+    private void preloadDependencyIfPresent(Path dependencyPath) {
+        Path normalizedPath = dependencyPath.toAbsolutePath().normalize();
+        if (!Files.isRegularFile(normalizedPath)) {
+            return;
+        }
+        if (!PRELOADED_NATIVE_DEPENDENCIES.add(normalizedPath)) {
+            return;
+        }
+
+        System.load(normalizedPath.toString());
     }
 
     private static long offset(MemoryLayout layout, String fieldName) {
@@ -213,11 +247,10 @@ public final class QuackleNativeBridge {
     }
 
     private static String defaultLibraryFileName() {
-        String osName = System.getProperty("os.name", "").toLowerCase();
-        if (osName.contains("win")) {
+        if (isWindows()) {
             return "quackle_ffm.dll";
         }
-        if (osName.contains("mac") || osName.contains("darwin")) {
+        if (isMacOs()) {
             return "libquackle_ffm.dylib";
         }
         return "libquackle_ffm.so";
@@ -231,6 +264,19 @@ public final class QuackleNativeBridge {
         return Path.of(System.getProperty("user.dir")).resolve("../../quackle-master/data");
     }
 
+    private static boolean isWindows() {
+        return osName().contains("win");
+    }
+
+    private static boolean isMacOs() {
+        String osName = osName();
+        return osName.contains("mac") || osName.contains("darwin");
+    }
+
+    private static String osName() {
+        return System.getProperty("os.name", "").toLowerCase();
+    }
+
     public static final class Engine implements AutoCloseable {
         private final Bindings bindings;
         private MemorySegment handle;
@@ -242,6 +288,14 @@ public final class QuackleNativeBridge {
         }
 
         public synchronized AiMove chooseMove(AiPositionSnapshot snapshot) {
+            AiMoveOptionSet moveOptions = chooseMoveOptions(snapshot);
+            if (moveOptions.isEmpty()) {
+                throw new IllegalStateException("Native AI returned an empty move option set.");
+            }
+            return moveOptions.moves().get(0);
+        }
+
+        public synchronized AiMoveOptionSet chooseMoveOptions(AiPositionSnapshot snapshot) {
             ensureOpen();
             Objects.requireNonNull(snapshot, "snapshot cannot be null.");
 
@@ -269,7 +323,7 @@ public final class QuackleNativeBridge {
                     throw new IllegalStateException(readError(errorBuffer));
                 }
 
-                return decodeMove(result);
+                return AiMoveOptionSet.ofSingle(decodeMove(result));
             } catch (RuntimeException exception) {
                 throw exception;
             } catch (Throwable throwable) {

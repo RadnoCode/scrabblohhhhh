@@ -25,13 +25,13 @@ public final class AiMoveService implements AutoCloseable {
         this.executor = Executors.newSingleThreadExecutor(new AiThreadFactory());
     }
 
-    public CompletableFuture<AiMove> requestMove(AiPositionSnapshot snapshot) {
+    public CompletableFuture<AiMoveOptionSet> requestMove(AiPositionSnapshot snapshot) {
         Objects.requireNonNull(snapshot, "snapshot cannot be null.");
         ensureOpen();
         return CompletableFuture.supplyAsync(() -> {
             activeRequests.incrementAndGet();
             try {
-                return engine.chooseMove(snapshot);
+                return engine.chooseMoveOptions(snapshot);
             } finally {
                 if (activeRequests.decrementAndGet() == 0 && closing.get()) {
                     engine.close();

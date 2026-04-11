@@ -20,6 +20,9 @@ public class GameViewModel {
     private String stepTimerText;
     private String totalTimerTitle;
     private String totalTimerText;
+    private boolean interactionLocked;
+    private String aiErrorSummary;
+    private String aiErrorDetails;
 
     public GameViewModel(String titleText) {
         this.titleText = Objects.requireNonNull(titleText, "titleText cannot be null.");
@@ -30,6 +33,9 @@ public class GameViewModel {
         this.stepTimerText = "--:--";
         this.totalTimerTitle = "Total Time";
         this.totalTimerText = "--:--";
+        this.interactionLocked = false;
+        this.aiErrorSummary = "";
+        this.aiErrorDetails = "";
         resetPlaceholders();
     }
 
@@ -96,10 +102,37 @@ public class GameViewModel {
         this.totalTimerText = Objects.requireNonNull(totalTimerText, "totalTimerText cannot be null.");
     }
 
+    public boolean isInteractionLocked() {
+        return interactionLocked;
+    }
+
+    public void setInteractionLocked(boolean interactionLocked) {
+        this.interactionLocked = interactionLocked;
+    }
+
+    public String getAiErrorSummary() {
+        return aiErrorSummary;
+    }
+
+    public void setAiErrorSummary(String aiErrorSummary) {
+        this.aiErrorSummary = Objects.requireNonNull(aiErrorSummary, "aiErrorSummary cannot be null.");
+    }
+
+    public String getAiErrorDetails() {
+        return aiErrorDetails;
+    }
+
+    public void setAiErrorDetails(String aiErrorDetails) {
+        this.aiErrorDetails = Objects.requireNonNull(aiErrorDetails, "aiErrorDetails cannot be null.");
+    }
+
     public void resetPlaceholders() {
         playerCards.clear();
         rackTiles.clear();
         boardTiles.clear();
+        interactionLocked = false;
+        aiErrorSummary = "";
+        aiErrorDetails = "";
         for (int index = 0; index < DEFAULT_RACK_SLOT_COUNT; index++) {
             rackTiles.add(TileModel.empty());
         }

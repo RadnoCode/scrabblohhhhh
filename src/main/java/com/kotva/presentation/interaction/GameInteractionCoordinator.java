@@ -97,6 +97,12 @@ public class GameInteractionCoordinator {
     }
 
     private void handleRackPressed(int rackIndex, MouseEvent event) {
+        if (actionPort.isInteractionLocked()) {
+            previewRenderer.clear();
+            gameRenderer.refresh();
+            event.consume();
+            return;
+        }
         GameViewModel.TileModel tileModel = draftState.getRackTileAt(rackIndex);
         if (tileModel == null || tileModel.isEmpty()) {
             return;
@@ -108,6 +114,12 @@ public class GameInteractionCoordinator {
     }
 
     private void handleBoardPressed(BoardCoordinate coordinate, MouseEvent event) {
+        if (actionPort.isInteractionLocked()) {
+            previewRenderer.clear();
+            gameRenderer.refresh();
+            event.consume();
+            return;
+        }
         GameDraftState.DraftPlacementModel draftPlacement = draftState.getDraftTileAt(coordinate);
         if (draftPlacement == null) {
             return;
@@ -119,6 +131,14 @@ public class GameInteractionCoordinator {
     }
 
     private void handleSceneMouseDragged(MouseEvent event) {
+        if (actionPort.isInteractionLocked()) {
+            if (previewRenderer.hasActiveDrag()) {
+                previewRenderer.clear();
+                gameRenderer.refresh();
+                event.consume();
+            }
+            return;
+        }
         if (!previewRenderer.hasActiveDrag()) {
             return;
         }
@@ -128,6 +148,14 @@ public class GameInteractionCoordinator {
     }
 
     private void handleSceneMouseReleased(MouseEvent event) {
+        if (actionPort.isInteractionLocked()) {
+            if (previewRenderer.hasActiveDrag()) {
+                previewRenderer.clear();
+                gameRenderer.refresh();
+                event.consume();
+            }
+            return;
+        }
         if (!previewRenderer.hasActiveDrag()) {
             return;
         }
@@ -153,6 +181,11 @@ public class GameInteractionCoordinator {
     }
 
     private void recallAllDraftTiles() {
+        if (actionPort.isInteractionLocked()) {
+            previewRenderer.clear();
+            gameRenderer.refresh();
+            return;
+        }
         if (!draftState.hasDraftPlacements()) {
             return;
         }
@@ -161,6 +194,11 @@ public class GameInteractionCoordinator {
     }
 
     private void submitDraft() {
+        if (actionPort.isInteractionLocked()) {
+            previewRenderer.clear();
+            gameRenderer.refresh();
+            return;
+        }
         if (!draftState.hasDraftPlacements()) {
             return;
         }

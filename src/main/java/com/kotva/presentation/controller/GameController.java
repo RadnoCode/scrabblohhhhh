@@ -1,17 +1,15 @@
 package com.kotva.presentation.controller;
 
-import com.kotva.ai.AiMove;
+import com.kotva.application.runtime.GameRuntime;
+import com.kotva.application.runtime.GameRuntimeFactory;
 import com.kotva.application.service.AiSessionRuntime;
-import com.kotva.application.service.GameApplicationService;
+import com.kotva.application.session.AiRuntimeSnapshot;
 import com.kotva.application.session.BoardCellRenderSnapshot;
 import com.kotva.application.session.GamePlayerSnapshot;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.session.RackTileSnapshot;
-import com.kotva.domain.model.Player;
 import com.kotva.domain.model.Position;
-import com.kotva.launcher.AppContext;
-import com.kotva.mode.PlayerController;
 import com.kotva.policy.ClockPhase;
 import com.kotva.policy.SessionStatus;
 import com.kotva.presentation.fx.SceneNavigator;
@@ -37,21 +35,19 @@ public class GameController implements GameActionPort {
     private static final Duration POLLING_INTERVAL = Duration.millis(100);
     private static final int RACK_SLOT_COUNT = 7;
 
-    private final AppContext appContext;
-    private final GameApplicationService gameApplicationService;
+    private final GameRuntimeFactory gameRuntimeFactory;
     private final GameLaunchContext launchContext;
     private final GameViewModel viewModel;
     private final GameDraftState draftState;
     private UiScheduler uiScheduler;
     private GameRenderer renderer;
-    private GameSession session;
+    private GameRuntime gameRuntime;
     private long lastTickNanos;
-    private AiSessionRuntime aiSessionRuntime;
+    private boolean interactionLocked;
 
     public GameController(SceneNavigator navigator, GameLaunchContext launchContext) {
         Objects.requireNonNull(navigator, "navigator cannot be null.");
-        this.appContext = navigator.getAppContext();
-        this.gameApplicationService = appContext.getGameApplicationService();
+        this.gameRuntimeFactory = navigator.getAppContext().getGameRuntimeFactory();
         this.launchContext = Objects.requireNonNull(launchContext, "launchContext cannot be null.");
         this.viewModel = new GameViewModel("S C R A B B L E");
         this.draftState = new GameDraftState();
@@ -66,18 +62,18 @@ public class GameController implements GameActionPort {
     }
 
     public GameSession getSession() {
-        return session;
+        return gameRuntime == null ? null : gameRuntime.getSession();
     }
 
     public boolean hasSession() {
-        return session != null;
+        return gameRuntime != null && gameRuntime.hasSession();
     }
 
     public void refreshFromCurrentSession() {
-        if (session == null || renderer == null) {
+        if (gameRuntime == null || !gameRuntime.hasSession() || renderer == null) {
             return;
         }
-        renderSnapshot(gameApplicationService.getSessionSnapshot(session));
+        renderSnapshot(gameRuntime.getSessionSnapshot());
     }
 
     public void bind(GameRenderer renderer, GameInteractionCoordinator interactionCoordinator) {
@@ -88,14 +84,14 @@ public class GameController implements GameActionPort {
 
     private void startGameFromLaunchContext() {
         stopPolling();
-        shutdownAiSupport();
-        session = appContext.getGameSetupService().startNewGame(launchContext.getRequest());
-        initializeAiSupport();
+        shutdownRuntime();
+        gameRuntime = gameRuntimeFactory.create(launchContext.getRequest());
+        gameRuntime.start(launchContext.getRequest());
 
-        GameSessionSnapshot firstSnapshot = gameApplicationService.getSessionSnapshot(session);
+        GameSessionSnapshot firstSnapshot = gameRuntime.getSessionSnapshot();
         renderSnapshot(firstSnapshot);
 
-        if (!session.getConfig().hasTimeControl()) {
+        if (!gameRuntime.isSessionInProgress() || !gameRuntime.hasTimeControl()) {
             return;
         }
 
@@ -105,12 +101,12 @@ public class GameController implements GameActionPort {
     }
 
     private void pollSnapshot() {
-        if (session == null) {
+        if (gameRuntime == null || !gameRuntime.hasSession()) {
             return;
         }
 
-        if (session.getSessionStatus() != SessionStatus.IN_PROGRESS) {
-            renderSnapshot(gameApplicationService.getSessionSnapshot(session));
+        if (!gameRuntime.isSessionInProgress()) {
+            renderSnapshot(gameRuntime.getSessionSnapshot());
             stopPolling();
             return;
         }
@@ -119,7 +115,7 @@ public class GameController implements GameActionPort {
         long elapsedMillis = Math.max(0L, (now - lastTickNanos) / 1_000_000L);
         lastTickNanos = now;
 
-        GameSessionSnapshot snapshot = gameApplicationService.tickClock(session, elapsedMillis);
+        GameSessionSnapshot snapshot = gameRuntime.tickClock(elapsedMillis);
         renderSnapshot(snapshot);
         if (snapshot.getSessionStatus() == SessionStatus.COMPLETED) {
             stopPolling();
@@ -127,6 +123,7 @@ public class GameController implements GameActionPort {
     }
 
     private void renderSnapshot(GameSessionSnapshot snapshot) {
+        AiRuntimeSnapshot aiRuntimeSnapshot = snapshot.getAiRuntimeSnapshot();
         viewModel.setStepTimerTitle("Step Time");
         viewModel.setTotalTimerTitle("Total Time");
         viewModel.setTotalTimerText(resolveTotalTimerText(snapshot));
@@ -134,6 +131,10 @@ public class GameController implements GameActionPort {
         viewModel.setPlayerCards(buildPlayerCards(snapshot));
         viewModel.setBoardTiles(buildBoardTiles(snapshot));
         viewModel.setRackTiles(buildRackTiles(snapshot));
+        interactionLocked = resolveInteractionLocked(snapshot, aiRuntimeSnapshot);
+        viewModel.setInteractionLocked(interactionLocked);
+        viewModel.setAiErrorSummary(aiRuntimeSnapshot == null ? "" : aiRuntimeSnapshot.summary());
+        viewModel.setAiErrorDetails(aiRuntimeSnapshot == null ? "" : aiRuntimeSnapshot.details());
         draftState.syncSnapshot(viewModel.getRackTiles(), viewModel.getBoardTiles());
         renderer.render(viewModel);
         syncAiTurn(snapshot);
@@ -235,19 +236,15 @@ public class GameController implements GameActionPort {
 
     public void shutdown() {
         stopPolling();
-        shutdownAiSupport();
-        session = null;
-    }
-
-    private PlayerController requireCurrentPlayerController() {
-        Objects.requireNonNull(session, "session cannot be null.");
-        return Objects.requireNonNull(
-                session.getGameState().requireCurrentActivePlayer().getController(),
-                "current player controller cannot be null.");
+        shutdownRuntime();
     }
 
     private void refreshSnapshotAfterAction() {
-        GameSessionSnapshot snapshot = gameApplicationService.getSessionSnapshot(session);
+        if (gameRuntime == null || !gameRuntime.hasSession()) {
+            return;
+        }
+
+        GameSessionSnapshot snapshot = gameRuntime.getSessionSnapshot();
         renderSnapshot(snapshot);
         if (snapshot.getSessionStatus() == SessionStatus.COMPLETED) {
             stopPolling();
@@ -255,9 +252,9 @@ public class GameController implements GameActionPort {
     }
 
     private void tickClockBeforeActionIfNeeded() {
-        if (session == null
-                || !session.getConfig().hasTimeControl()
-                || session.getSessionStatus() != SessionStatus.IN_PROGRESS) {
+        if (gameRuntime == null
+                || !gameRuntime.hasTimeControl()
+                || !gameRuntime.isSessionInProgress()) {
             return;
         }
 
@@ -265,7 +262,7 @@ public class GameController implements GameActionPort {
         long elapsedMillis = Math.max(0L, (now - lastTickNanos) / 1_000_000L);
         lastTickNanos = now;
         if (elapsedMillis > 0L) {
-            gameApplicationService.tickClock(session, elapsedMillis);
+            gameRuntime.tickClock(elapsedMillis);
         }
     }
 
@@ -273,167 +270,114 @@ public class GameController implements GameActionPort {
         return displayLetter == null ? "" : String.valueOf(displayLetter);
     }
 
-    private void initializeAiSupport() {
-        if (session == null) {
-            aiSessionRuntime = null;
-            return;
+    private void shutdownRuntime() {
+        if (gameRuntime != null) {
+            gameRuntime.shutdown();
+            gameRuntime = null;
         }
-        aiSessionRuntime = appContext.getAiSessionRuntimeFactory().create(session.getConfig());
-    }
-
-    private void shutdownAiSupport() {
-        if (aiSessionRuntime != null) {
-            aiSessionRuntime.close();
-            aiSessionRuntime = null;
-        }
+        interactionLocked = false;
     }
 
     private void syncAiTurn(GameSessionSnapshot snapshot) {
-        if (aiSessionRuntime == null) {
+        if (gameRuntime == null || !gameRuntime.hasAutomatedTurnSupport()) {
             return;
         }
 
-        if (session == null || snapshot.getSessionStatus() != SessionStatus.IN_PROGRESS) {
-            shutdownAiSupport();
+        if (snapshot.getSessionStatus() != SessionStatus.IN_PROGRESS) {
+            gameRuntime.disableAutomatedTurnSupport();
             return;
         }
 
-        Player currentPlayer = resolveCurrentPlayer();
-        if (currentPlayer == null || !requireCurrentPlayerController().supportsAutomatedTurn()) {
-            aiSessionRuntime.cancelPending();
+        if (!gameRuntime.isCurrentTurnAutomated()) {
+            gameRuntime.cancelPendingAutomatedTurn();
             return;
         }
 
-        aiSessionRuntime.requestTurnIfIdle(
-                session,
-                requireCurrentPlayerController(),
+        gameRuntime.requestAutomatedTurnIfIdle(
                 completion -> Platform.runLater(() -> handleAiMoveCompleted(completion)));
     }
 
     private void handleAiMoveCompleted(AiSessionRuntime.TurnCompletion completion) {
-        if (session == null
-                || aiSessionRuntime == null
-                || session.getSessionStatus() != SessionStatus.IN_PROGRESS) {
+        if (gameRuntime == null || !gameRuntime.hasSession()) {
             return;
         }
 
-        Player currentPlayer = resolveCurrentPlayer();
-        if (currentPlayer == null
-                || !aiSessionRuntime.matchesCurrentTurn(
-                        completion,
-                        session,
-                        currentPlayer,
-                        requireCurrentPlayerController())) {
+        if (!gameRuntime.matchesAutomatedTurn(completion)) {
             return;
         }
 
-        if (completion.error() != null) {
-            disableAiSupport("AI move request failed.", completion.error());
-            return;
-        }
-
-        try {
-            tickClockBeforeActionIfNeeded();
-            aiSessionRuntime.applyTurn(
-                    requireCurrentPlayerController(),
-                    gameApplicationService,
-                    session,
-                    completion);
-            refreshSnapshotAfterAction();
-        } catch (RuntimeException exception) {
-            disableAiSupport("Failed to apply AI move.", exception);
-        }
+        tickClockBeforeActionIfNeeded();
+        gameRuntime.applyAutomatedTurn(completion);
+        refreshSnapshotAfterAction();
     }
 
-    private void disableAiSupport(String message, Throwable error) {
-        System.err.println(message);
-        if (error != null) {
-            error.printStackTrace(System.err);
-        }
-        shutdownAiSupport();
-        refreshFromCurrentSession();
-    }
-
-    private Player resolveCurrentPlayer() {
-        if (session == null || !session.getGameState().hasActivePlayers()) {
-            return null;
-        }
-        return session.getGameState().requireCurrentActivePlayer();
-    }
-
-    private boolean isAiTurnLocked() {
-        if (aiSessionRuntime == null
-                || session == null
-                || session.getSessionStatus() != SessionStatus.IN_PROGRESS) {
-            return false;
-        }
-
-        Player currentPlayer = resolveCurrentPlayer();
-        return currentPlayer != null && requireCurrentPlayerController().supportsAutomatedTurn();
+    @Override
+    public boolean isInteractionLocked() {
+        return interactionLocked;
     }
 
     @Override
     public void onDraftTilePlaced(String tileId, Position position) {
-        if (isAiTurnLocked()) {
+        if (isInteractionLocked()) {
             return;
         }
         Objects.requireNonNull(tileId, "tileId cannot be null.");
         Objects.requireNonNull(position, "position cannot be null.");
         tickClockBeforeActionIfNeeded();
-        requireCurrentPlayerController().placeDraftTile(gameApplicationService, session, tileId, position);
+        gameRuntime.placeDraftTile(tileId, position);
         refreshSnapshotAfterAction();
     }
 
     @Override
     public void onDraftTileMoved(String tileId, Position position) {
-        if (isAiTurnLocked()) {
+        if (isInteractionLocked()) {
             return;
         }
         Objects.requireNonNull(tileId, "tileId cannot be null.");
         Objects.requireNonNull(position, "position cannot be null.");
         tickClockBeforeActionIfNeeded();
-        requireCurrentPlayerController().moveDraftTile(gameApplicationService, session, tileId, position);
+        gameRuntime.moveDraftTile(tileId, position);
         refreshSnapshotAfterAction();
     }
 
     @Override
     public void onDraftTileRemoved(String tileId) {
-        if (isAiTurnLocked()) {
+        if (isInteractionLocked()) {
             return;
         }
         Objects.requireNonNull(tileId, "tileId cannot be null.");
         tickClockBeforeActionIfNeeded();
-        requireCurrentPlayerController().removeDraftTile(gameApplicationService, session, tileId);
+        gameRuntime.removeDraftTile(tileId);
         refreshSnapshotAfterAction();
     }
 
     @Override
     public void onRecallAllDraftTilesRequested() {
-        if (isAiTurnLocked()) {
+        if (isInteractionLocked()) {
             return;
         }
         tickClockBeforeActionIfNeeded();
-        requireCurrentPlayerController().recallAllDraftTiles(gameApplicationService, session);
+        gameRuntime.recallAllDraftTiles();
         refreshSnapshotAfterAction();
     }
 
     @Override
     public void onSubmitDraftRequested() {
-        if (isAiTurnLocked()) {
+        if (isInteractionLocked()) {
             return;
         }
         tickClockBeforeActionIfNeeded();
-        requireCurrentPlayerController().submitDraft(gameApplicationService, session);
+        gameRuntime.submitDraft();
         refreshSnapshotAfterAction();
     }
 
     @Override
     public void onSkipTurnRequested() {
-        if (isAiTurnLocked()) {
+        if (isInteractionLocked()) {
             return;
         }
         tickClockBeforeActionIfNeeded();
-        requireCurrentPlayerController().passTurn(gameApplicationService, session);
+        gameRuntime.passTurn();
         refreshSnapshotAfterAction();
     }
 
@@ -445,5 +389,15 @@ public class GameController implements GameActionPort {
     @Override
     public void onResignRequested() {
         // Not wired yet.
+    }
+
+    private boolean resolveInteractionLocked(
+            GameSessionSnapshot snapshot, AiRuntimeSnapshot aiRuntimeSnapshot) {
+        if (aiRuntimeSnapshot != null && aiRuntimeSnapshot.interactionLocked()) {
+            return true;
+        }
+        return gameRuntime != null
+                && snapshot.getSessionStatus() == SessionStatus.IN_PROGRESS
+                && gameRuntime.isCurrentTurnAutomated();
     }
 }

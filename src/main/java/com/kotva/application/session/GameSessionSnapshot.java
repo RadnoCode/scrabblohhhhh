@@ -29,6 +29,7 @@ public class GameSessionSnapshot {
     private final List<DraftPlacementSnapshot> draftPlacements;
     private final PreviewSnapshot preview;
     private final SettlementResult settlementResult;
+    private final AiRuntimeSnapshot aiRuntimeSnapshot;
 
     public GameSessionSnapshot(
             String sessionId,
@@ -49,7 +50,8 @@ public class GameSessionSnapshot {
             List<RackTileSnapshot> currentRackTiles,
             List<DraftPlacementSnapshot> draftPlacements,
             PreviewSnapshot preview,
-            SettlementResult settlementResult) {
+            SettlementResult settlementResult,
+            AiRuntimeSnapshot aiRuntimeSnapshot) {
         this.sessionId = Objects.requireNonNull(sessionId, "sessionId cannot be null.");
         this.gameMode = Objects.requireNonNull(gameMode, "gameMode cannot be null.");
         this.sessionStatus = Objects.requireNonNull(sessionStatus, "sessionStatus cannot be null.");
@@ -78,6 +80,7 @@ public class GameSessionSnapshot {
                         Objects.requireNonNull(draftPlacements, "draftPlacements cannot be null."));
         this.preview = preview;
         this.settlementResult = settlementResult;
+        this.aiRuntimeSnapshot = aiRuntimeSnapshot;
     }
 
     public String getSessionId() {
@@ -154,5 +157,9 @@ public class GameSessionSnapshot {
 
     public SettlementResult getSettlementResult() {
         return settlementResult;
+    }
+
+    public AiRuntimeSnapshot getAiRuntimeSnapshot() {
+        return aiRuntimeSnapshot;
     }
 }

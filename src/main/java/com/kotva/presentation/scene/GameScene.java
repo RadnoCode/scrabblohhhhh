@@ -1,6 +1,7 @@
 package com.kotva.presentation.scene;
 
 import com.kotva.presentation.component.ActionPanelView;
+import com.kotva.presentation.component.AiStatusBannerView;
 import com.kotva.presentation.component.BoardView;
 import com.kotva.presentation.component.PlayerInfoCardView;
 import com.kotva.presentation.component.RackView;
@@ -56,9 +57,10 @@ public class GameScene extends Scene {
         contentRoot.setTop(titleBanner);
 
         // 中央棋盘列：上面是棋盘，下面是牌架。
+        AiStatusBannerView aiStatusBannerView = new AiStatusBannerView();
         BoardView boardView = new BoardView();
         RackView rackView = new RackView();
-        VBox boardColumn = new VBox(18, boardView, rackView);
+        VBox boardColumn = new VBox(18, aiStatusBannerView, boardView, rackView);
         boardColumn.setAlignment(Pos.CENTER);
         boardColumn.getStyleClass().add("game-board-column");
 
@@ -97,6 +99,8 @@ public class GameScene extends Scene {
         GameRenderer renderer = new GameRenderer(
                 boardView,
                 rackView,
+                actionPanel,
+                aiStatusBannerView,
                 stepTimerView,
                 totalTimerView,
                 List.of(leftTopCard, rightTopCard, leftBottomCard, rightBottomCard),

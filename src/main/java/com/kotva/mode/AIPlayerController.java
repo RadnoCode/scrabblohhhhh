@@ -1,6 +1,8 @@
 package com.kotva.mode;
 
 import com.kotva.ai.AiMove;
+import com.kotva.ai.AiMoveOptionSet;
+import com.kotva.application.service.AiTurnAttemptResult;
 import com.kotva.application.service.AiTurnCoordinator;
 import com.kotva.application.service.GameApplicationService;
 import com.kotva.application.session.GameSession;
@@ -18,13 +20,13 @@ final class AIPlayerController extends PlayerController {
     }
 
     @Override
-    public CompletableFuture<AiMove> requestAutomatedTurn(
+    public CompletableFuture<AiMoveOptionSet> requestAutomatedTurn(
             AiTurnCoordinator aiTurnCoordinator, GameSession session) {
         return aiTurnCoordinator.requestMove(session);
     }
 
     @Override
-    public AiTurnCoordinator.ExecutionResult applyAutomatedTurn(
+    public AiTurnAttemptResult applyAutomatedTurn(
             AiTurnCoordinator aiTurnCoordinator,
             GameApplicationService gameApplicationService,
             GameSession session,

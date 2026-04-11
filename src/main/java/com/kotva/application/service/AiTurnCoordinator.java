@@ -1,12 +1,11 @@
 package com.kotva.application.service;
 
 import com.kotva.ai.AiMove;
+import com.kotva.ai.AiMoveOptionSet;
 import com.kotva.ai.AiMoveService;
 import com.kotva.ai.AiPositionSnapshot;
 import com.kotva.ai.AiTurnMapper;
 import com.kotva.ai.QuackleNativeBridge;
-import com.kotva.application.service.SubmitDraftResult;
-import com.kotva.application.service.TurnTransitionResult;
 import com.kotva.application.session.GameSession;
 import com.kotva.domain.model.Player;
 import com.kotva.domain.model.Tile;
@@ -31,12 +30,12 @@ public final class AiTurnCoordinator implements AutoCloseable {
                 Objects.requireNonNull(difficulty, "difficulty cannot be null."));
     }
 
-    public CompletableFuture<AiMove> requestMove(GameSession session) {
+    public CompletableFuture<AiMoveOptionSet> requestMove(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
         return aiMoveService.requestMove(AiPositionSnapshot.fromSession(session));
     }
 
-    public ExecutionResult applyMove(
+    public AiTurnAttemptResult applyMove(
             PlayerController controller,
             GameApplicationService gameApplicationService,
             GameSession session,
@@ -52,10 +51,35 @@ public final class AiTurnCoordinator implements AutoCloseable {
         }
 
         Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
-        AiTurnMapper.ResolvedMove resolvedMove = AiTurnMapper.resolve(currentPlayer, move);
+        AiTurnMapper.ResolvedMove resolvedMove;
+        try {
+            resolvedMove = AiTurnMapper.resolve(currentPlayer, move);
+        } catch (RuntimeException exception) {
+            return AiTurnAttemptResult.rejected(
+                    move,
+                    "MOVE_MAPPING_FAILED",
+                    "Failed to map the AI move onto the current rack state.",
+                    exception);
+        }
+
         if (resolvedMove.action() == AiMove.Action.PASS) {
-            TurnTransitionResult result = controller.passTurn(gameApplicationService, session);
-            return new ExecutionResult(move, result.isSuccess(), 0, result.getNextPlayerId());
+            try {
+                TurnTransitionResult result = controller.passTurn(gameApplicationService, session);
+                if (result.isSuccess()) {
+                    return AiTurnAttemptResult.accepted(move, 0, result.getNextPlayerId());
+                }
+                return AiTurnAttemptResult.rejected(
+                        move,
+                        "PASS_REJECTED",
+                        result.getMessage(),
+                        null);
+            } catch (RuntimeException exception) {
+                return AiTurnAttemptResult.rejected(
+                        move,
+                        "PASS_FAILED",
+                        "Applying the AI pass move failed unexpectedly.",
+                        exception);
+            }
         }
 
         List<Tile> assignedBlankTiles = new ArrayList<>();
@@ -74,14 +98,25 @@ public final class AiTurnCoordinator implements AutoCloseable {
             }
 
             SubmitDraftResult result = controller.submitDraft(gameApplicationService, session);
-            return new ExecutionResult(
+            if (result.isSuccess()) {
+                return AiTurnAttemptResult.accepted(
+                        move,
+                        result.getAwardedScore(),
+                        result.getNextPlayerId());
+            }
+            rollbackDraft(controller, gameApplicationService, session, assignedBlankTiles);
+            return AiTurnAttemptResult.rejected(
                     move,
-                    result.isSuccess(),
-                    result.getAwardedScore(),
-                    result.getNextPlayerId());
+                    "SUBMIT_REJECTED",
+                    result.getMessage(),
+                    null);
         } catch (RuntimeException exception) {
             rollbackDraft(controller, gameApplicationService, session, assignedBlankTiles);
-            throw exception;
+            return AiTurnAttemptResult.rejected(
+                    move,
+                    "APPLY_FAILED",
+                    "Applying the AI move failed unexpectedly.",
+                    exception);
         }
     }
 
@@ -128,9 +163,4 @@ public final class AiTurnCoordinator implements AutoCloseable {
         }
     }
 
-    public record ExecutionResult(AiMove move, boolean success, int awardedScore, String nextPlayerId) {
-        public ExecutionResult {
-            move = Objects.requireNonNull(move, "move cannot be null.");
-        }
-    }
 }
