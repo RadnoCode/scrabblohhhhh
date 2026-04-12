@@ -1,5 +1,7 @@
 package com.kotva.domain.utils;
 
+import java.util.List;
+
 import com.kotva.domain.action.ActionPlacement;
 import com.kotva.domain.action.PlayerAction;
 import com.kotva.domain.model.Board;
@@ -9,7 +11,6 @@ import com.kotva.domain.model.Position;
 import com.kotva.domain.model.Tile;
 import com.kotva.domain.model.TileBag;
 import com.kotva.policy.BonusType;
-import java.util.List;
 
 public final class ScoreCalculator {
     private ScoreCalculator() {

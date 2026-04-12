@@ -1,9 +1,10 @@
 package com.kotva.domain.utils;
 
+import java.util.List;
+
 import com.kotva.domain.model.Board;
 import com.kotva.domain.model.Cell;
 import com.kotva.domain.model.Position;
-import java.util.List;
 
 public final class MoveValidator {
     private MoveValidator() {

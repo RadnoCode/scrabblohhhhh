@@ -1,0 +1,84 @@
+.game-root {
+    -fx-background-color: -app-background;
+}
+
+.game-content-box {
+    -fx-alignment: center;
+}
+
+.game-side-column {
+    -fx-alignment: top_center;
+}
+
+.game-board-column {
+    -fx-alignment: center;
+}
+
+.game-timer-row {
+    -fx-alignment: center;
+}
+
+.game-board-shell {
+    -fx-padding: 0;
+}
+
+.game-board-cell {
+    -fx-background-color: rgba(226, 219, 206, 0.90);
+    -fx-background-radius: 11;
+    -fx-border-color: transparent;
+    -fx-border-width: 1;
+    -fx-border-radius: 11;
+}
+
+.game-board-cell-main-word {
+    -fx-background-color: rgba(195, 213, 228, 0.96);
+    -fx-border-color: rgba(118, 145, 168, 0.82);
+}
+
+.game-board-cell-valid-preview {
+    -fx-background-color: rgba(188, 217, 184, 0.97);
+    -fx-border-color: rgba(101, 145, 96, 0.92);
+}
+
+.game-board-cell-invalid-preview {
+    -fx-background-color: rgba(231, 186, 186, 0.97);
+    -fx-border-color: rgba(176, 94, 94, 0.94);
+}
+
+.game-board-cell-hover {
+    -fx-border-color: rgba(255, 255, 255, 0.96);
+}
+
+.game-board-draft-tile {
+    -fx-effect: dropshadow(gaussian, rgba(87, 106, 140, 0.16), 8, 0.10, 0, 2);
+}
+
+.game-drag-floating-tile {
+    -fx-effect: dropshadow(gaussian, rgba(61, 73, 96, 0.22), 14, 0.18, 0, 4);
+    -fx-opacity: 0.96;
+}
+
+.game-placeholder-panel {
+    -fx-background-color: rgba(226, 219, 206, 0.82);
+    -fx-background-radius: 30;
+}
+
+.game-ai-status-banner {
+    -fx-background-color: rgba(127, 38, 38, 0.94);
+    -fx-background-radius: 16;
+    -fx-border-color: rgba(233, 195, 195, 0.56);
+    -fx-border-radius: 16;
+    -fx-border-width: 1;
+    -fx-max-width: 460;
+}
+
+.game-ai-status-summary {
+    -fx-text-fill: #fff6f6;
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+}
+
+.game-ai-status-details {
+    -fx-text-fill: rgba(255, 240, 240, 0.88);
+    -fx-font-size: 12px;
+}

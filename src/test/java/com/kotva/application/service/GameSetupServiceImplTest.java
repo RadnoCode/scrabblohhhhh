@@ -1,3 +1,7 @@
+/**
+ * 包作用：应用层服务测试包，负责验证计时、开局与结算服务行为。
+ * 包含类：ClockServiceImplTest、GameSetupServiceImplTest、SettlementServiceImplTest。
+ */
 package com.kotva.application.service;
 
 import static org.junit.Assert.assertEquals;
@@ -13,6 +17,7 @@ import com.kotva.domain.model.Player;
 import com.kotva.domain.model.RackSlot;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.mode.GameMode;
+import com.kotva.policy.AiDifficulty;
 import com.kotva.policy.ClockPhase;
 import com.kotva.policy.DictionaryType;
 import com.kotva.policy.PlayerType;
@@ -24,7 +29,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Test;
 
+/**
+ * 类作用：测试开局服务实现的配置校验与建局行为。
+ * 包含方法：buildConfigNormalizesHotSeatPlayersAndTimeControl、buildConfigRejectsInvalidSetupInputs、startNewGameInitializesSessionDictionaryOrderAndTiles、startNewGameUsesStableRandomizedPlayerOrder、startNewGameLeavesUnlimitedGamesWithDisabledClocks、extractPlayerNames、countRackTiles。
+ * 继承/实现：无。
+ * 引用类：GameConfig 用于提供开局配置；GameSession 用于承载当前会话、配置与对局状态；TimeControlConfig 用于提供时间控制参数；NewGameRequest 用于承接新对局请求参数；Player 用于访问玩家对象、分数、行动权或牌架；RackSlot 用于配合当前类完成与 RackSlot 相关的处理；DictionaryRepository 用于查询词典是否合法；GameMode 用于配合当前类完成与 GameMode 相关的处理；ClockPhase 用于区分计时阶段；DictionaryType 用于区分词典类型；PlayerType 用于区分玩家控制器类型；SessionStatus 用于表示会话状态；Test 用于标记测试方法。
+ */
 public class GameSetupServiceImplTest {
+    /**
+     * 方法作用：测试方法：验证 buildConfigNormalizesHotSeatPlayersAndTimeControl 对应的业务场景。
+     */
     @Test
     public void buildConfigNormalizesHotSeatPlayersAndTimeControl() {
         GameSetupServiceImpl service =
@@ -49,6 +63,9 @@ public class GameSetupServiceImplTest {
         assertEquals(10_000L, config.getTimeControlConfig().getByoYomiMillisPerTurn());
     }
 
+    /**
+     * 方法作用：测试方法：验证 buildConfigRejectsInvalidSetupInputs 对应的业务场景。
+     */
     @Test
     public void buildConfigRejectsInvalidSetupInputs() {
         GameSetupServiceImpl service =
@@ -108,8 +125,25 @@ public class GameSetupServiceImplTest {
                                         List.of("Alice", "Bob"),
                                         DictionaryType.AM,
                                         null)));
+
+        GameConfig localAiConfig =
+                service.buildConfig(
+                        new NewGameRequest(
+                                GameMode.HUMAN_VS_AI,
+                                2,
+                                List.of("Alice", "Bob"),
+                                DictionaryType.AM,
+                                null,
+                                AiDifficulty.HARD));
+        assertEquals(GameMode.HUMAN_VS_AI, localAiConfig.getGameMode());
+        assertEquals(PlayerType.LOCAL, localAiConfig.getPlayers().get(0).getPlayerType());
+        assertEquals(PlayerType.AI, localAiConfig.getPlayers().get(1).getPlayerType());
+        assertEquals(AiDifficulty.HARD, localAiConfig.getAiDifficulty());
     }
 
+    /**
+     * 方法作用：测试方法：验证 startNewGameInitializesSessionDictionaryOrderAndTiles 对应的业务场景。
+     */
     @Test
     public void startNewGameInitializesSessionDictionaryOrderAndTiles() {
         StubDictionaryRepository dictionaryRepository = new StubDictionaryRepository();
@@ -139,6 +173,9 @@ public class GameSetupServiceImplTest {
         }
     }
 
+    /**
+     * 方法作用：测试方法：验证 startNewGameUsesStableRandomizedPlayerOrder 对应的业务场景。
+     */
     @Test
     public void startNewGameUsesStableRandomizedPlayerOrder() {
         NewGameRequest request =
@@ -161,6 +198,9 @@ public class GameSetupServiceImplTest {
         assertNotEquals(request.getPlayerNames(), firstOrder);
     }
 
+    /**
+     * 方法作用：测试方法：验证 startNewGameLeavesUnlimitedGamesWithDisabledClocks 对应的业务场景。
+     */
     @Test
     public void startNewGameLeavesUnlimitedGamesWithDisabledClocks() {
         GameSetupServiceImpl service =
@@ -180,12 +220,18 @@ public class GameSetupServiceImplTest {
                         .allMatch(player -> player.getClock().getPhase() == ClockPhase.DISABLED));
     }
 
+    /**
+     * 方法作用：提取会话中的玩家名称列表。
+     */
     private List<String> extractPlayerNames(GameSession session) {
         return session.getGameState().getPlayers().stream()
                 .map(Player::getPlayerName)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 方法作用：统计玩家牌架中的字牌数量。
+     */
     private int countRackTiles(Player player) {
         int tileCount = 0;
         for (RackSlot slot : player.getRack().getSlots()) {
@@ -196,24 +242,42 @@ public class GameSetupServiceImplTest {
         return tileCount;
     }
 
+    /**
+     * 类作用：测试替身类，用于在测试中提供可控的词典行为。
+     * 包含方法：loadDictionary、getDictionary、getLoadedDictionaryType、isAccepted。
+     * 继承/实现：继承 DictionaryRepository。
+     * 引用类：当前类未直接导入其他自定义类。
+     */
     private static class StubDictionaryRepository extends DictionaryRepository {
         private DictionaryType loadedDictionaryType;
 
+        /**
+         * 方法作用：加载词典。
+         */
         @Override
         public void loadDictionary(DictionaryType dictionaryType) {
             this.loadedDictionaryType = dictionaryType;
         }
 
+        /**
+         * 方法作用：获取词典。
+         */
         @Override
         public Set<String> getDictionary() {
             return Collections.singleton("BOOK");
         }
 
+        /**
+         * 方法作用：获取已加载词典类型。
+         */
         @Override
         public DictionaryType getLoadedDictionaryType() {
             return loadedDictionaryType;
         }
 
+        /**
+         * 方法作用：判断是否Accepted。
+         */
         @Override
         public boolean isAccepted(String word) {
             return "BOOK".equalsIgnoreCase(word);

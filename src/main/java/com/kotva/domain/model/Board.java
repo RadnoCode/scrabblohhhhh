@@ -21,7 +21,7 @@ public class Board {
             "....D.....D....", // 4
             ".t...t...t...t.", // 5
             "..d...d.d...d..", // 6
-            "T..d...D...d..T", // 7 (中心点)
+            "T..d...D...d..T", // 7
             "..d...d.d...d..", // 8
             ".t...t...t...t.", // 9
             "....D.....D....", // 10
@@ -85,15 +85,12 @@ public class Board {
 
 
     public boolean isEmpty() {
-        // 外层循环：从第 0 行扫到第 14 行
         for (int row = 0; row < Board.SIZE; row++) {
 
-            // 内层循环：在当前行里，从第 0 列扫到第 14 列
             for (int col = 0; col < Board.SIZE; col++) {
 
-                // 1. 拿到当前这个坐标的格子 (Cell)
                 Position pos = new Position(row, col);
-                Cell cell = this.getCell(pos); // this. 可以省略
+                Cell cell = this.getCell(pos);
 
                 if (!cell.isEmpty()) {
                     return false;

@@ -1,0 +1,28 @@
+.help-root {
+    -fx-background-color: -app-background;
+}
+
+.help-panel {
+    -fx-background-color: rgba(255, 255, 255, 0.55);
+    -fx-border-color: -app-line;
+    -fx-border-width: 2;
+    -fx-padding: 12;
+}
+
+.help-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 6;
+}
+
+.help-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.help-text-label {
+    -fx-text-fill: -app-text;
+    -fx-font-size: 18px;
+    -fx-line-spacing: 6px;
+    -fx-padding: 10;
+}

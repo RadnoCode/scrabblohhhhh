@@ -97,8 +97,9 @@ public class SettlementServiceImpl implements SettlementService {
             case TARGET_SCORE_REACHED -> "Game ended because the target score was reached.";
             case NO_LEGAL_PLACEMENT_AVAILABLE ->
                     "Game ended because no legal placement was available.";
+            case AI_RUNTIME_FAILURE ->
+                    "Game ended because the AI runtime failed and the match was frozen.";
             case NORMAL_FINISH -> "Game ended normally.";
-            
         };
     }
 }

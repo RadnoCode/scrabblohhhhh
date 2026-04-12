@@ -41,14 +41,23 @@ public class GameSetupServiceImpl implements GameSetupService {
     public GameConfig buildConfig(NewGameRequest request) {
         Objects.requireNonNull(request, "request cannot be null.");
 
-        if (request.getGameMode() != GameMode.HOT_SEAT) {
-            throw new IllegalArgumentException("Only HOT_SEAT is supported in setup v1.");
+        GameMode gameMode = request.getGameMode();
+        if (gameMode == null) {
+            throw new IllegalArgumentException("gameMode cannot be null.");
         }
-        //TODO: Support AI LAN in
 
         int playerCount = request.getPlayerCount();
         if (playerCount < 2 || playerCount > 4) {
             throw new IllegalArgumentException("playerCount must be between 2 and 4.");
+        }
+        if (gameMode == GameMode.LAN_MULTIPLAYER) {
+            throw new IllegalArgumentException("LAN_MULTIPLAYER is not supported on this branch.");
+        }
+        if (gameMode == GameMode.HUMAN_VS_AI && playerCount != 2) {
+            throw new IllegalArgumentException("HUMAN_VS_AI currently requires exactly 2 players.");
+        }
+        if (gameMode == GameMode.HUMAN_VS_AI && request.getAiDifficulty() == null) {
+            throw new IllegalArgumentException("HUMAN_VS_AI requires aiDifficulty.");
         }
 
         if (request.getDictionaryType() == null) {
@@ -62,20 +71,22 @@ public class GameSetupServiceImpl implements GameSetupService {
 
         List<PlayerConfig> players = new ArrayList<>(playerCount);
         Set<String> seenNames = new HashSet<>();
-        for (String rawName : playerNames) {
+        for (int index = 0; index < playerNames.size(); index++) {
+            String rawName = playerNames.get(index);
             String normalizedName = normalizePlayerName(rawName);
             String uniqueKey = normalizedName.toLowerCase(Locale.ROOT);
             if (!seenNames.add(uniqueKey)) {
                 throw new IllegalArgumentException("player names must be unique.");
             }
-            players.add(new PlayerConfig(normalizedName, PlayerType.LOCAL));
+            players.add(new PlayerConfig(normalizedName, resolvePlayerType(gameMode, index)));
         }
 
         return new GameConfig(
-                request.getGameMode(),
+                gameMode,
                 players,
                 request.getDictionaryType(),
-                request.getTimeControlConfig());
+                request.getTimeControlConfig(),
+                request.getAiDifficulty());
     }
 
     @Override
@@ -138,5 +149,14 @@ public class GameSetupServiceImpl implements GameSetupService {
         }
         return normalizedName;
     }
-}
 
+    private PlayerType resolvePlayerType(GameMode gameMode, int playerIndex) {
+        return switch (gameMode) {
+            case HOT_SEAT -> PlayerType.LOCAL;
+            case HUMAN_VS_AI -> playerIndex == 0 ? PlayerType.LOCAL : PlayerType.AI;
+            case LAN_MULTIPLAYER ->
+                    throw new IllegalArgumentException(
+                            "LAN_MULTIPLAYER is not supported on this branch.");
+        };
+    }
+}

@@ -24,10 +24,12 @@ public class GameSessionSnapshot {
     private final List<PlayerClockSnapshot> playerClockSnapshots;
     private final List<GamePlayerSnapshot> players;
     private final BoardSnapshot boardSnapshot;
+    private final List<BoardCellRenderSnapshot> boardCells;
     private final List<RackTileSnapshot> currentRackTiles;
     private final List<DraftPlacementSnapshot> draftPlacements;
     private final PreviewSnapshot preview;
     private final SettlementResult settlementResult;
+    private final AiRuntimeSnapshot aiRuntimeSnapshot;
 
     public GameSessionSnapshot(
             String sessionId,
@@ -44,10 +46,12 @@ public class GameSessionSnapshot {
             List<PlayerClockSnapshot> playerClockSnapshots,
             List<GamePlayerSnapshot> players,
             BoardSnapshot boardSnapshot,
+            List<BoardCellRenderSnapshot> boardCells,
             List<RackTileSnapshot> currentRackTiles,
             List<DraftPlacementSnapshot> draftPlacements,
             PreviewSnapshot preview,
-            SettlementResult settlementResult) {
+            SettlementResult settlementResult,
+            AiRuntimeSnapshot aiRuntimeSnapshot) {
         this.sessionId = Objects.requireNonNull(sessionId, "sessionId cannot be null.");
         this.gameMode = Objects.requireNonNull(gameMode, "gameMode cannot be null.");
         this.sessionStatus = Objects.requireNonNull(sessionStatus, "sessionStatus cannot be null.");
@@ -67,6 +71,7 @@ public class GameSessionSnapshot {
                                 playerClockSnapshots, "playerClockSnapshots cannot be null."));
         this.players = List.copyOf(Objects.requireNonNull(players, "players cannot be null."));
         this.boardSnapshot = Objects.requireNonNull(boardSnapshot, "boardSnapshot cannot be null.");
+        this.boardCells = List.copyOf(Objects.requireNonNull(boardCells, "boardCells cannot be null."));
         this.currentRackTiles =
                 List.copyOf(
                         Objects.requireNonNull(currentRackTiles, "currentRackTiles cannot be null."));
@@ -75,6 +80,7 @@ public class GameSessionSnapshot {
                         Objects.requireNonNull(draftPlacements, "draftPlacements cannot be null."));
         this.preview = preview;
         this.settlementResult = settlementResult;
+        this.aiRuntimeSnapshot = aiRuntimeSnapshot;
     }
 
     public String getSessionId() {
@@ -133,6 +139,10 @@ public class GameSessionSnapshot {
         return boardSnapshot;
     }
 
+    public List<BoardCellRenderSnapshot> getBoardCells() {
+        return boardCells;
+    }
+
     public List<RackTileSnapshot> getCurrentRackTiles() {
         return currentRackTiles;
     }
@@ -147,5 +157,9 @@ public class GameSessionSnapshot {
 
     public SettlementResult getSettlementResult() {
         return settlementResult;
+    }
+
+    public AiRuntimeSnapshot getAiRuntimeSnapshot() {
+        return aiRuntimeSnapshot;
     }
 }

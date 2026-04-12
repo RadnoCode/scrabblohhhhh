@@ -96,6 +96,14 @@ public class TileBag {
         return tiles.isEmpty();
     }
 
+    public int size() {
+        return tiles.size();
+    }
+
+    public List<Tile> getRemainingTiles() {
+        return List.copyOf(tiles);
+    }
+
     /**
      * Finds a tile by tile id from all tiles created for this game.
      *
@@ -107,12 +115,5 @@ public class TileBag {
             return null;
         }
         return allTilesById.get(tileId);
-    }
-
-    public void registerTile(Tile tile) {
-        if (tile == null) {
-            return;
-        }
-        allTilesById.put(tile.getTileID(), tile);
     }
 }

@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.kotva.application.preview.PreviewResult;
+import com.kotva.application.session.BoardCellRenderSnapshot;
 import com.kotva.application.session.GameConfig;
 import com.kotva.application.session.GamePlayerSnapshot;
 import com.kotva.application.session.GameSession;
@@ -32,8 +33,7 @@ public class GameSessionSnapshotTest {
     @Test
     public void sessionSnapshotIncludesBoardPlayersRackDraftAndPreview() {
         GameSession session = createInProgressSession();
-        GameApplicationServiceImpl service =
-                new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
+        GameApplicationServiceImpl service = createService(Set.of("AT"));
         Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
         Tile tileA = drawTileWithLetter(session.getGameState().getTileBag(), 'A');
         Tile tileT = drawTileWithLetter(session.getGameState().getTileBag(), 'T');
@@ -55,6 +55,7 @@ public class GameSessionSnapshotTest {
         assertEquals("Alice", snapshot.getCurrentPlayerName());
         assertEquals(2, snapshot.getPlayers().size());
         assertEquals(225, snapshot.getBoardSnapshot().getCells().size());
+        assertEquals(2, snapshot.getBoardCells().size());
         assertEquals(7, snapshot.getCurrentRackTiles().size());
         assertEquals(2, snapshot.getDraftPlacements().size());
         assertNotNull(snapshot.getPreview());
@@ -69,6 +70,7 @@ public class GameSessionSnapshotTest {
                 snapshot.getPreview().getHighlights().stream()
                         .allMatch(highlight -> highlight.getRow() == 7 && highlight.getCol() >= 7 && highlight.getCol() <= 8));
         assertNull(snapshot.getSettlementResult());
+        assertNull(snapshot.getAiRuntimeSnapshot());
 
         GamePlayerSnapshot firstPlayer =
                 snapshot.getPlayers().stream()
@@ -78,6 +80,7 @@ public class GameSessionSnapshotTest {
         assertTrue(firstPlayer.isCurrentTurn());
         assertEquals(2, firstPlayer.getRackTileCount());
         assertEquals(tileA.getTileID(), snapshot.getCurrentRackTiles().get(0).getTileId());
+        assertEquals(Character.valueOf('A'), snapshot.getCurrentRackTiles().get(0).getDisplayLetter());
         assertTrue(
                 snapshot.getBoardSnapshot().getCells().stream()
                         .filter(cell -> cell.getRow() == 7 && cell.getCol() == 7)
@@ -85,13 +88,83 @@ public class GameSessionSnapshotTest {
                         .orElseThrow()
                         .getLetter()
                         == null);
+
+        BoardCellRenderSnapshot firstDraftCell = findBoardCell(snapshot, 7, 7);
+        assertEquals(tileA.getTileID(), firstDraftCell.getTileId());
+        assertEquals(Character.valueOf('A'), firstDraftCell.getDisplayLetter());
+        assertTrue(firstDraftCell.isDraft());
+        assertTrue(firstDraftCell.isPreviewValid());
+        assertFalse(firstDraftCell.isPreviewInvalid());
+        assertTrue(firstDraftCell.isMainWordHighlighted());
+        assertFalse(firstDraftCell.isCrossWordHighlighted());
+    }
+
+    @Test
+    public void sessionSnapshotMarksMainAndCrossWordPositionsOnBoardCells() {
+        GameSession session = createInProgressSession();
+        GameApplicationServiceImpl service = createService(Set.of("AT"));
+        Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
+
+        Tile committedA = drawTileWithLetter(session.getGameState().getTileBag(), 'A');
+        session.getGameState().getBoard().getCell(new Position(6, 8)).setPlacedTile(committedA);
+
+        Tile tileA = drawTileWithLetter(session.getGameState().getTileBag(), 'A');
+        Tile tileT = drawTileWithLetter(session.getGameState().getTileBag(), 'T');
+        currentPlayer.getRack().setTileAt(0, tileA);
+        currentPlayer.getRack().setTileAt(1, tileT);
+
+        service.placeDraftTile(session, tileA.getTileID(), new Position(7, 7));
+        PreviewResult preview = service.placeDraftTile(session, tileT.getTileID(), new Position(7, 8));
+        assertTrue(preview.isValid());
+
+        GameSessionSnapshot snapshot = service.getSessionSnapshot(session);
+
+        assertEquals(2, snapshot.getPreview().getWords().size());
+        assertTrue(snapshot.getPreview().getWords().stream().anyMatch(word -> word.getWordType() == WordType.MAIN_WORD));
+        assertTrue(snapshot.getPreview().getWords().stream().anyMatch(word -> word.getWordType() == WordType.CROSS_WORD));
+
+        BoardCellRenderSnapshot committedCell = findBoardCell(snapshot, 6, 8);
+        assertFalse(committedCell.isDraft());
+        assertFalse(committedCell.isPreviewValid());
+        assertFalse(committedCell.isMainWordHighlighted());
+        assertTrue(committedCell.isCrossWordHighlighted());
+
+        BoardCellRenderSnapshot sharedDraftCell = findBoardCell(snapshot, 7, 8);
+        assertTrue(sharedDraftCell.isDraft());
+        assertTrue(sharedDraftCell.isPreviewValid());
+        assertTrue(sharedDraftCell.isMainWordHighlighted());
+        assertTrue(sharedDraftCell.isCrossWordHighlighted());
+    }
+
+    @Test
+    public void sessionSnapshotMarksInvalidPreviewOnDraftBoardCells() {
+        GameSession session = createInProgressSession();
+        GameApplicationServiceImpl service = createService(Set.of("AT"));
+        Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
+        Tile tileA = drawTileWithLetter(session.getGameState().getTileBag(), 'A');
+        Tile tileB = drawTileWithLetter(session.getGameState().getTileBag(), 'B');
+        currentPlayer.getRack().setTileAt(0, tileA);
+        currentPlayer.getRack().setTileAt(1, tileB);
+
+        service.placeDraftTile(session, tileA.getTileID(), new Position(7, 7));
+        PreviewResult preview = service.placeDraftTile(session, tileB.getTileID(), new Position(7, 8));
+        assertFalse(preview.isValid());
+
+        GameSessionSnapshot snapshot = service.getSessionSnapshot(session);
+
+        assertFalse(snapshot.getPreview().isValid());
+        BoardCellRenderSnapshot firstDraftCell = findBoardCell(snapshot, 7, 7);
+        BoardCellRenderSnapshot secondDraftCell = findBoardCell(snapshot, 7, 8);
+        assertTrue(firstDraftCell.isPreviewInvalid());
+        assertTrue(secondDraftCell.isPreviewInvalid());
+        assertFalse(firstDraftCell.isPreviewValid());
+        assertFalse(secondDraftCell.isPreviewValid());
     }
 
     @Test
     public void sessionSnapshotIncludesSettlementAfterGameEnds() {
         GameSession session = createInProgressSession();
-        GameApplicationServiceImpl service =
-                new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
+        GameApplicationServiceImpl service = createService(Set.of("AT"));
 
         service.passTurn(session);
         service.passTurn(session);
@@ -102,6 +175,7 @@ public class GameSessionSnapshotTest {
         assertEquals(SessionStatus.COMPLETED, snapshot.getSessionStatus());
         assertEquals(GameEndReason.ALL_PLAYERS_PASSED, snapshot.getGameEndReason());
         assertNotNull(snapshot.getSettlementResult());
+        assertNull(snapshot.getAiRuntimeSnapshot());
         assertEquals(GameEndReason.ALL_PLAYERS_PASSED, snapshot.getSettlementResult().getEndReason());
     }
 
@@ -122,6 +196,10 @@ public class GameSessionSnapshotTest {
         return session;
     }
 
+    private GameApplicationServiceImpl createService(Set<String> acceptedWords) {
+        return new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository(acceptedWords));
+    }
+
     private Tile drawTileWithLetter(TileBag tileBag, char letter) {
         while (!tileBag.isEmpty()) {
             Tile tile = tileBag.drawTile();
@@ -132,14 +210,27 @@ public class GameSessionSnapshotTest {
         throw new AssertionError("Expected tile with letter " + letter + " to be available.");
     }
 
+    private BoardCellRenderSnapshot findBoardCell(GameSessionSnapshot snapshot, int row, int col) {
+        return snapshot.getBoardCells().stream()
+                .filter(cell -> cell.getRow() == row && cell.getCol() == col)
+                .findFirst()
+                .orElseThrow();
+    }
+
     private static class StubDictionaryRepository extends DictionaryRepository {
+        private final Set<String> acceptedWords;
+
+        private StubDictionaryRepository(Set<String> acceptedWords) {
+            this.acceptedWords = acceptedWords;
+        }
+
         @Override
         public void loadDictionary(DictionaryType dictionaryType) {
         }
 
         @Override
         public Set<String> getDictionary() {
-            return Set.of("AT");
+            return acceptedWords;
         }
 
         @Override
@@ -149,7 +240,7 @@ public class GameSessionSnapshotTest {
 
         @Override
         public boolean isAccepted(String word) {
-            return "AT".equalsIgnoreCase(word);
+            return acceptedWords.contains(word.toUpperCase());
         }
     }
 }
