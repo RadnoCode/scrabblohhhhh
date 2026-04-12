@@ -1,5 +1,6 @@
 package com.kotva;
 
+import com.kotva.launcher.AppContext;
 import com.kotva.presentation.fx.SceneNavigator;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -11,7 +12,7 @@ import javafx.stage.Stage;
 public class FrontEndTest extends Application {
     @Override
     public void start(Stage stage) {
-        SceneNavigator navigator = new SceneNavigator(stage);
+        SceneNavigator navigator = new SceneNavigator(stage, new AppContext());
         navigator.showHome();
         stage.setMinWidth(1100);
         stage.setMinHeight(720);

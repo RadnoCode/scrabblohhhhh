@@ -79,6 +79,12 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         draftManager.removeTile(session.getTurnDraft(), tileId);
         return refreshPreview(session);
     }
+    @Override
+    public void assignLettertoBlank(GameSession session, String tileId, char assignedLetter) {
+        ensureEditingAllowed(session);
+        Tile tile =session.getGameState().getTileBag().getTileById(tileId);
+        tile.setAssignedLetter(assignedLetter);
+    }
 
     @Override
     public PreviewResult recallAllDraftTiles(GameSession session) {
@@ -159,8 +165,8 @@ public class GameApplicationServiceImpl implements GameApplicationService {
 
         return switch (action.type()) {
             case PLACE_TILE -> executePlace(session, currentPlayer, action);
-            case PASS_TURN -> executePass(session, action);
-            case LOSE -> executeLose(session, action);
+            case PASS_TURN -> executePass(session, currentPlayer, action);
+            case LOSE -> executeLose(session, currentPlayer, action);
         };
     }
 
@@ -179,6 +185,7 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         ruleEngine.apply(session.getGameState(), action);
         currentPlayer.addScore(awardedScore);
         refillRack(currentPlayer, session.getGameState().getTileBag());
+        clearRackBlankAssignments(currentPlayer);
         session.resetTurnDraft();
         clockService.stopTurnClock(session);
 
@@ -186,9 +193,10 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         return completeTransition(session, awardedScore, "Draft submitted.", settlementResult);
     }
 
-    private ActionDispatchResult executePass(GameSession session, PlayerAction action) {
+    private ActionDispatchResult executePass(GameSession session, Player currentPlayer, PlayerAction action) {
         RuleEngine ruleEngine = new RuleEngine(dictionaryRepository);
         ruleEngine.apply(session.getGameState(), action);
+        clearRackBlankAssignments(currentPlayer);
         session.resetTurnDraft();
         clockService.stopTurnClock(session);
 
@@ -196,9 +204,10 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         return completeTransition(session, 0, "Turn passed.", settlementResult);
     }
 
-    private ActionDispatchResult executeLose(GameSession session, PlayerAction action) {
+    private ActionDispatchResult executeLose(GameSession session, Player currentPlayer, PlayerAction action) {
         RuleEngine ruleEngine = new RuleEngine(dictionaryRepository);
         ruleEngine.apply(session.getGameState(), action);
+        clearRackBlankAssignments(currentPlayer);
         session.resetTurnDraft();
         clockService.stopTurnClock(session);
 
@@ -275,6 +284,19 @@ public class GameApplicationServiceImpl implements GameApplicationService {
                 return;
             }
             player.getRack().setTileAt(slot.getIndex(), drawnTile);
+        }
+    }
+
+    private void clearRackBlankAssignments(Player player) {
+        for (RackSlot slot : player.getRack().getSlots()) {
+            if (slot.isEmpty()) {
+                continue;
+            }
+
+            Tile tile = slot.getTile();
+            if (tile.isBlank()) {
+                tile.clearAssignedLetter();
+            }
         }
     }
 

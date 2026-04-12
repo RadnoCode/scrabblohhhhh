@@ -174,6 +174,40 @@ public class GameApplicationServiceImplSubmitDraftTest {
     }
 
     @Test
+    public void submitDraftClearsRemainingRackBlankAssignmentsAndMarksPlacedBlankFixed() {
+        RecordingSettlementService settlementService = new RecordingSettlementService();
+        GameSession session = createInProgressSession(settlementService);
+        GameApplicationServiceImpl service =
+                new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
+        Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
+        TileBag tileBag = session.getGameState().getTileBag();
+        Tile tileA = drawTileWithLetter(tileBag, 'A');
+        Tile placedBlank = drawBlankTile(tileBag);
+        Tile remainingBlank = drawBlankTile(tileBag);
+        currentPlayer.getRack().setTileAt(0, tileA);
+        currentPlayer.getRack().setTileAt(1, placedBlank);
+        currentPlayer.getRack().setTileAt(2, remainingBlank);
+        placedBlank.setAssignedLetter('T');
+        remainingBlank.setAssignedLetter('Z');
+
+        session.getTurnDraft()
+                .getPlacements()
+                .add(new DraftPlacement(tileA.getTileID(), new Position(7, 7)));
+        session.getTurnDraft()
+                .getPlacements()
+                .add(new DraftPlacement(placedBlank.getTileID(), new Position(7, 8)));
+
+        SubmitDraftResult result = service.submitDraft(session);
+
+        assertTrue(result.isSuccess());
+        Tile committedBlank = session.getGameState().getBoard().getCell(new Position(7, 8)).getPlacedTile();
+        assertEquals(placedBlank.getTileID(), committedBlank.getTileID());
+        assertEquals(Character.valueOf('T'), committedBlank.getAssignedLetter());
+        assertTrue(committedBlank.isFixed());
+        assertNull(remainingBlank.getAssignedLetter());
+    }
+
+    @Test
     public void draftEditingUpdatesOnlyDraftAndPreview() {
         RecordingSettlementService settlementService = new RecordingSettlementService();
         GameSession session = createInProgressSession(settlementService);
@@ -264,6 +298,23 @@ public class GameApplicationServiceImplSubmitDraftTest {
         assertEquals(0, settlementService.callCount);
     }
 
+    @Test
+    public void passTurnClearsAssignedLetterOnRackBlank() {
+        RecordingSettlementService settlementService = new RecordingSettlementService();
+        GameSession session = createInProgressSession(settlementService);
+        GameApplicationServiceImpl service =
+                new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
+        Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
+        Tile blank = drawBlankTile(session.getGameState().getTileBag());
+        currentPlayer.getRack().setTileAt(0, blank);
+        blank.setAssignedLetter('Q');
+
+        TurnTransitionResult result = service.passTurn(session);
+
+        assertTrue(result.isSuccess());
+        assertNull(blank.getAssignedLetter());
+    }
+
     private GameSession createInProgressSession(SettlementService settlementService) {
         Player first = new Player("p1", "Alice", PlayerType.LOCAL);
         Player second = new Player("p2", "Bob", PlayerType.LOCAL);
@@ -289,6 +340,16 @@ public class GameApplicationServiceImplSubmitDraftTest {
             }
         }
         throw new AssertionError("Expected tile with letter " + letter + " to be available.");
+    }
+
+    private Tile drawBlankTile(TileBag tileBag) {
+        while (!tileBag.isEmpty()) {
+            Tile tile = tileBag.drawTile();
+            if (tile.isBlank()) {
+                return tile;
+            }
+        }
+        throw new AssertionError("Expected blank tile to be available.");
     }
 
     private int countRackTiles(Player player) {

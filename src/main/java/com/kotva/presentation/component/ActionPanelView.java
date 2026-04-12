@@ -70,4 +70,12 @@ public class ActionPanelView extends StackPane {
     public WorkbenchButton getSubmitButton() {
         return submitButton;
     }
+
+    public void setInteractionLocked(boolean interactionLocked) {
+        skipTurnButton.setDisable(interactionLocked);
+        rearrangeButton.setDisable(interactionLocked);
+        recallButton.setDisable(interactionLocked);
+        resignButton.setDisable(interactionLocked);
+        submitButton.setDisable(interactionLocked);
+    }
 }

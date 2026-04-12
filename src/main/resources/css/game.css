@@ -62,3 +62,23 @@
     -fx-background-color: rgba(226, 219, 206, 0.82);
     -fx-background-radius: 30;
 }
+
+.game-ai-status-banner {
+    -fx-background-color: rgba(127, 38, 38, 0.94);
+    -fx-background-radius: 16;
+    -fx-border-color: rgba(233, 195, 195, 0.56);
+    -fx-border-radius: 16;
+    -fx-border-width: 1;
+    -fx-max-width: 460;
+}
+
+.game-ai-status-summary {
+    -fx-text-fill: #fff6f6;
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+}
+
+.game-ai-status-details {
+    -fx-text-fill: rgba(255, 240, 240, 0.88);
+    -fx-font-size: 12px;
+}

@@ -1,5 +1,7 @@
 package com.kotva.presentation.renderer;
 
+import com.kotva.presentation.component.ActionPanelView;
+import com.kotva.presentation.component.AiStatusBannerView;
 import com.kotva.presentation.component.BoardView;
 import com.kotva.presentation.component.PlayerInfoCardView;
 import com.kotva.presentation.component.RackView;
@@ -13,6 +15,10 @@ import java.util.Objects;
  * GameRenderer 负责把控制器产出的 ViewModel 真正落到界面组件上。
  */
 public class GameRenderer {
+    private final BoardView boardView;
+    private final RackView rackView;
+    private final ActionPanelView actionPanelView;
+    private final AiStatusBannerView aiStatusBannerView;
     private final TimerView stepTimerView;
     private final TimerView totalTimerView;
     private final List<PlayerInfoCardView> playerCards;
@@ -23,12 +29,18 @@ public class GameRenderer {
     public GameRenderer(
             BoardView boardView,
             RackView rackView,
+            ActionPanelView actionPanelView,
+            AiStatusBannerView aiStatusBannerView,
             TimerView stepTimerView,
             TimerView totalTimerView,
             List<PlayerInfoCardView> playerCards,
             GameDraftState draftState,
             PreviewRenderer previewRenderer) {
-        Objects.requireNonNull(rackView, "rackView cannot be null.");
+        this.boardView = Objects.requireNonNull(boardView, "boardView cannot be null.");
+        this.rackView = Objects.requireNonNull(rackView, "rackView cannot be null.");
+        this.actionPanelView = Objects.requireNonNull(actionPanelView, "actionPanelView cannot be null.");
+        this.aiStatusBannerView =
+                Objects.requireNonNull(aiStatusBannerView, "aiStatusBannerView cannot be null.");
         this.stepTimerView = Objects.requireNonNull(stepTimerView, "stepTimerView cannot be null.");
         this.totalTimerView = Objects.requireNonNull(totalTimerView, "totalTimerView cannot be null.");
         this.playerCards = List.copyOf(Objects.requireNonNull(playerCards, "playerCards cannot be null."));
@@ -54,6 +66,16 @@ public class GameRenderer {
         totalTimerView.setTimeText(viewModel.getTotalTimerText());
         boardRenderer.render();
         rackRenderer.render();
+        boardView.setDisable(viewModel.isInteractionLocked());
+        rackView.setDisable(viewModel.isInteractionLocked());
+        actionPanelView.setInteractionLocked(viewModel.isInteractionLocked());
+        if (viewModel.getAiErrorSummary().isBlank()) {
+            aiStatusBannerView.clear();
+        } else {
+            aiStatusBannerView.showMessage(
+                    viewModel.getAiErrorSummary(),
+                    viewModel.getAiErrorDetails());
+        }
 
         List<GameViewModel.PlayerCardModel> cardModels = viewModel.getPlayerCards();
         for (int index = 0; index < playerCards.size(); index++) {

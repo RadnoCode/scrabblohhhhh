@@ -54,7 +54,6 @@ public class Cell {
      */
     public void setPlacedTile(Tile tile) {
         if (!this.isEmpty()) {
-            // TODO: UI should put the dragging back.
             throw new IllegalStateException("This cell is already occupied");
         }
         this.placedTile = tile;

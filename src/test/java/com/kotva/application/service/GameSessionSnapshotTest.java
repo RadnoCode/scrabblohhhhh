@@ -70,6 +70,7 @@ public class GameSessionSnapshotTest {
                 snapshot.getPreview().getHighlights().stream()
                         .allMatch(highlight -> highlight.getRow() == 7 && highlight.getCol() >= 7 && highlight.getCol() <= 8));
         assertNull(snapshot.getSettlementResult());
+        assertNull(snapshot.getAiRuntimeSnapshot());
 
         GamePlayerSnapshot firstPlayer =
                 snapshot.getPlayers().stream()
@@ -174,6 +175,7 @@ public class GameSessionSnapshotTest {
         assertEquals(SessionStatus.COMPLETED, snapshot.getSessionStatus());
         assertEquals(GameEndReason.ALL_PLAYERS_PASSED, snapshot.getGameEndReason());
         assertNotNull(snapshot.getSettlementResult());
+        assertNull(snapshot.getAiRuntimeSnapshot());
         assertEquals(GameEndReason.ALL_PLAYERS_PASSED, snapshot.getSettlementResult().getEndReason());
     }
 

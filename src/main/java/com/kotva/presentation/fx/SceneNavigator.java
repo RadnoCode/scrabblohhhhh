@@ -40,10 +40,11 @@ public class SceneNavigator {
     private final Deque<PageType> history;
     private GameLaunchContext gameLaunchContext;
     private PageType currentPage;
+    private GameController gameController;
 
-    public SceneNavigator(Stage stage) {
-        this.stage = stage;
-        this.appContext = new AppContext();
+    public SceneNavigator(Stage stage, AppContext appContext) {
+        this.stage = java.util.Objects.requireNonNull(stage, "stage cannot be null.");
+        this.appContext = java.util.Objects.requireNonNull(appContext, "appContext cannot be null.");
         this.history = new ArrayDeque<>();
     }
 
@@ -111,6 +112,7 @@ public class SceneNavigator {
             history.push(currentPage);
         }
 
+        releaseCurrentPage();
         currentPage = pageType;
 
         switch (pageType) {
@@ -148,10 +150,18 @@ public class SceneNavigator {
         GameController controller = new GameController(this, gameLaunchContext != null
                 ? gameLaunchContext
                 : GameLaunchContext.defaultContext());
+        gameController = controller;
         GameScene scene = new GameScene(controller);
         stage.setTitle("Scrabble Game");
         stage.setScene(scene);
         stage.show();
+    }
+
+    private void releaseCurrentPage() {
+        if (currentPage == PageType.GAME && gameController != null) {
+            gameController.shutdown();
+            gameController = null;
+        }
     }
 
     private void showSettingsScene() {

@@ -56,6 +56,9 @@ public class GameSetupServiceImpl implements GameSetupService {
         if (gameMode == GameMode.HUMAN_VS_AI && playerCount != 2) {
             throw new IllegalArgumentException("HUMAN_VS_AI currently requires exactly 2 players.");
         }
+        if (gameMode == GameMode.HUMAN_VS_AI && request.getAiDifficulty() == null) {
+            throw new IllegalArgumentException("HUMAN_VS_AI requires aiDifficulty.");
+        }
 
         if (request.getDictionaryType() == null) {
             throw new IllegalArgumentException("dictionaryType cannot be null.");
@@ -82,7 +85,8 @@ public class GameSetupServiceImpl implements GameSetupService {
                 gameMode,
                 players,
                 request.getDictionaryType(),
-                request.getTimeControlConfig());
+                request.getTimeControlConfig(),
+                request.getAiDifficulty());
     }
 
     @Override
