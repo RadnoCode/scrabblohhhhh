@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class QuackleNativeBridge {
     private static final long ERROR_BUFFER_CAPACITY = 1024L;
+    private static final int MAX_MOVE_OPTION_COUNT = 10;
     private static final Set<Path> PRELOADED_NATIVE_DEPENDENCIES =
             ConcurrentHashMap.newKeySet();
 
@@ -60,6 +61,11 @@ public final class QuackleNativeBridge {
             MemoryLayout.sequenceLayout(7, PLACEMENT_LAYOUT).withName("placements"),
             MemoryLayout.paddingLayout(4));
 
+    private static final MemoryLayout RESULT_LIST_LAYOUT = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT.withName("moveCount"),
+            MemoryLayout.paddingLayout(4),
+            MemoryLayout.sequenceLayout(MAX_MOVE_OPTION_COUNT, RESULT_LAYOUT).withName("moves"));
+
     private static final long INIT_DATA_DIR_OFFSET = offset(INIT_LAYOUT, "dataDir");
     private static final long INIT_DICTIONARY_ID_OFFSET = offset(INIT_LAYOUT, "dictionaryId");
     private static final long INIT_DIFFICULTY_ID_OFFSET = offset(INIT_LAYOUT, "difficultyId");
@@ -81,6 +87,8 @@ public final class QuackleNativeBridge {
     private static final long RESULT_EQUITY_OFFSET = offset(RESULT_LAYOUT, "equity");
     private static final long RESULT_WIN_OFFSET = offset(RESULT_LAYOUT, "win");
     private static final long RESULT_PLACEMENTS_OFFSET = offset(RESULT_LAYOUT, "placements");
+    private static final long RESULT_LIST_MOVE_COUNT_OFFSET = offset(RESULT_LIST_LAYOUT, "moveCount");
+    private static final long RESULT_LIST_MOVES_OFFSET = offset(RESULT_LIST_LAYOUT, "moves");
 
     private static final long PLACEMENT_ROW_OFFSET = offset(PLACEMENT_LAYOUT, "row");
     private static final long PLACEMENT_COL_OFFSET = offset(PLACEMENT_LAYOUT, "col");
@@ -261,7 +269,14 @@ public final class QuackleNativeBridge {
         if (configuredPath != null && !configuredPath.isBlank()) {
             return Path.of(configuredPath);
         }
-        return Path.of(System.getProperty("user.dir")).resolve("../../quackle-master/data");
+
+        Path projectRoot = Path.of(System.getProperty("user.dir"));
+        Path bundledDataDirectory = projectRoot.resolve("quackle-master").resolve("data");
+        if (Files.isDirectory(bundledDataDirectory)) {
+            return bundledDataDirectory;
+        }
+
+        return projectRoot.resolve("../../quackle-master/data");
     }
 
     private static boolean isWindows() {
@@ -310,7 +325,7 @@ public final class QuackleNativeBridge {
                 position.set(ValueLayout.JAVA_INT, POSITION_AI_SCORE_OFFSET, snapshot.aiScore());
                 position.set(ValueLayout.JAVA_INT, POSITION_OPPONENT_SCORE_OFFSET, snapshot.opponentScore());
 
-                MemorySegment result = arena.allocate(RESULT_LAYOUT).fill((byte) 0);
+                MemorySegment result = arena.allocate(RESULT_LIST_LAYOUT).fill((byte) 0);
                 MemorySegment errorBuffer = arena.allocate(ERROR_BUFFER_CAPACITY).fill((byte) 0);
 
                 int status = (int) bindings.chooseHandle.invoke(
@@ -323,7 +338,7 @@ public final class QuackleNativeBridge {
                     throw new IllegalStateException(readError(errorBuffer));
                 }
 
-                return AiMoveOptionSet.ofSingle(decodeMove(result));
+                return decodeMoveOptions(result);
             } catch (RuntimeException exception) {
                 throw exception;
             } catch (Throwable throwable) {
@@ -397,6 +412,19 @@ public final class QuackleNativeBridge {
             }
 
             return new AiMove(AiMove.Action.PLACE, placements, score, equity, win);
+        }
+
+        private static AiMoveOptionSet decodeMoveOptions(MemorySegment resultList) {
+            int moveCount = resultList.get(ValueLayout.JAVA_INT, RESULT_LIST_MOVE_COUNT_OFFSET);
+            int boundedMoveCount = Math.max(0, Math.min(moveCount, MAX_MOVE_OPTION_COUNT));
+            List<AiMove> moves = new ArrayList<>(boundedMoveCount);
+            for (int index = 0; index < boundedMoveCount; index++) {
+                MemorySegment moveResult = resultList.asSlice(
+                        RESULT_LIST_MOVES_OFFSET + index * RESULT_LAYOUT.byteSize(),
+                        RESULT_LAYOUT.byteSize());
+                moves.add(decodeMove(moveResult));
+            }
+            return new AiMoveOptionSet(moves);
         }
     }
 

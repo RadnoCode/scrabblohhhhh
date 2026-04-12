@@ -3,19 +3,17 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-QUACKLE_ROOT="${QUACKLE_ROOT:-${PROJECT_ROOT}/../../quackle-master}"
+QUACKLE_ROOT="${QUACKLE_ROOT:-${PROJECT_ROOT}/quackle-master}"
 BUILD_DIR="${QUACKLE_ROOT}/build/windows-x86_64"
-TOOLCHAIN_FILE="${QUACKLE_ROOT}/cmake/toolchains/mingw-w64-x86_64.cmake"
 OUTPUT_DIR="${PROJECT_ROOT}/native"
 TARGET_DLL="${OUTPUT_DIR}/quackle_ffm.dll"
-MINGW_BIN_DIR="$(brew --prefix mingw-w64)/toolchain-x86_64/x86_64-w64-mingw32/bin"
+MINGW_BIN_DIR="$(dirname "$(command -v g++)")"
 
 cmake \
   -S "${QUACKLE_ROOT}" \
   -B "${BUILD_DIR}" \
-  -G "Unix Makefiles" \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}"
+  -G "MinGW Makefiles" \
+  -DCMAKE_BUILD_TYPE=Release
 
 cmake --build "${BUILD_DIR}" --target quackle_ffm -j
 

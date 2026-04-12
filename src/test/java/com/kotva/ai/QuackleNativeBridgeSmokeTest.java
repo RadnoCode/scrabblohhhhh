@@ -1,5 +1,6 @@
 package com.kotva.ai;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -31,8 +32,14 @@ public class QuackleNativeBridgeSmokeTest {
 
         try (QuackleNativeBridge.Engine engine =
                     bridge.createEngine(DictionaryType.AM, AiDifficulty.EASY)) {
-            AiMove move = engine.chooseMove(snapshot);
-            assertNotNull(move);
+            AiMoveOptionSet moveOptions = engine.chooseMoveOptions(snapshot);
+            assertNotNull(moveOptions);
+            assertTrue(!moveOptions.isEmpty());
+            assertTrue(moveOptions.size() > 1);
+            assertTrue(moveOptions.size() <= 10);
+
+            AiMove move = moveOptions.moves().get(0);
+            assertEquals(move, engine.chooseMove(snapshot));
             assertNotNull(move.action());
             if (move.action() == AiMove.Action.PLACE) {
                 assertTrue(!move.placements().isEmpty());

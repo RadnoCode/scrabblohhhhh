@@ -76,3 +76,6 @@ add_library(libquackle
 )
 
 target_link_libraries(libquackle Threads::Threads)
+
+add_library(quackle_ffm SHARED quackle_ffm.cpp)
+target_link_libraries(quackle_ffm PRIVATE libquackle Threads::Threads)
