@@ -402,7 +402,12 @@ public class GameController implements GameActionPort {
 
     @Override
     public void onResignRequested() {
-        // Not wired yet.
+        if (isInteractionLocked()) {
+            return;
+        }
+        tickClockBeforeActionIfNeeded();
+        gameRuntime.resign(trackPendingClientAction(nextClientActionId("resign")));
+        refreshSnapshotAfterAction();
     }
 
     private boolean resolveInteractionLocked(

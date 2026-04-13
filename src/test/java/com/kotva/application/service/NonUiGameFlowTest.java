@@ -1,6 +1,7 @@
 package com.kotva.application.service;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -58,6 +59,39 @@ public class NonUiGameFlowTest {
                 GameEndReason.ALL_PLAYERS_PASSED,
                 session.getTurnCoordinator().getSettlementResult().getEndReason());
         assertEquals(2, session.getTurnCoordinator().getTurnNumber());
+    }
+
+    @Test
+    public void resigningPlayerLeavesMatchAndRemainingPlayersContinue() {
+        ClockService clockService = new ClockServiceImpl();
+        StubDictionaryRepository dictionaryRepository = new StubDictionaryRepository();
+        GameSetupService setupService =
+                new GameSetupServiceImpl(dictionaryRepository, clockService, new Random(17L));
+        GameApplicationService applicationService =
+                new GameApplicationServiceImpl(clockService, dictionaryRepository);
+
+        GameSession session =
+                setupService.startNewGame(
+                        new NewGameRequest(
+                                GameMode.HOT_SEAT,
+                                3,
+                                List.of("Alice", "Bob", "Cleo"),
+                                DictionaryType.AM,
+                                null));
+
+        PlayerController firstController =
+                session.getGameState().requireCurrentActivePlayer().getController();
+        String resigningPlayerId = session.getGameState().requireCurrentActivePlayer().getPlayerId();
+        GameActionResult result = firstController.resign(applicationService, session, "ui-resign-1");
+
+        assertTrue(result.isSuccess());
+        assertEquals("ui-resign-1", result.getClientActionId());
+        assertFalse(result.isGameEnded());
+        assertEquals(SessionStatus.IN_PROGRESS, session.getSessionStatus());
+        assertFalse(session.getGameState().getPlayerById(resigningPlayerId).getActive());
+        assertFalse(
+                resigningPlayerId.equals(
+                        session.getGameState().requireCurrentActivePlayer().getPlayerId()));
     }
 
     private static class StubDictionaryRepository extends DictionaryRepository {

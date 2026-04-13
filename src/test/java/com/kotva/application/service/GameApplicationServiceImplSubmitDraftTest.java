@@ -376,16 +376,70 @@ public class GameApplicationServiceImplSubmitDraftTest {
         assertSame(result, session.getLatestActionResult());
     }
 
+    @Test
+    public void resignDeactivatesPlayerAdvancesTurnAndEchoesClientActionIdWhenOthersRemain() {
+        RecordingSettlementService settlementService = new RecordingSettlementService();
+        GameSession session =
+                createInProgressSession(settlementService, "Alice", "Bob", "Cleo");
+        GameApplicationServiceImpl service =
+                new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
+
+        GameActionResult result = service.resign(session, "ui-resign-1");
+
+        assertTrue(result.isSuccess());
+        assertEquals("Player resigned.", result.getMessage());
+        assertEquals("ui-resign-1", result.getClientActionId());
+        assertEquals("p1", result.getPlayerId());
+        assertEquals("p2", result.getNextPlayerId());
+        assertFalse(result.isGameEnded());
+        assertSame(result, session.getLatestActionResult());
+        assertFalse(session.getGameState().getPlayerById("p1").getActive());
+        assertEquals("p2", session.getGameState().requireCurrentActivePlayer().getPlayerId());
+        assertEquals(SessionStatus.IN_PROGRESS, session.getSessionStatus());
+        assertEquals(0, settlementService.callCount);
+    }
+
+    @Test
+    public void resignEndsGameWhenOnlyOneActivePlayerRemains() {
+        RecordingSettlementService settlementService = new RecordingSettlementService();
+        GameSession session = createInProgressSession(settlementService);
+        GameApplicationServiceImpl service =
+                new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
+
+        GameActionResult result = service.resign(session);
+
+        assertTrue(result.isSuccess());
+        assertEquals("Player resigned.", result.getMessage());
+        assertTrue(result.isGameEnded());
+        assertNull(result.getNextPlayerId());
+        assertFalse(session.getGameState().getPlayerById("p1").getActive());
+        assertEquals(SessionStatus.COMPLETED, session.getSessionStatus());
+        assertEquals(
+                GameEndReason.ONLY_ONE_PLAYER_REMAINING,
+                session.getGameState().getGameEndReason());
+        assertEquals(1, settlementService.callCount);
+    }
+
     private GameSession createInProgressSession(SettlementService settlementService) {
-        Player first = new Player("p1", "Alice", PlayerType.LOCAL);
-        Player second = new Player("p2", "Bob", PlayerType.LOCAL);
-        GameState gameState = new GameState(List.of(first, second));
+        return createInProgressSession(settlementService, "Alice", "Bob");
+    }
+
+    private GameSession createInProgressSession(
+            SettlementService settlementService, String... playerNames) {
+        List<Player> players = new java.util.ArrayList<>();
+        List<PlayerConfig> playerConfigs = new java.util.ArrayList<>();
+        for (int index = 0; index < playerNames.length; index++) {
+            String playerId = "p" + (index + 1);
+            String playerName = playerNames[index];
+            players.add(new Player(playerId, playerName, PlayerType.LOCAL));
+            playerConfigs.add(new PlayerConfig(playerName, PlayerType.LOCAL));
+        }
+
+        GameState gameState = new GameState(players);
         GameConfig config =
                 new GameConfig(
                         GameMode.HOT_SEAT,
-                        List.of(
-                                new PlayerConfig("Alice", PlayerType.LOCAL),
-                                new PlayerConfig("Bob", PlayerType.LOCAL)),
+                        playerConfigs,
                         DictionaryType.AM,
                         null);
         GameSession session = new GameSession("session-1", config, gameState, settlementService);

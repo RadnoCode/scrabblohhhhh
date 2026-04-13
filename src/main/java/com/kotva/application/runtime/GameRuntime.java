@@ -42,6 +42,12 @@ public interface GameRuntime {
         passTurn();
     }
 
+    void resign();
+
+    default void resign(String clientActionId) {
+        resign();
+    }
+
     boolean hasAutomatedTurnSupport();
 
     boolean isCurrentTurnAutomated();

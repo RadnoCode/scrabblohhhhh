@@ -117,6 +117,21 @@ public class GameApplicationServiceImpl implements GameApplicationService {
     }
 
     @Override
+    public GameActionResult resign(GameSession session) {
+        return resign(session, null);
+    }
+
+    @Override
+    public GameActionResult resign(GameSession session, String clientActionId) {
+        Player currentPlayer = requireCurrentPlayer(session);
+        return executeAction(
+                session,
+                PlayerAction.lose(currentPlayer.getPlayerId()),
+                clientActionId,
+                "Player resigned.");
+    }
+
+    @Override
     public void confirmHotSeatHandoff(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
     }
@@ -154,6 +169,14 @@ public class GameApplicationServiceImpl implements GameApplicationService {
 
     private GameActionResult executeAction(
             GameSession session, PlayerAction action, String clientActionId) {
+        return executeAction(session, action, clientActionId, "Player resigned.");
+    }
+
+    private GameActionResult executeAction(
+            GameSession session,
+            PlayerAction action,
+            String clientActionId,
+            String loseMessage) {
         Objects.requireNonNull(session, "session cannot be null.");
         Objects.requireNonNull(action, "action cannot be null.");
         ensureSessionInProgress(session);
@@ -169,7 +192,13 @@ public class GameApplicationServiceImpl implements GameApplicationService {
                     case PASS_TURN ->
                             executePass(session, currentPlayer, action, actionId, clientActionId);
                     case LOSE ->
-                            executeLose(session, currentPlayer, action, actionId, clientActionId);
+                            executeLose(
+                                    session,
+                                    currentPlayer,
+                                    action,
+                                    actionId,
+                                    clientActionId,
+                                    loseMessage);
                 };
         session.setLatestActionResult(result);
         return result;
@@ -229,7 +258,8 @@ public class GameApplicationServiceImpl implements GameApplicationService {
             Player currentPlayer,
             PlayerAction action,
             String actionId,
-            String clientActionId) {
+            String clientActionId,
+            String message) {
         RuleEngine ruleEngine = new RuleEngine(dictionaryRepository);
         ruleEngine.apply(session.getGameState(), action);
         clearRackBlankAssignments(currentPlayer);
@@ -243,7 +273,7 @@ public class GameApplicationServiceImpl implements GameApplicationService {
                 clientActionId,
                 action,
                 0,
-                "Player lost the turn.");
+                message);
     }
 
     public GameActionResult executeRemoteCommand(GameSession session, PlayerAction action) {
@@ -292,7 +322,11 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         }
 
         if (currentPlayer.getClock().getPhase() == ClockPhase.TIMEOUT) {
-            executeAction(session, PlayerAction.lose(currentPlayer.getPlayerId()), null);
+            executeAction(
+                    session,
+                    PlayerAction.lose(currentPlayer.getPlayerId()),
+                    null,
+                    "Player timed out.");
         }
     }
 

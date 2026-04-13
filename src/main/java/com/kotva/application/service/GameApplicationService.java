@@ -24,6 +24,10 @@ public interface GameApplicationService {
 
     GameActionResult passTurn(GameSession session, String clientActionId);
 
+    GameActionResult resign(GameSession session);
+
+    GameActionResult resign(GameSession session, String clientActionId);
+
     void confirmHotSeatHandoff(GameSession session);
 
     GameSessionSnapshot tickClock(GameSession session, long elapsedMillis);

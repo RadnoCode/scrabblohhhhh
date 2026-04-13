@@ -81,6 +81,15 @@ public class PlayerController {
         return requireService(service).passTurn(session, clientActionId);
     }
 
+    public GameActionResult resign(GameApplicationService service, GameSession session) {
+        return requireService(service).resign(session);
+    }
+
+    public GameActionResult resign(
+            GameApplicationService service, GameSession session, String clientActionId) {
+        return requireService(service).resign(session, clientActionId);
+    }
+
     public boolean supportsAutomatedTurn() {
         return false;
     }

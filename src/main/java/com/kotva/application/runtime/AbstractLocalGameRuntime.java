@@ -126,6 +126,19 @@ abstract class AbstractLocalGameRuntime implements GameRuntime {
     }
 
     @Override
+    public void resign() {
+        requireCurrentPlayerController().resign(gameApplicationService, requireSession());
+    }
+
+    @Override
+    public void resign(String clientActionId) {
+        requireCurrentPlayerController().resign(
+                gameApplicationService,
+                requireSession(),
+                clientActionId);
+    }
+
+    @Override
     public boolean hasAutomatedTurnSupport() {
         return false;
     }

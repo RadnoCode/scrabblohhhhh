@@ -55,6 +55,30 @@ public class GameRuntimeFactoryTest {
     }
 
     @Test
+    public void hotSeatRuntimeAllowsCurrentPlayerToResignAndContinueWithRemainingPlayers() {
+        GameRuntimeFactory runtimeFactory = createRuntimeFactory();
+        NewGameRequest request =
+                new NewGameRequest(
+                        GameMode.HOT_SEAT,
+                        3,
+                        List.of("Alice", "Bob", "Cleo"),
+                        DictionaryType.AM,
+                        null);
+
+        GameRuntime runtime = runtimeFactory.create(request);
+        runtime.start(request);
+        String resigningPlayerId = runtime.getSession().getGameState().requireCurrentActivePlayer().getPlayerId();
+
+        runtime.resign();
+
+        assertEquals(SessionStatus.IN_PROGRESS, runtime.getSession().getSessionStatus());
+        assertFalse(runtime.getSession().getGameState().getPlayerById(resigningPlayerId).getActive());
+        assertFalse(
+                resigningPlayerId.equals(
+                        runtime.getSession().getGameState().requireCurrentActivePlayer().getPlayerId()));
+    }
+
+    @Test
     public void aiModeCreatesDedicatedAiRuntime() {
         GameRuntimeFactory runtimeFactory = createRuntimeFactory();
         NewGameRequest request =
