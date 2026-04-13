@@ -81,6 +81,7 @@ public final class GameSessionSnapshotFactory {
                 buildCurrentRackTiles(currentPlayer),
                 buildDraftPlacements(session),
                 previewSnapshot,
+                session.getLatestActionResult(),
                 session.getTurnCoordinator().getSettlementResult(),
                 aiRuntimeSnapshot);
     }

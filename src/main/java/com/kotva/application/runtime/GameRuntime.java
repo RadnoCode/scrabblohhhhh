@@ -32,7 +32,15 @@ public interface GameRuntime {
 
     void submitDraft();
 
+    default void submitDraft(String clientActionId) {
+        submitDraft();
+    }
+
     void passTurn();
+
+    default void passTurn(String clientActionId) {
+        passTurn();
+    }
 
     boolean hasAutomatedTurnSupport();
 

@@ -69,6 +69,7 @@ public class GameSessionSnapshotTest {
         assertTrue(
                 snapshot.getPreview().getHighlights().stream()
                         .allMatch(highlight -> highlight.getRow() == 7 && highlight.getCol() >= 7 && highlight.getCol() <= 8));
+        assertNull(snapshot.getLatestActionResult());
         assertNull(snapshot.getSettlementResult());
         assertNull(snapshot.getAiRuntimeSnapshot());
 
@@ -166,14 +167,20 @@ public class GameSessionSnapshotTest {
         GameSession session = createInProgressSession();
         GameApplicationServiceImpl service = createService(Set.of("AT"));
 
-        service.passTurn(session);
-        service.passTurn(session);
+        GameActionResult firstResult = service.passTurn(session, "ui-pass-1");
+        GameActionResult secondResult = service.passTurn(session, "ui-pass-2");
 
         GameSessionSnapshot snapshot = service.getSessionSnapshot(session);
 
+        assertNotNull(firstResult.getActionId());
+        assertNotNull(secondResult.getActionId());
+        assertFalse(firstResult.getActionId().equals(secondResult.getActionId()));
         assertTrue(snapshot.isGameEnded());
         assertEquals(SessionStatus.COMPLETED, snapshot.getSessionStatus());
         assertEquals(GameEndReason.ALL_PLAYERS_PASSED, snapshot.getGameEndReason());
+        assertNotNull(snapshot.getLatestActionResult());
+        assertEquals(secondResult.getActionId(), snapshot.getLatestActionResult().getActionId());
+        assertEquals("ui-pass-2", snapshot.getLatestActionResult().getClientActionId());
         assertNotNull(snapshot.getSettlementResult());
         assertNull(snapshot.getAiRuntimeSnapshot());
         assertEquals(GameEndReason.ALL_PLAYERS_PASSED, snapshot.getSettlementResult().getEndReason());

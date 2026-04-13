@@ -11,6 +11,7 @@ public class GameState {
     private int currentPlayerIndex;
     private boolean gameOver;
     private GameEndReason gameEndReason;
+    private boolean firstMoveMade;
 
     public GameState(List<Player> players) {
         this.players = List.copyOf(players);
@@ -19,6 +20,7 @@ public class GameState {
         this.currentPlayerIndex = 0;
         this.gameOver = false;
         this.gameEndReason = null;
+        this.firstMoveMade = false;
     }
 
     public Board getBoard() {
@@ -107,6 +109,14 @@ public class GameState {
 
     public boolean isGameOver() {
         return gameOver;
+    }
+
+    public boolean isFirstMoveMade() {
+        return firstMoveMade;
+    }
+
+    public void markFirstMoveMade() {
+        this.firstMoveMade = true;
     }
 
     public GameEndReason getGameEndReason() {

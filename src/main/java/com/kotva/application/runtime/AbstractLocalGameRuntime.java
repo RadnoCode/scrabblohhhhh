@@ -105,8 +105,24 @@ abstract class AbstractLocalGameRuntime implements GameRuntime {
     }
 
     @Override
+    public void submitDraft(String clientActionId) {
+        requireCurrentPlayerController().submitDraft(
+                gameApplicationService,
+                requireSession(),
+                clientActionId);
+    }
+
+    @Override
     public void passTurn() {
         requireCurrentPlayerController().passTurn(gameApplicationService, requireSession());
+    }
+
+    @Override
+    public void passTurn(String clientActionId) {
+        requireCurrentPlayerController().passTurn(
+                gameApplicationService,
+                requireSession(),
+                clientActionId);
     }
 
     @Override

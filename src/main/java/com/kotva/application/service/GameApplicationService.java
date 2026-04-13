@@ -16,9 +16,13 @@ public interface GameApplicationService {
 
     PreviewResult recallAllDraftTiles(GameSession session);
 
-    SubmitDraftResult submitDraft(GameSession session);
+    GameActionResult submitDraft(GameSession session);
 
-    TurnTransitionResult passTurn(GameSession session);
+    GameActionResult submitDraft(GameSession session, String clientActionId);
+
+    GameActionResult passTurn(GameSession session);
+
+    GameActionResult passTurn(GameSession session, String clientActionId);
 
     void confirmHotSeatHandoff(GameSession session);
 

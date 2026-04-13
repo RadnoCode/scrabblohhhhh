@@ -6,8 +6,7 @@ import com.kotva.application.service.AiTurnAttemptResult;
 import com.kotva.application.preview.PreviewResult;
 import com.kotva.application.service.AiTurnCoordinator;
 import com.kotva.application.service.GameApplicationService;
-import com.kotva.application.service.SubmitDraftResult;
-import com.kotva.application.service.TurnTransitionResult;
+import com.kotva.application.service.GameActionResult;
 import com.kotva.application.session.GameSession;
 import com.kotva.domain.model.Position;
 import com.kotva.policy.PlayerType;
@@ -64,12 +63,22 @@ public class PlayerController {
         return requireService(service).recallAllDraftTiles(session);
     }
 
-    public SubmitDraftResult submitDraft(GameApplicationService service, GameSession session) {
+    public GameActionResult submitDraft(GameApplicationService service, GameSession session) {
         return requireService(service).submitDraft(session);
     }
 
-    public TurnTransitionResult passTurn(GameApplicationService service, GameSession session) {
+    public GameActionResult submitDraft(
+            GameApplicationService service, GameSession session, String clientActionId) {
+        return requireService(service).submitDraft(session, clientActionId);
+    }
+
+    public GameActionResult passTurn(GameApplicationService service, GameSession session) {
         return requireService(service).passTurn(session);
+    }
+
+    public GameActionResult passTurn(
+            GameApplicationService service, GameSession session, String clientActionId) {
+        return requireService(service).passTurn(session, clientActionId);
     }
 
     public boolean supportsAutomatedTurn() {

@@ -36,10 +36,17 @@ public class RuleEngine {
 
         Board board = state.getBoard();
         List<Position> placements = new ArrayList<>();
+        if (!state.isFirstMoveMade()) {
+            if(!MoveValidator.firstMove(action.placements().stream().map(ActionPlacement::position).toList())) {
+                return "First word shall sit on the center";
+            } else {
+                state.markFirstMoveMade();
+            }
+        }
         for (ActionPlacement placement : action.placements()) {
             placements.add(placement.position());
         }
-
+        
         if (!MoveValidator.isStraightLine(placements)) {
             return "Letters shall be in a line";
         }

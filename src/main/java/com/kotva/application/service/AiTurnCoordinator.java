@@ -64,7 +64,7 @@ public final class AiTurnCoordinator implements AutoCloseable {
 
         if (resolvedMove.action() == AiMove.Action.PASS) {
             try {
-                TurnTransitionResult result = controller.passTurn(gameApplicationService, session);
+                GameActionResult result = controller.passTurn(gameApplicationService, session);
                 if (result.isSuccess()) {
                     return AiTurnAttemptResult.accepted(move, 0, result.getNextPlayerId());
                 }
@@ -97,7 +97,7 @@ public final class AiTurnCoordinator implements AutoCloseable {
                         placement.position());
             }
 
-            SubmitDraftResult result = controller.submitDraft(gameApplicationService, session);
+            GameActionResult result = controller.submitDraft(gameApplicationService, session);
             if (result.isSuccess()) {
                 return AiTurnAttemptResult.accepted(
                         move,

@@ -2,6 +2,7 @@ package com.kotva.application.session;
 
 import com.kotva.application.result.BoardSnapshot;
 import com.kotva.application.result.SettlementResult;
+import com.kotva.application.service.GameActionResult;
 import com.kotva.domain.endgame.GameEndReason;
 import com.kotva.mode.GameMode;
 import com.kotva.policy.ClockPhase;
@@ -28,6 +29,7 @@ public class GameSessionSnapshot {
     private final List<RackTileSnapshot> currentRackTiles;
     private final List<DraftPlacementSnapshot> draftPlacements;
     private final PreviewSnapshot preview;
+    private final GameActionResult latestActionResult;
     private final SettlementResult settlementResult;
     private final AiRuntimeSnapshot aiRuntimeSnapshot;
 
@@ -50,6 +52,7 @@ public class GameSessionSnapshot {
             List<RackTileSnapshot> currentRackTiles,
             List<DraftPlacementSnapshot> draftPlacements,
             PreviewSnapshot preview,
+            GameActionResult latestActionResult,
             SettlementResult settlementResult,
             AiRuntimeSnapshot aiRuntimeSnapshot) {
         this.sessionId = Objects.requireNonNull(sessionId, "sessionId cannot be null.");
@@ -79,6 +82,7 @@ public class GameSessionSnapshot {
                 List.copyOf(
                         Objects.requireNonNull(draftPlacements, "draftPlacements cannot be null."));
         this.preview = preview;
+        this.latestActionResult = latestActionResult;
         this.settlementResult = settlementResult;
         this.aiRuntimeSnapshot = aiRuntimeSnapshot;
     }
@@ -153,6 +157,10 @@ public class GameSessionSnapshot {
 
     public PreviewSnapshot getPreview() {
         return preview;
+    }
+
+    public GameActionResult getLatestActionResult() {
+        return latestActionResult;
     }
 
     public SettlementResult getSettlementResult() {

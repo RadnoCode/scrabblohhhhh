@@ -3,6 +3,7 @@ package com.kotva.presentation.controller;
 import com.kotva.application.runtime.GameRuntime;
 import com.kotva.application.runtime.GameRuntimeFactory;
 import com.kotva.application.service.AiSessionRuntime;
+import com.kotva.application.service.GameActionResult;
 import com.kotva.application.session.AiRuntimeSnapshot;
 import com.kotva.application.session.BoardCellRenderSnapshot;
 import com.kotva.application.session.GamePlayerSnapshot;
@@ -24,6 +25,7 @@ import com.kotva.presentation.viewmodel.GameViewModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import javafx.application.Platform;
 import javafx.util.Duration;
 
@@ -39,10 +41,13 @@ public class GameController implements GameActionPort {
     private final GameLaunchContext launchContext;
     private final GameViewModel viewModel;
     private final GameDraftState draftState;
+    private final String presentationClientId;
     private UiScheduler uiScheduler;
     private GameRenderer renderer;
     private GameRuntime gameRuntime;
     private long lastTickNanos;
+    private long nextClientActionSequence;
+    private String pendingClientActionId;
     private boolean interactionLocked;
 
     public GameController(SceneNavigator navigator, GameLaunchContext launchContext) {
@@ -51,6 +56,8 @@ public class GameController implements GameActionPort {
         this.launchContext = Objects.requireNonNull(launchContext, "launchContext cannot be null.");
         this.viewModel = new GameViewModel("S C R A B B L E");
         this.draftState = new GameDraftState();
+        this.presentationClientId = UUID.randomUUID().toString();
+        this.nextClientActionSequence = 1L;
     }
 
     public GameViewModel getViewModel() {
@@ -59,6 +66,10 @@ public class GameController implements GameActionPort {
 
     public GameDraftState getDraftState() {
         return draftState;
+    }
+
+    public String getPendingClientActionId() {
+        return pendingClientActionId;
     }
 
     public GameSession getSession() {
@@ -87,6 +98,7 @@ public class GameController implements GameActionPort {
         shutdownRuntime();
         gameRuntime = gameRuntimeFactory.create(launchContext.getRequest());
         gameRuntime.start(launchContext.getRequest());
+        clearClientActionTracking();
 
         GameSessionSnapshot firstSnapshot = gameRuntime.getSessionSnapshot();
         renderSnapshot(firstSnapshot);
@@ -124,6 +136,7 @@ public class GameController implements GameActionPort {
 
     private void renderSnapshot(GameSessionSnapshot snapshot) {
         AiRuntimeSnapshot aiRuntimeSnapshot = snapshot.getAiRuntimeSnapshot();
+        syncClientActionTracking(snapshot);
         viewModel.setStepTimerTitle("Step Time");
         viewModel.setTotalTimerTitle("Total Time");
         viewModel.setTotalTimerText(resolveTotalTimerText(snapshot));
@@ -275,6 +288,7 @@ public class GameController implements GameActionPort {
             gameRuntime.shutdown();
             gameRuntime = null;
         }
+        clearClientActionTracking();
         interactionLocked = false;
     }
 
@@ -367,7 +381,7 @@ public class GameController implements GameActionPort {
             return;
         }
         tickClockBeforeActionIfNeeded();
-        gameRuntime.submitDraft();
+        gameRuntime.submitDraft(trackPendingClientAction(nextClientActionId("submit-draft")));
         refreshSnapshotAfterAction();
     }
 
@@ -377,7 +391,7 @@ public class GameController implements GameActionPort {
             return;
         }
         tickClockBeforeActionIfNeeded();
-        gameRuntime.passTurn();
+        gameRuntime.passTurn(trackPendingClientAction(nextClientActionId("pass-turn")));
         refreshSnapshotAfterAction();
     }
 
@@ -399,5 +413,34 @@ public class GameController implements GameActionPort {
         return gameRuntime != null
                 && snapshot.getSessionStatus() == SessionStatus.IN_PROGRESS
                 && gameRuntime.isCurrentTurnAutomated();
+    }
+
+    private String nextClientActionId(String actionName) {
+        Objects.requireNonNull(actionName, "actionName cannot be null.");
+        return presentationClientId + ":" + actionName + ":" + nextClientActionSequence++;
+    }
+
+    private String trackPendingClientAction(String clientActionId) {
+        pendingClientActionId =
+                Objects.requireNonNull(clientActionId, "clientActionId cannot be null.");
+        return clientActionId;
+    }
+
+    private void syncClientActionTracking(GameSessionSnapshot snapshot) {
+        Objects.requireNonNull(snapshot, "snapshot cannot be null.");
+        GameActionResult latestActionResult = snapshot.getLatestActionResult();
+        if (latestActionResult == null || latestActionResult.getClientActionId() == null) {
+            return;
+        }
+
+        if (!Objects.equals(latestActionResult.getClientActionId(), pendingClientActionId)) {
+            return;
+        }
+
+        pendingClientActionId = null;
+    }
+
+    private void clearClientActionTracking() {
+        pendingClientActionId = null;
     }
 }

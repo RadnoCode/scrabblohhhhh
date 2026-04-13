@@ -42,15 +42,16 @@ public class GameApplicationServiceImplSubmitDraftTest {
                 new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
         TurnDraft originalDraft = session.getTurnDraft();
 
-        SubmitDraftResult result = service.submitDraft(session);
+        GameActionResult result = service.submitDraft(session);
 
         assertFalse(result.isSuccess());
         assertEquals("No tiles placed", result.getMessage());
         assertEquals(0, result.getAwardedScore());
         assertEquals("p1", result.getNextPlayerId());
         assertFalse(result.isGameEnded());
-        assertNull(result.getSettlementResult());
+        assertEquals("p1", result.getPlayerId());
         assertSame(originalDraft, session.getTurnDraft());
+        assertSame(result, session.getLatestActionResult());
         assertTrue(session.getGameState().getBoard().getCell(new Position(7, 7)).isEmpty());
         assertEquals("p1", session.getGameState().requireCurrentActivePlayer().getPlayerId());
         assertEquals(0, settlementService.callCount);
@@ -77,15 +78,15 @@ public class GameApplicationServiceImplSubmitDraftTest {
                 .getPlacements()
                 .add(new DraftPlacement(tileT.getTileID(), new Position(7, 9)));
 
-        SubmitDraftResult result = service.submitDraft(session);
+        GameActionResult result = service.submitDraft(session);
 
         assertFalse(result.isSuccess());
         assertEquals("Letters shall be contiguous", result.getMessage());
         assertEquals(0, result.getAwardedScore());
         assertEquals("p1", result.getNextPlayerId());
         assertFalse(result.isGameEnded());
-        assertNull(result.getSettlementResult());
         assertSame(originalDraft, session.getTurnDraft());
+        assertSame(result, session.getLatestActionResult());
         assertTrue(session.getGameState().getBoard().getCell(new Position(7, 7)).isEmpty());
         assertTrue(session.getGameState().getBoard().getCell(new Position(7, 8)).isEmpty());
         assertTrue(session.getGameState().getBoard().getCell(new Position(7, 9)).isEmpty());
@@ -114,23 +115,52 @@ public class GameApplicationServiceImplSubmitDraftTest {
                 .getPlacements()
                 .add(new DraftPlacement(tileT.getTileID(), new Position(7, 8)));
 
-        SubmitDraftResult result = service.submitDraft(session);
+        GameActionResult result = service.submitDraft(session);
 
         assertTrue(result.isSuccess());
         assertEquals("Draft submitted.", result.getMessage());
         assertEquals(4, result.getAwardedScore());
         assertEquals("p2", result.getNextPlayerId());
         assertFalse(result.isGameEnded());
-        assertNull(result.getSettlementResult());
+        assertEquals("p1", result.getPlayerId());
+        assertNotNull(result.getActionId());
         assertEquals(4, currentPlayer.getScore());
         assertEquals(tileA.getTileID(), session.getGameState().getBoard().getCell(new Position(7, 7)).getPlacedTile().getTileID());
         assertEquals(tileT.getTileID(), session.getGameState().getBoard().getCell(new Position(7, 8)).getPlacedTile().getTileID());
         assertEquals(7, countRackTiles(currentPlayer));
         assertNotSame(originalDraft, session.getTurnDraft());
         assertTrue(session.getTurnDraft().getPlacements().isEmpty());
+        assertSame(result, session.getLatestActionResult());
         assertEquals("p2", session.getGameState().requireCurrentActivePlayer().getPlayerId());
         assertEquals(SessionStatus.IN_PROGRESS, session.getSessionStatus());
         assertEquals(0, settlementService.callCount);
+    }
+
+    @Test
+    public void submitDraftEchoesClientActionIdIntoActionResultAndSnapshot() {
+        RecordingSettlementService settlementService = new RecordingSettlementService();
+        GameSession session = createInProgressSession(settlementService);
+        GameApplicationServiceImpl service =
+                new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
+        Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
+        TileBag tileBag = session.getGameState().getTileBag();
+        Tile tileA = drawTileWithLetter(tileBag, 'A');
+        Tile tileT = drawTileWithLetter(tileBag, 'T');
+        currentPlayer.getRack().setTileAt(0, tileA);
+        currentPlayer.getRack().setTileAt(1, tileT);
+
+        session.getTurnDraft()
+                .getPlacements()
+                .add(new DraftPlacement(tileA.getTileID(), new Position(7, 7)));
+        session.getTurnDraft()
+                .getPlacements()
+                .add(new DraftPlacement(tileT.getTileID(), new Position(7, 8)));
+
+        GameActionResult result = service.submitDraft(session, "ui-submit-1");
+
+        assertEquals("ui-submit-1", result.getClientActionId());
+        assertSame(result, session.getLatestActionResult());
+        assertEquals("ui-submit-1", session.getLatestActionResult().getClientActionId());
     }
 
     @Test
@@ -156,15 +186,16 @@ public class GameApplicationServiceImplSubmitDraftTest {
                 .getPlacements()
                 .add(new DraftPlacement(tileT.getTileID(), new Position(7, 8)));
 
-        SubmitDraftResult result = service.submitDraft(session);
+        GameActionResult result = service.submitDraft(session);
 
         assertTrue(result.isSuccess());
         assertTrue(result.isGameEnded());
         assertNull(result.getNextPlayerId());
-        assertNotNull(result.getSettlementResult());
+        assertSame(result, session.getLatestActionResult());
+        assertNotNull(session.getTurnCoordinator().getSettlementResult());
         assertEquals(
                 GameEndReason.TILE_BAG_EMPTY_AND_PLAYER_FINISHED,
-                result.getSettlementResult().getEndReason());
+                session.getTurnCoordinator().getSettlementResult().getEndReason());
         assertEquals(SessionStatus.COMPLETED, session.getSessionStatus());
         assertTrue(session.getGameState().isGameOver());
         assertEquals(
@@ -197,7 +228,7 @@ public class GameApplicationServiceImplSubmitDraftTest {
                 .getPlacements()
                 .add(new DraftPlacement(placedBlank.getTileID(), new Position(7, 8)));
 
-        SubmitDraftResult result = service.submitDraft(session);
+        GameActionResult result = service.submitDraft(session);
 
         assertTrue(result.isSuccess());
         Tile committedBlank = session.getGameState().getBoard().getCell(new Position(7, 8)).getPlacedTile();
@@ -283,13 +314,13 @@ public class GameApplicationServiceImplSubmitDraftTest {
                 .getPlacements()
                 .add(new DraftPlacement(tile.getTileID(), new Position(7, 7)));
 
-        TurnTransitionResult result = service.passTurn(session);
+        GameActionResult result = service.passTurn(session);
 
         assertTrue(result.isSuccess());
         assertEquals("Turn passed.", result.getMessage());
         assertEquals("p2", result.getNextPlayerId());
         assertFalse(result.isGameEnded());
-        assertNull(result.getSettlementResult());
+        assertSame(result, session.getLatestActionResult());
         assertTrue(session.getTurnDraft().getPlacements().isEmpty());
         assertTrue(session.getGameState().getBoard().getCell(new Position(7, 7)).isEmpty());
         assertEquals("p2", session.getGameState().requireCurrentActivePlayer().getPlayerId());
@@ -309,10 +340,40 @@ public class GameApplicationServiceImplSubmitDraftTest {
         currentPlayer.getRack().setTileAt(0, blank);
         blank.setAssignedLetter('Q');
 
-        TurnTransitionResult result = service.passTurn(session);
+        GameActionResult result = service.passTurn(session);
 
         assertTrue(result.isSuccess());
         assertNull(blank.getAssignedLetter());
+    }
+
+    @Test
+    public void confirmHotSeatHandoffDoesNotClearLatestActionResult() {
+        RecordingSettlementService settlementService = new RecordingSettlementService();
+        GameSession session = createInProgressSession(settlementService);
+        GameApplicationServiceImpl service =
+                new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
+
+        GameActionResult result = service.passTurn(session);
+
+        assertSame(result, session.getLatestActionResult());
+
+        service.confirmHotSeatHandoff(session);
+
+        assertSame(result, session.getLatestActionResult());
+    }
+
+    @Test
+    public void passTurnEchoesClientActionIdIntoActionResult() {
+        RecordingSettlementService settlementService = new RecordingSettlementService();
+        GameSession session = createInProgressSession(settlementService);
+        GameApplicationServiceImpl service =
+                new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
+
+        GameActionResult result = service.passTurn(session, "ui-pass-1");
+
+        assertTrue(result.isSuccess());
+        assertEquals("ui-pass-1", result.getClientActionId());
+        assertSame(result, session.getLatestActionResult());
     }
 
     private GameSession createInProgressSession(SettlementService settlementService) {

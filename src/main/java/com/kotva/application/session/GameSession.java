@@ -2,6 +2,7 @@ package com.kotva.application.session;
 
 import com.kotva.application.TurnCoordinator;
 import com.kotva.application.draft.TurnDraft;
+import com.kotva.application.service.GameActionResult;
 import com.kotva.application.service.SettlementService;
 import com.kotva.application.service.SettlementServiceImpl;
 import com.kotva.domain.model.GameState;
@@ -16,6 +17,8 @@ public class GameSession {
     private SessionStatus sessionStatus;
     private final SettlementService settlementService;
     private final TurnCoordinator turnCoordinator;
+    private long nextActionSequence;
+    private GameActionResult latestActionResult;
 
     public GameSession(String sessionId, GameConfig config, GameState gameState) {
         this(sessionId, config, gameState, new SettlementServiceImpl());
@@ -34,6 +37,7 @@ public class GameSession {
         this.settlementService =
                 Objects.requireNonNull(settlementService, "settlementService cannot be null.");
         this.turnCoordinator = new TurnCoordinator(gameState, this.settlementService);
+        this.nextActionSequence = 1L;
     }
 
     public String getSessionId() {
@@ -74,5 +78,18 @@ public class GameSession {
 
     public TurnCoordinator getTurnCoordinator() {
         return turnCoordinator;
+    }
+
+    public String issueActionId() {
+        return sessionId + "-action-" + nextActionSequence++;
+    }
+
+    public GameActionResult getLatestActionResult() {
+        return latestActionResult;
+    }
+
+    public void setLatestActionResult(GameActionResult latestActionResult) {
+        this.latestActionResult =
+                Objects.requireNonNull(latestActionResult, "latestActionResult cannot be null.");
     }
 }

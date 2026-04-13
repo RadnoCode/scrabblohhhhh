@@ -39,7 +39,7 @@ public class NonUiGameFlowTest {
 
         PlayerController firstController =
                 session.getGameState().requireCurrentActivePlayer().getController();
-        TurnTransitionResult firstResult = firstController.passTurn(applicationService, session);
+        GameActionResult firstResult = firstController.passTurn(applicationService, session);
 
         assertTrue(firstResult.isSuccess());
         assertEquals(SessionStatus.IN_PROGRESS, session.getSessionStatus());
@@ -47,14 +47,16 @@ public class NonUiGameFlowTest {
 
         PlayerController secondController =
                 session.getGameState().requireCurrentActivePlayer().getController();
-        TurnTransitionResult secondResult = secondController.passTurn(applicationService, session);
+        GameActionResult secondResult = secondController.passTurn(applicationService, session);
 
         assertTrue(secondResult.isSuccess());
         assertTrue(secondResult.isGameEnded());
         assertEquals(SessionStatus.COMPLETED, session.getSessionStatus());
         assertEquals(GameEndReason.ALL_PLAYERS_PASSED, session.getGameState().getGameEndReason());
-        assertNotNull(secondResult.getSettlementResult());
-        assertEquals(GameEndReason.ALL_PLAYERS_PASSED, secondResult.getSettlementResult().getEndReason());
+        assertNotNull(session.getTurnCoordinator().getSettlementResult());
+        assertEquals(
+                GameEndReason.ALL_PLAYERS_PASSED,
+                session.getTurnCoordinator().getSettlementResult().getEndReason());
         assertEquals(2, session.getTurnCoordinator().getTurnNumber());
     }
 

@@ -3,7 +3,6 @@ package com.kotva.application.service;
 import com.kotva.application.draft.DraftManager;
 import com.kotva.application.draft.TurnDraftActionMapper;
 import com.kotva.application.preview.PreviewResult;
-import com.kotva.application.result.SettlementResult;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.session.GameSessionSnapshotFactory;
@@ -94,29 +93,27 @@ public class GameApplicationServiceImpl implements GameApplicationService {
     }
 
     @Override
-    public SubmitDraftResult submitDraft(GameSession session) {
-        Player currentPlayer = requireCurrentPlayer(session);
-        PlayerAction action = TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), session.getTurnDraft());
-        ActionDispatchResult result = executeAction(session, action);
-        return new SubmitDraftResult(
-                result.success,
-                result.message,
-                result.awardedScore,
-                result.nextPlayerId,
-                result.gameEnded,
-                result.settlementResult);
+    public GameActionResult submitDraft(GameSession session) {
+        return submitDraft(session, null);
     }
 
     @Override
-    public TurnTransitionResult passTurn(GameSession session) {
+    public GameActionResult submitDraft(GameSession session, String clientActionId) {
         Player currentPlayer = requireCurrentPlayer(session);
-        ActionDispatchResult result = executeAction(session, PlayerAction.pass(currentPlayer.getPlayerId()));
-        return new TurnTransitionResult(
-                result.success,
-                result.message,
-                result.nextPlayerId,
-                result.gameEnded,
-                result.settlementResult);
+        PlayerAction action =
+                TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), session.getTurnDraft());
+        return executeAction(session, action, clientActionId);
+    }
+
+    @Override
+    public GameActionResult passTurn(GameSession session) {
+        return passTurn(session, null);
+    }
+
+    @Override
+    public GameActionResult passTurn(GameSession session, String clientActionId) {
+        Player currentPlayer = requireCurrentPlayer(session);
+        return executeAction(session, PlayerAction.pass(currentPlayer.getPlayerId()), clientActionId);
     }
 
     @Override
@@ -155,28 +152,45 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         return previewResult;
     }
 
-    private ActionDispatchResult executeAction(GameSession session, PlayerAction action) {
+    private GameActionResult executeAction(
+            GameSession session, PlayerAction action, String clientActionId) {
         Objects.requireNonNull(session, "session cannot be null.");
         Objects.requireNonNull(action, "action cannot be null.");
         ensureSessionInProgress(session);
 
         Player currentPlayer = requireCurrentPlayer(session);
         validateActionOwner(currentPlayer, action);
+        String actionId = session.issueActionId();
 
-        return switch (action.type()) {
-            case PLACE_TILE -> executePlace(session, currentPlayer, action);
-            case PASS_TURN -> executePass(session, currentPlayer, action);
-            case LOSE -> executeLose(session, currentPlayer, action);
-        };
+        GameActionResult result =
+                switch (action.type()) {
+                    case PLACE_TILE ->
+                            executePlace(session, currentPlayer, action, actionId, clientActionId);
+                    case PASS_TURN ->
+                            executePass(session, currentPlayer, action, actionId, clientActionId);
+                    case LOSE ->
+                            executeLose(session, currentPlayer, action, actionId, clientActionId);
+                };
+        session.setLatestActionResult(result);
+        return result;
     }
 
-    private ActionDispatchResult executePlace(
-            GameSession session, Player currentPlayer, PlayerAction action) {
+    private GameActionResult executePlace(
+            GameSession session,
+            Player currentPlayer,
+            PlayerAction action,
+            String actionId,
+            String clientActionId) {
         ensureDictionaryLoaded(session);
         RuleEngine ruleEngine = new RuleEngine(dictionaryRepository);
         String validationMessage = ruleEngine.validateMove(session.getGameState(), action);
         if (validationMessage != null) {
-            return ActionDispatchResult.failure(validationMessage, currentPlayer.getPlayerId());
+            return failureResult(
+                    actionId,
+                    clientActionId,
+                    action,
+                    validationMessage,
+                    currentPlayer.getPlayerId());
         }
 
         List<CandidateWord> words = WordExtractor.extract(
@@ -189,46 +203,86 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         session.resetTurnDraft();
         clockService.stopTurnClock(session);
 
-        SettlementResult settlementResult = session.getTurnCoordinator().onActionApplied(action);
-        return completeTransition(session, awardedScore, "Draft submitted.", settlementResult);
+        session.getTurnCoordinator().onActionApplied(action);
+        return completeTransition(
+                session, actionId, clientActionId, action, awardedScore, "Draft submitted.");
     }
 
-    private ActionDispatchResult executePass(GameSession session, Player currentPlayer, PlayerAction action) {
+    private GameActionResult executePass(
+            GameSession session,
+            Player currentPlayer,
+            PlayerAction action,
+            String actionId,
+            String clientActionId) {
         RuleEngine ruleEngine = new RuleEngine(dictionaryRepository);
         ruleEngine.apply(session.getGameState(), action);
         clearRackBlankAssignments(currentPlayer);
         session.resetTurnDraft();
         clockService.stopTurnClock(session);
 
-        SettlementResult settlementResult = session.getTurnCoordinator().onActionApplied(action);
-        return completeTransition(session, 0, "Turn passed.", settlementResult);
+        session.getTurnCoordinator().onActionApplied(action);
+        return completeTransition(session, actionId, clientActionId, action, 0, "Turn passed.");
     }
 
-    private ActionDispatchResult executeLose(GameSession session, Player currentPlayer, PlayerAction action) {
+    private GameActionResult executeLose(
+            GameSession session,
+            Player currentPlayer,
+            PlayerAction action,
+            String actionId,
+            String clientActionId) {
         RuleEngine ruleEngine = new RuleEngine(dictionaryRepository);
         ruleEngine.apply(session.getGameState(), action);
         clearRackBlankAssignments(currentPlayer);
         session.resetTurnDraft();
         clockService.stopTurnClock(session);
 
-        SettlementResult settlementResult = session.getTurnCoordinator().onActionApplied(action);
-        return completeTransition(session, 0, "Player lost the turn.", settlementResult);
+        session.getTurnCoordinator().onActionApplied(action);
+        return completeTransition(
+                session,
+                actionId,
+                clientActionId,
+                action,
+                0,
+                "Player lost the turn.");
     }
 
-    public ActionDispatchResult executeRemoteCommand(GameSession session, PlayerAction action) {
-        return executeAction(session, action);
+    public GameActionResult executeRemoteCommand(GameSession session, PlayerAction action) {
+        return executeRemoteCommand(session, action, null);
     }
 
-    private ActionDispatchResult completeTransition(
-            GameSession session, int awardedScore, String message, SettlementResult settlementResult) {
+    public GameActionResult executeRemoteCommand(
+            GameSession session, PlayerAction action, String clientActionId) {
+        return executeAction(session, action, clientActionId);
+    }
+
+    private GameActionResult completeTransition(
+            GameSession session,
+            String actionId,
+            String clientActionId,
+            PlayerAction action,
+            int awardedScore,
+            String message) {
         if (session.getTurnCoordinator().isGameEnded()) {
             session.setSessionStatus(SessionStatus.COMPLETED);
-            return ActionDispatchResult.success(message, awardedScore, null, true, settlementResult);
+            return successResult(
+                    actionId,
+                    clientActionId,
+                    action,
+                    message,
+                    awardedScore,
+                    null,
+                    true);
         }
 
         clockService.startTurnClock(session);
-        return ActionDispatchResult.success(
-                message, awardedScore, requireCurrentPlayer(session).getPlayerId(), false, null);
+        return successResult(
+                actionId,
+                clientActionId,
+                action,
+                message,
+                awardedScore,
+                requireCurrentPlayer(session).getPlayerId(),
+                false);
     }
 
     private void handleTimeoutIfNeeded(GameSession session) {
@@ -238,7 +292,7 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         }
 
         if (currentPlayer.getClock().getPhase() == ClockPhase.TIMEOUT) {
-            executeAction(session, PlayerAction.lose(currentPlayer.getPlayerId()));
+            executeAction(session, PlayerAction.lose(currentPlayer.getPlayerId()), null);
         }
     }
 
@@ -300,41 +354,41 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         }
     }
 
-    private static final class ActionDispatchResult {
-        private final boolean success;
-        private final String message;
-        private final int awardedScore;
-        private final String nextPlayerId;
-        private final boolean gameEnded;
-        private final SettlementResult settlementResult;
+    private static GameActionResult failureResult(
+            String actionId,
+            String clientActionId,
+            PlayerAction action,
+            String message,
+            String nextPlayerId) {
+        return new GameActionResult(
+                actionId,
+                clientActionId,
+                action.playerId(),
+                action.type(),
+                false,
+                message,
+                0,
+                nextPlayerId,
+                false);
+    }
 
-        private ActionDispatchResult(
-                boolean success,
-                String message,
-                int awardedScore,
-                String nextPlayerId,
-                boolean gameEnded,
-                SettlementResult settlementResult) {
-            this.success = success;
-            this.message = message;
-            this.awardedScore = awardedScore;
-            this.nextPlayerId = nextPlayerId;
-            this.gameEnded = gameEnded;
-            this.settlementResult = settlementResult;
-        }
-
-        private static ActionDispatchResult failure(String message, String nextPlayerId) {
-            return new ActionDispatchResult(false, message, 0, nextPlayerId, false, null);
-        }
-
-        private static ActionDispatchResult success(
-                String message,
-                int awardedScore,
-                String nextPlayerId,
-                boolean gameEnded,
-                SettlementResult settlementResult) {
-            return new ActionDispatchResult(
-                    true, message, awardedScore, nextPlayerId, gameEnded, settlementResult);
-        }
+    private static GameActionResult successResult(
+            String actionId,
+            String clientActionId,
+            PlayerAction action,
+            String message,
+            int awardedScore,
+            String nextPlayerId,
+            boolean gameEnded) {
+        return new GameActionResult(
+                actionId,
+                clientActionId,
+                action.playerId(),
+                action.type(),
+                true,
+                message,
+                awardedScore,
+                nextPlayerId,
+                gameEnded);
     }
 }
