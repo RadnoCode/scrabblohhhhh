@@ -115,5 +115,12 @@ public class TileBag {
             return null;
         }
         return allTilesById.get(tileId);
-    } 
+    }
+
+    public void indexTile(Tile tile) {
+        if (tile == null) {
+            return;
+        }
+        allTilesById.put(tile.getTileID(), tile);
+    }
 }

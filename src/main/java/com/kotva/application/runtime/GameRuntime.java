@@ -1,20 +1,18 @@
 package com.kotva.application.runtime;
 
 import com.kotva.application.service.AiSessionRuntime;
-import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
-import com.kotva.application.setup.NewGameRequest;
 import com.kotva.domain.model.Position;
 import java.util.function.Consumer;
 
 public interface GameRuntime {
-    void start(NewGameRequest request);
+    void start();
 
     boolean hasSession();
 
-    GameSession getSession();
-
     boolean hasTimeControl();
+
+    boolean requiresBackgroundRefresh();
 
     boolean isSessionInProgress();
 

@@ -32,10 +32,11 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
     private int consecutiveIllegalMoveCount;
 
     LocalAiGameRuntime(
+            RuntimeLaunchSpec launchSpec,
             GameSetupService gameSetupService,
             GameApplicationService gameApplicationService,
             Supplier<AiRuntimeBootstrapper> aiRuntimeBootstrapperSupplier) {
-        super(gameSetupService, gameApplicationService);
+        super(launchSpec, gameSetupService, gameApplicationService);
         this.aiRuntimeBootstrapperSupplier = Objects.requireNonNull(
                 aiRuntimeBootstrapperSupplier,
                 "aiRuntimeBootstrapperSupplier cannot be null.");

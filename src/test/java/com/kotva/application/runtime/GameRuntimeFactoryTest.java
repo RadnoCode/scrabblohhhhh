@@ -12,6 +12,7 @@ import com.kotva.application.service.GameApplicationService;
 import com.kotva.application.service.GameApplicationServiceImpl;
 import com.kotva.application.service.GameSetupService;
 import com.kotva.application.service.GameSetupServiceImpl;
+import com.kotva.application.session.GameSession;
 import com.kotva.application.setup.NewGameRequest;
 import com.kotva.domain.endgame.GameEndReason;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
@@ -38,20 +39,20 @@ public class GameRuntimeFactoryTest {
 
         GameRuntime runtime = runtimeFactory.create(request);
         assertTrue(runtime instanceof HotSeatGameRuntime);
-        runtime.start(request);
+        runtime.start();
 
         assertTrue(runtime.hasSession());
-        assertNotNull(runtime.getSession());
+        assertNotNull(extractLocalSession(runtime));
         assertFalse(runtime.hasAutomatedTurnSupport());
 
         runtime.passTurn();
-        assertEquals(SessionStatus.IN_PROGRESS, runtime.getSession().getSessionStatus());
+        assertEquals(SessionStatus.IN_PROGRESS, extractLocalSession(runtime).getSessionStatus());
 
         runtime.passTurn();
-        assertEquals(SessionStatus.COMPLETED, runtime.getSession().getSessionStatus());
+        assertEquals(SessionStatus.COMPLETED, extractLocalSession(runtime).getSessionStatus());
         assertEquals(
                 GameEndReason.ALL_PLAYERS_PASSED,
-                runtime.getSession().getGameState().getGameEndReason());
+                extractLocalSession(runtime).getGameState().getGameEndReason());
     }
 
     @Test
@@ -72,7 +73,7 @@ public class GameRuntimeFactoryTest {
     }
 
     @Test
-    public void lanModeRemainsUnsupportedAtRuntimeFactoryBoundary() {
+    public void lanModeCreatesHostRuntimeAtRuntimeFactoryBoundary() {
         GameRuntimeFactory runtimeFactory = createRuntimeFactory();
         NewGameRequest request =
                 new NewGameRequest(
@@ -82,10 +83,16 @@ public class GameRuntimeFactoryTest {
                         DictionaryType.AM,
                         null);
 
-        IllegalArgumentException exception =
-                assertThrows(IllegalArgumentException.class, () -> runtimeFactory.create(request));
+        GameRuntime runtime = runtimeFactory.create(request);
 
-        assertEquals("LAN_MULTIPLAYER is not supported on this branch.", exception.getMessage());
+        assertTrue(runtime instanceof HostGameRuntime);
+        runtime.start();
+        assertTrue(runtime.hasSession());
+        assertNotNull(extractLocalSession(runtime));
+    }
+
+    private static GameSession extractLocalSession(GameRuntime runtime) {
+        return ((AbstractLocalGameRuntime) runtime).localSession();
     }
 
     private static GameRuntimeFactory createRuntimeFactory() {

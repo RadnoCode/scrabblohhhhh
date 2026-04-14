@@ -5,7 +5,6 @@ import com.kotva.application.service.GameApplicationService;
 import com.kotva.application.service.GameSetupService;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
-import com.kotva.application.setup.NewGameRequest;
 import com.kotva.domain.model.Player;
 import com.kotva.domain.model.Position;
 import com.kotva.mode.PlayerController;
@@ -14,14 +13,17 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 abstract class AbstractLocalGameRuntime implements GameRuntime {
+    private final RuntimeLaunchSpec launchSpec;
     private final GameSetupService gameSetupService;
     protected final GameApplicationService gameApplicationService;
 
     private GameSession session;
 
     protected AbstractLocalGameRuntime(
+            RuntimeLaunchSpec launchSpec,
             GameSetupService gameSetupService,
             GameApplicationService gameApplicationService) {
+        this.launchSpec = Objects.requireNonNull(launchSpec, "launchSpec cannot be null.");
         this.gameSetupService =
                 Objects.requireNonNull(gameSetupService, "gameSetupService cannot be null.");
         this.gameApplicationService = Objects.requireNonNull(
@@ -29,11 +31,17 @@ abstract class AbstractLocalGameRuntime implements GameRuntime {
     }
 
     @Override
-    public void start(NewGameRequest request) {
-        Objects.requireNonNull(request, "request cannot be null.");
+    public void start() {
         shutdown();
-        session = gameSetupService.startNewGame(request);
+        session = startSession();
         afterSessionStarted();
+    }
+
+    private GameSession startSession() {
+        if (launchSpec.getLanRole() == LanRole.HOST && launchSpec.hasLanLaunchConfig()) {
+            return gameSetupService.startNewGame(launchSpec.requireLanLaunchConfig().getGameConfig());
+        }
+        return gameSetupService.startNewGame(launchSpec.requireRequest());
     }
 
     @Override
@@ -42,13 +50,13 @@ abstract class AbstractLocalGameRuntime implements GameRuntime {
     }
 
     @Override
-    public GameSession getSession() {
-        return session;
+    public boolean hasTimeControl() {
+        return session != null && session.getConfig().hasTimeControl();
     }
 
     @Override
-    public boolean hasTimeControl() {
-        return session != null && session.getConfig().hasTimeControl();
+    public boolean requiresBackgroundRefresh() {
+        return false;
     }
 
     @Override
@@ -157,6 +165,10 @@ abstract class AbstractLocalGameRuntime implements GameRuntime {
 
     protected final GameSession requireSession() {
         return Objects.requireNonNull(session, "session cannot be null.");
+    }
+
+    final GameSession localSession() {
+        return requireSession();
     }
 
     protected final PlayerController requireCurrentPlayerController() {

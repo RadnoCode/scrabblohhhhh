@@ -182,8 +182,10 @@ public class GameApplicationServiceImplSubmitDraftTest {
         Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
         TileBag tileBag = session.getGameState().getTileBag();
         Tile tileA = drawTileWithLetter(tileBag, 'A');
-        Tile placedBlank = drawBlankTile(tileBag);
-        Tile remainingBlank = drawBlankTile(tileBag);
+        Tile placedBlank = new Tile("placed-blank", ' ', 0, true);
+        Tile remainingBlank = new Tile("remaining-blank", ' ', 0, true);
+        tileBag.indexTile(placedBlank);
+        tileBag.indexTile(remainingBlank);
         currentPlayer.getRack().setTileAt(0, tileA);
         currentPlayer.getRack().setTileAt(1, placedBlank);
         currentPlayer.getRack().setTileAt(2, remainingBlank);
@@ -305,7 +307,8 @@ public class GameApplicationServiceImplSubmitDraftTest {
         GameApplicationServiceImpl service =
                 new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository());
         Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
-        Tile blank = drawBlankTile(session.getGameState().getTileBag());
+        Tile blank = new Tile("rack-blank", ' ', 0, true);
+        session.getGameState().getTileBag().indexTile(blank);
         currentPlayer.getRack().setTileAt(0, blank);
         blank.setAssignedLetter('Q');
 
@@ -340,16 +343,6 @@ public class GameApplicationServiceImplSubmitDraftTest {
             }
         }
         throw new AssertionError("Expected tile with letter " + letter + " to be available.");
-    }
-
-    private Tile drawBlankTile(TileBag tileBag) {
-        while (!tileBag.isEmpty()) {
-            Tile tile = tileBag.drawTile();
-            if (tile.isBlank()) {
-                return tile;
-            }
-        }
-        throw new AssertionError("Expected blank tile to be available.");
     }
 
     private int countRackTiles(Player player) {

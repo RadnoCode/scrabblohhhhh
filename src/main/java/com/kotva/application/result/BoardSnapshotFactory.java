@@ -21,15 +21,17 @@ public final class BoardSnapshotFactory {
                 Cell cell = board.getCell(new Position(row, col));
                 Tile placedTile = cell.getPlacedTile();
                 Character letter = null;
+                int score = 0;
                 boolean blank = false;
                 if (placedTile != null) {
                     blank = placedTile.isBlank();
+                    score = placedTile.getScore();
                     letter =
                             placedTile.getAssignedLetter() != null
                                     ? placedTile.getAssignedLetter()
                                     : placedTile.getLetter();
                 }
-                cells.add(new BoardCellSnapshot(row, col, cell.getBonusType(), letter, blank));
+                cells.add(new BoardCellSnapshot(row, col, cell.getBonusType(), letter, score, blank));
             }
         }
         return new BoardSnapshot(cells);

@@ -12,6 +12,7 @@ import com.kotva.application.session.GameConfig;
 import com.kotva.application.session.GamePlayerSnapshot;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
+import com.kotva.application.session.GameSessionSnapshotFactory;
 import com.kotva.application.session.PlayerConfig;
 import com.kotva.domain.endgame.GameEndReason;
 import com.kotva.domain.model.GameState;
@@ -56,7 +57,7 @@ public class GameSessionSnapshotTest {
         assertEquals(2, snapshot.getPlayers().size());
         assertEquals(225, snapshot.getBoardSnapshot().getCells().size());
         assertEquals(2, snapshot.getBoardCells().size());
-        assertEquals(7, snapshot.getCurrentRackTiles().size());
+        assertEquals(7, snapshot.getVisibleRackTiles().size());
         assertEquals(2, snapshot.getDraftPlacements().size());
         assertNotNull(snapshot.getPreview());
         assertTrue(snapshot.getPreview().isValid());
@@ -79,8 +80,8 @@ public class GameSessionSnapshotTest {
                         .orElseThrow();
         assertTrue(firstPlayer.isCurrentTurn());
         assertEquals(2, firstPlayer.getRackTileCount());
-        assertEquals(tileA.getTileID(), snapshot.getCurrentRackTiles().get(0).getTileId());
-        assertEquals(Character.valueOf('A'), snapshot.getCurrentRackTiles().get(0).getDisplayLetter());
+        assertEquals(tileA.getTileID(), snapshot.getVisibleRackTiles().get(0).getTileId());
+        assertEquals(Character.valueOf('A'), snapshot.getVisibleRackTiles().get(0).getDisplayLetter());
         assertTrue(
                 snapshot.getBoardSnapshot().getCells().stream()
                         .filter(cell -> cell.getRow() == 7 && cell.getCol() == 7)
@@ -177,6 +178,33 @@ public class GameSessionSnapshotTest {
         assertNotNull(snapshot.getSettlementResult());
         assertNull(snapshot.getAiRuntimeSnapshot());
         assertEquals(GameEndReason.ALL_PLAYERS_PASSED, snapshot.getSettlementResult().getEndReason());
+    }
+
+    @Test
+    public void viewerSpecificSnapshotShowsOnlyViewerRackAndHidesOtherPlayersDraft() {
+        GameSession session = createInProgressSession();
+        GameApplicationServiceImpl service = createService(Set.of("AT"));
+        Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
+        Player otherPlayer = session.getGameState().getPlayerById("p2");
+
+        Tile tileA = drawTileWithLetter(session.getGameState().getTileBag(), 'A');
+        Tile tileT = drawTileWithLetter(session.getGameState().getTileBag(), 'T');
+        Tile tileB = new Tile("viewer-b", 'B', 3, false);
+        session.getGameState().getTileBag().indexTile(tileB);
+        currentPlayer.getRack().setTileAt(0, tileA);
+        currentPlayer.getRack().setTileAt(1, tileT);
+        otherPlayer.getRack().setTileAt(0, tileB);
+
+        service.placeDraftTile(session, tileA.getTileID(), new Position(7, 7));
+        service.placeDraftTile(session, tileT.getTileID(), new Position(7, 8));
+
+        GameSessionSnapshot viewerSnapshot =
+                GameSessionSnapshotFactory.fromSessionForViewer(session, otherPlayer.getPlayerId());
+
+        assertEquals(tileB.getTileID(), viewerSnapshot.getVisibleRackTiles().get(0).getTileId());
+        assertTrue(viewerSnapshot.getDraftPlacements().isEmpty());
+        assertNull(viewerSnapshot.getPreview());
+        assertTrue(viewerSnapshot.getBoardCells().isEmpty());
     }
 
     private GameSession createInProgressSession() {

@@ -51,7 +51,7 @@ public class LocalAiGameRuntimeTest {
             return new StubBootstrapper(aiTurnRuntime);
         });
 
-        runtime.start(createAiRequest());
+        runtime.start();
 
         assertEquals(2, bootstrapperAttempts.get());
         assertTrue(runtime.hasSession());
@@ -68,16 +68,16 @@ public class LocalAiGameRuntimeTest {
             return new FailingBootstrapper("missing native library");
         });
 
-        runtime.start(createAiRequest());
+        runtime.start();
 
         assertEquals(2, bootstrapperAttempts.get());
         assertTrue(runtime.hasSession());
         assertFalse(runtime.isSessionInProgress());
         assertFalse(runtime.hasAutomatedTurnSupport());
-        assertEquals(SessionStatus.COMPLETED, runtime.getSession().getSessionStatus());
+        assertEquals(SessionStatus.COMPLETED, runtime.localSession().getSessionStatus());
         assertEquals(
                 GameEndReason.AI_RUNTIME_FAILURE,
-                runtime.getSession().getGameState().getGameEndReason());
+                runtime.localSession().getGameState().getGameEndReason());
 
         AiRuntimeSnapshot snapshot = runtime.getSessionSnapshot().getAiRuntimeSnapshot();
         assertNotNull(snapshot);
@@ -104,7 +104,7 @@ public class LocalAiGameRuntimeTest {
                 null));
 
         LocalAiGameRuntime runtime = createRuntime(() -> new StubBootstrapper(aiTurnRuntime));
-        runtime.start(createAiRequest());
+        runtime.start();
         runtime.passTurn();
 
         runtime.applyAutomatedTurn(completionForCurrentTurn(
@@ -145,7 +145,7 @@ public class LocalAiGameRuntimeTest {
                 null));
 
         LocalAiGameRuntime runtime = createRuntime(() -> new StubBootstrapper(aiTurnRuntime));
-        runtime.start(createAiRequest());
+        runtime.start();
         runtime.passTurn();
 
         runtime.applyAutomatedTurn(completionForCurrentTurn(runtime, AiMoveOptionSet.ofSingle(move)));
@@ -158,10 +158,10 @@ public class LocalAiGameRuntimeTest {
 
         runtime.applyAutomatedTurn(completionForCurrentTurn(runtime, AiMoveOptionSet.ofSingle(move)));
 
-        assertEquals(SessionStatus.COMPLETED, runtime.getSession().getSessionStatus());
+        assertEquals(SessionStatus.COMPLETED, runtime.localSession().getSessionStatus());
         assertEquals(
                 GameEndReason.AI_RUNTIME_FAILURE,
-                runtime.getSession().getGameState().getGameEndReason());
+                runtime.localSession().getGameState().getGameEndReason());
 
         AiRuntimeSnapshot snapshot = runtime.getSessionSnapshot().getAiRuntimeSnapshot();
         assertNotNull(snapshot);
@@ -178,7 +178,11 @@ public class LocalAiGameRuntimeTest {
                 new GameSetupServiceImpl(dictionaryRepository, clockService, new Random(19L));
         GameApplicationService gameApplicationService =
                 new GameApplicationServiceImpl(clockService, dictionaryRepository);
-        return new LocalAiGameRuntime(gameSetupService, gameApplicationService, bootstrapperSupplier);
+        return new LocalAiGameRuntime(
+                RuntimeLaunchSpec.forLocal(createAiRequest()),
+                gameSetupService,
+                gameApplicationService,
+                bootstrapperSupplier);
     }
 
     private static NewGameRequest createAiRequest() {
@@ -197,9 +201,9 @@ public class LocalAiGameRuntimeTest {
 
     private static AiSessionRuntime.TurnCompletion completionForCurrentTurn(
             LocalAiGameRuntime runtime, AiMoveOptionSet moveOptions) {
-        String sessionId = runtime.getSession().getSessionId();
+        String sessionId = runtime.localSession().getSessionId();
         String currentPlayerId =
-                runtime.getSession().getGameState().requireCurrentActivePlayer().getPlayerId();
+                runtime.localSession().getGameState().requireCurrentActivePlayer().getPlayerId();
         return new AiSessionRuntime.TurnCompletion(sessionId, currentPlayerId, 0L, moveOptions, null);
     }
 

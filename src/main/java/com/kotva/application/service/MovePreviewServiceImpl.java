@@ -11,19 +11,18 @@ import com.kotva.application.preview.BoardHighlight;
 import com.kotva.application.preview.HighlightType;
 import com.kotva.application.preview.PreviewResult;
 import com.kotva.application.preview.PreviewWord;
-import com.kotva.application.session.GameSession;
 import com.kotva.domain.RuleEngine;
 import com.kotva.domain.action.ActionPlacement;
 import com.kotva.domain.action.PlayerAction;
 import com.kotva.domain.model.Board;
 import com.kotva.domain.model.GameState;
-import com.kotva.domain.model.Player;
 import com.kotva.domain.model.Position;
 import com.kotva.domain.utils.CandidateWord;
 import com.kotva.domain.utils.MoveValidator;
 import com.kotva.domain.utils.ScoreCalculator;
 import com.kotva.domain.utils.WordExtractor;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
+import com.kotva.policy.DictionaryType;
 import com.kotva.policy.WordType;
 
 /**
@@ -43,15 +42,19 @@ public class MovePreviewServiceImpl implements MovePreviewService
     }
 
     @Override
-    public PreviewResult preview(GameSession session) {
-        Objects.requireNonNull(session, "session cannot be null.");
-        ensureDictionaryLoaded(session);
-        GameState gameState = session.getGameState();
-        Player currentPlayer = gameState.requireCurrentActivePlayer();
-        TurnDraft turnDraft = session.getTurnDraft();
+    public PreviewResult preview(
+            GameState gameState,
+            DictionaryType dictionaryType,
+            String playerId,
+            TurnDraft turnDraft) {
+        Objects.requireNonNull(gameState, "gameState cannot be null.");
+        Objects.requireNonNull(dictionaryType, "dictionaryType cannot be null.");
+        Objects.requireNonNull(playerId, "playerId cannot be null.");
+        Objects.requireNonNull(turnDraft, "turnDraft cannot be null.");
+        ensureDictionaryLoaded(dictionaryType);
 
         PlayerAction action =
-            TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), turnDraft);
+                TurnDraftActionMapper.toPlaceAction(playerId, turnDraft);
 
         String validationMessage = validateSafely(gameState, action);
 
@@ -71,9 +74,9 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return new PreviewResult(valid, estimatedScore, words, highlights, messages);
     }
 
-    private void ensureDictionaryLoaded(GameSession session) {
-        if (dictionaryRepository.getLoadedDictionaryType() != session.getConfig().getDictionaryType()) {
-            dictionaryRepository.loadDictionary(session.getConfig().getDictionaryType());
+    private void ensureDictionaryLoaded(DictionaryType dictionaryType) {
+        if (dictionaryRepository.getLoadedDictionaryType() != dictionaryType) {
+            dictionaryRepository.loadDictionary(dictionaryType);
         }
     }
 

@@ -99,12 +99,12 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         PlayerAction action = TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), session.getTurnDraft());
         ActionDispatchResult result = executeAction(session, action);
         return new SubmitDraftResult(
-                result.success,
-                result.message,
-                result.awardedScore,
-                result.nextPlayerId,
-                result.gameEnded,
-                result.settlementResult);
+                result.isSuccess(),
+                result.getMessage(),
+                result.getAwardedScore(),
+                result.getNextPlayerId(),
+                result.isGameEnded(),
+                result.getSettlementResult());
     }
 
     @Override
@@ -112,11 +112,16 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         Player currentPlayer = requireCurrentPlayer(session);
         ActionDispatchResult result = executeAction(session, PlayerAction.pass(currentPlayer.getPlayerId()));
         return new TurnTransitionResult(
-                result.success,
-                result.message,
-                result.nextPlayerId,
-                result.gameEnded,
-                result.settlementResult);
+                result.isSuccess(),
+                result.getMessage(),
+                result.getNextPlayerId(),
+                result.isGameEnded(),
+                result.getSettlementResult());
+    }
+
+    @Override
+    public ActionDispatchResult executeRemoteAction(GameSession session, PlayerAction action) {
+        return executeAction(session, action);
     }
 
     @Override
@@ -146,7 +151,12 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         Objects.requireNonNull(session, "session cannot be null.");
         ensureDictionaryLoaded(session);
 
-        PreviewResult previewResult = movePreviewService.preview(session);
+        PreviewResult previewResult =
+                movePreviewService.preview(
+                        session.getGameState(),
+                        session.getConfig().getDictionaryType(),
+                        requireCurrentPlayer(session).getPlayerId(),
+                        session.getTurnDraft());
         if (previewResult == null) {
             throw new IllegalStateException("movePreviewService returned null preview result.");
         }
@@ -213,10 +223,6 @@ public class GameApplicationServiceImpl implements GameApplicationService {
 
         SettlementResult settlementResult = session.getTurnCoordinator().onActionApplied(action);
         return completeTransition(session, 0, "Player lost the turn.", settlementResult);
-    }
-
-    public ActionDispatchResult executeRemoteCommand(GameSession session, PlayerAction action) {
-        return executeAction(session, action);
     }
 
     private ActionDispatchResult completeTransition(
@@ -300,41 +306,4 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         }
     }
 
-    private static final class ActionDispatchResult {
-        private final boolean success;
-        private final String message;
-        private final int awardedScore;
-        private final String nextPlayerId;
-        private final boolean gameEnded;
-        private final SettlementResult settlementResult;
-
-        private ActionDispatchResult(
-                boolean success,
-                String message,
-                int awardedScore,
-                String nextPlayerId,
-                boolean gameEnded,
-                SettlementResult settlementResult) {
-            this.success = success;
-            this.message = message;
-            this.awardedScore = awardedScore;
-            this.nextPlayerId = nextPlayerId;
-            this.gameEnded = gameEnded;
-            this.settlementResult = settlementResult;
-        }
-
-        private static ActionDispatchResult failure(String message, String nextPlayerId) {
-            return new ActionDispatchResult(false, message, 0, nextPlayerId, false, null);
-        }
-
-        private static ActionDispatchResult success(
-                String message,
-                int awardedScore,
-                String nextPlayerId,
-                boolean gameEnded,
-                SettlementResult settlementResult) {
-            return new ActionDispatchResult(
-                    true, message, awardedScore, nextPlayerId, gameEnded, settlementResult);
-        }
-    }
 }

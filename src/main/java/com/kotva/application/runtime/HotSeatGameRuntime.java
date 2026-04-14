@@ -5,8 +5,9 @@ import com.kotva.application.service.GameSetupService;
 
 final class HotSeatGameRuntime extends AbstractLocalGameRuntime {
     HotSeatGameRuntime(
+            RuntimeLaunchSpec launchSpec,
             GameSetupService gameSetupService,
             GameApplicationService gameApplicationService) {
-        super(gameSetupService, gameApplicationService);
+        super(launchSpec, gameSetupService, gameApplicationService);
     }
 }
