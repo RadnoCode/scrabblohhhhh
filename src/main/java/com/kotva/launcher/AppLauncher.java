@@ -8,7 +8,7 @@ public class AppLauncher extends Application {
     private static final double MIN_WIDTH = 1100;
     private static final double MIN_HEIGHT = 720;
 
-        @Override
+    @Override
     public void start(Stage stage) {
         AppContext appContext = new AppContext();
         SceneNavigator navigator = new SceneNavigator(stage, appContext);

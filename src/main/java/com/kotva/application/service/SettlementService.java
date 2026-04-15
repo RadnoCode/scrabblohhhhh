@@ -5,6 +5,5 @@ import com.kotva.domain.endgame.GameEndReason;
 import com.kotva.domain.model.GameState;
 
 public interface SettlementService {
-
     SettlementResult settle(GameState gameState, GameEndReason endReason);
 }

@@ -22,7 +22,6 @@ import java.util.Objects;
 import java.util.Set;
 
 public final class GameSessionSnapshotFactory {
-
     private GameSessionSnapshotFactory() {
     }
 
@@ -31,7 +30,7 @@ public final class GameSessionSnapshotFactory {
     }
 
     public static GameSessionSnapshot fromSession(
-        GameSession session, AiRuntimeSnapshot aiRuntimeSnapshot) {
+            GameSession session, AiRuntimeSnapshot aiRuntimeSnapshot) {
         Objects.requireNonNull(session, "session cannot be null.");
 
         Player currentPlayer = resolveSnapshotPlayer(session);
@@ -43,48 +42,48 @@ public final class GameSessionSnapshotFactory {
         for (Player player : session.getGameState().getPlayers()) {
             PlayerClock clock = player.getClock();
             PlayerClockSnapshot clockSnapshot =
-            new PlayerClockSnapshot(
-                player.getPlayerId(),
-                player.getPlayerName(),
-                clock.getMainTimeRemainingMillis(),
-                clock.getByoYomiRemainingMillis(),
-                clock.getPhase(),
-                player.getActive());
+                    new PlayerClockSnapshot(
+                            player.getPlayerId(),
+                            player.getPlayerName(),
+                            clock.getMainTimeRemainingMillis(),
+                            clock.getByoYomiRemainingMillis(),
+                            clock.getPhase(),
+                            player.getActive());
             playerClockSnapshots.add(clockSnapshot);
             players.add(
-                new GamePlayerSnapshot(
-                player.getPlayerId(),
-                player.getPlayerName(),
-                player.getPlayerType(),
-                player.getScore(),
-                player.getActive(),
-                player.getPlayerId().equals(currentPlayer.getPlayerId()),
-                countRackTiles(player),
-                clockSnapshot));
+                    new GamePlayerSnapshot(
+                            player.getPlayerId(),
+                            player.getPlayerName(),
+                            player.getPlayerType(),
+                            player.getScore(),
+                            player.getActive(),
+                            player.getPlayerId().equals(currentPlayer.getPlayerId()),
+                            countRackTiles(player),
+                            clockSnapshot));
         }
 
         return new GameSessionSnapshot(
-            session.getSessionId(),
-            session.getConfig().getGameMode(),
-            session.getSessionStatus(),
-            session.getGameState().isGameOver(),
-            session.getGameState().getGameEndReason(),
-            session.getTurnCoordinator().getTurnNumber(),
-            currentPlayer.getPlayerId(),
-            currentPlayer.getPlayerName(),
-            currentClock.getMainTimeRemainingMillis(),
-            currentClock.getByoYomiRemainingMillis(),
-            currentClock.getPhase(),
-            playerClockSnapshots,
-            players,
-            BoardSnapshotFactory.fromBoard(session.getGameState().getBoard()),
-            buildBoardCells(session, currentPlayer, previewSnapshot),
-            buildCurrentRackTiles(currentPlayer),
-            buildDraftPlacements(session),
-            previewSnapshot,
-            session.getLatestActionResult(),
-            session.getTurnCoordinator().getSettlementResult(),
-            aiRuntimeSnapshot);
+                session.getSessionId(),
+                session.getConfig().getGameMode(),
+                session.getSessionStatus(),
+                session.getGameState().isGameOver(),
+                session.getGameState().getGameEndReason(),
+                session.getTurnCoordinator().getTurnNumber(),
+                currentPlayer.getPlayerId(),
+                currentPlayer.getPlayerName(),
+                currentClock.getMainTimeRemainingMillis(),
+                currentClock.getByoYomiRemainingMillis(),
+                currentClock.getPhase(),
+                playerClockSnapshots,
+                players,
+                BoardSnapshotFactory.fromBoard(session.getGameState().getBoard()),
+                buildBoardCells(session, currentPlayer, previewSnapshot),
+                buildCurrentRackTiles(currentPlayer),
+                buildDraftPlacements(session),
+                previewSnapshot,
+                session.getLatestActionResult(),
+                session.getTurnCoordinator().getSettlementResult(),
+                aiRuntimeSnapshot);
     }
 
     private static List<RackTileSnapshot> buildCurrentRackTiles(Player player) {
@@ -92,29 +91,29 @@ public final class GameSessionSnapshotFactory {
         for (RackSlot slot : player.getRack().getSlots()) {
             Tile tile = slot.getTile();
             currentRackTiles.add(
-                new RackTileSnapshot(
-                slot.getIndex(),
-                tile != null ? tile.getTileID() : null,
-                tile != null ? tile.getLetter() : null,
-                tile != null ? resolveDisplayLetter(tile) : null,
-                tile != null ? tile.getScore() : 0,
-                tile != null && tile.isBlank(),
-                tile != null ? tile.getAssignedLetter() : null));
+                    new RackTileSnapshot(
+                            slot.getIndex(),
+                            tile != null ? tile.getTileID() : null,
+                            tile != null ? tile.getLetter() : null,
+                            tile != null ? resolveDisplayLetter(tile) : null,
+                            tile != null ? tile.getScore() : 0,
+                            tile != null && tile.isBlank(),
+                            tile != null ? tile.getAssignedLetter() : null));
         }
         return currentRackTiles;
     }
 
     private static List<BoardCellRenderSnapshot> buildBoardCells(
-        GameSession session, Player currentPlayer, PreviewSnapshot previewSnapshot) {
+            GameSession session, Player currentPlayer, PreviewSnapshot previewSnapshot) {
         Map<BoardPositionKey, DraftPlacement> draftPlacementsByPosition = new HashMap<>();
         for (DraftPlacement placement : session.getTurnDraft().getPlacements()) {
             if (placement == null || placement.getPosition() == null) {
                 continue;
             }
             draftPlacementsByPosition.put(
-                new BoardPositionKey(
-                placement.getPosition().getRow(), placement.getPosition().getCol()),
-                placement);
+                    new BoardPositionKey(
+                            placement.getPosition().getRow(), placement.getPosition().getCol()),
+                    placement);
         }
 
         Map<String, Tile> currentRackTilesById = new HashMap<>();
@@ -144,18 +143,18 @@ public final class GameSessionSnapshotFactory {
                 if (!cell.isEmpty()) {
                     Tile tile = cell.getPlacedTile();
                     boardCells.add(new BoardCellRenderSnapshot(
-                        row,
-                        col,
-                        cell.getBonusType(),
-                        tile.getTileID(),
-                        resolveDisplayLetter(tile),
-                        tile.getScore(),
-                        tile.isBlank(),
-                        false,
-                        previewValidPositions.contains(key),
-                        previewInvalidPositions.contains(key),
-                        mainWordPositions.contains(key),
-                        crossWordPositions.contains(key)));
+                            row,
+                            col,
+                            cell.getBonusType(),
+                            tile.getTileID(),
+                            resolveDisplayLetter(tile),
+                            tile.getScore(),
+                            tile.isBlank(),
+                            false,
+                            previewValidPositions.contains(key),
+                            previewInvalidPositions.contains(key),
+                            mainWordPositions.contains(key),
+                            crossWordPositions.contains(key)));
                     continue;
                 }
 
@@ -169,18 +168,18 @@ public final class GameSessionSnapshotFactory {
                 }
 
                 boardCells.add(new BoardCellRenderSnapshot(
-                    row,
-                    col,
-                    cell.getBonusType(),
-                    tile.getTileID(),
-                    resolveDisplayLetter(tile),
-                    tile.getScore(),
-                    tile.isBlank(),
-                    true,
-                    previewValidPositions.contains(key),
-                    previewInvalidPositions.contains(key),
-                    mainWordPositions.contains(key),
-                    crossWordPositions.contains(key)));
+                        row,
+                        col,
+                        cell.getBonusType(),
+                        tile.getTileID(),
+                        resolveDisplayLetter(tile),
+                        tile.getScore(),
+                        tile.isBlank(),
+                        true,
+                        previewValidPositions.contains(key),
+                        previewInvalidPositions.contains(key),
+                        mainWordPositions.contains(key),
+                        crossWordPositions.contains(key)));
             }
         }
         return boardCells;
@@ -190,10 +189,10 @@ public final class GameSessionSnapshotFactory {
         List<DraftPlacementSnapshot> draftPlacements = new ArrayList<>();
         for (DraftPlacement placement : session.getTurnDraft().getPlacements()) {
             draftPlacements.add(
-                new DraftPlacementSnapshot(
-                placement.getTileId(),
-                placement.getPosition().getRow(),
-                placement.getPosition().getCol()));
+                    new DraftPlacementSnapshot(
+                            placement.getTileId(),
+                            placement.getPosition().getRow(),
+                            placement.getPosition().getCol()));
         }
         return draftPlacements;
     }
@@ -204,11 +203,11 @@ public final class GameSessionSnapshotFactory {
             return null;
         }
         return new PreviewSnapshot(
-            previewResult.isValid(),
-            previewResult.getEstimatedScore(),
-            buildPreviewWords(previewResult),
-            buildPreviewHighlights(previewResult),
-            previewResult.getMessages());
+                previewResult.isValid(),
+                previewResult.getEstimatedScore(),
+                buildPreviewWords(previewResult),
+                buildPreviewHighlights(previewResult),
+                previewResult.getMessages());
     }
 
     private static List<PreviewWordSnapshot> buildPreviewWords(PreviewResult previewResult) {
@@ -222,12 +221,12 @@ public final class GameSessionSnapshotFactory {
                 continue;
             }
             words.add(
-                new PreviewWordSnapshot(
-                word.getWord(),
-                word.isValid(),
-                word.getScoreContribution(),
-                buildPreviewPositions(word.getCoveredPositions()),
-                word.getWordType()));
+                    new PreviewWordSnapshot(
+                            word.getWord(),
+                            word.isValid(),
+                            word.getScoreContribution(),
+                            buildPreviewPositions(word.getCoveredPositions()),
+                            word.getWordType()));
         }
         return words;
     }
@@ -243,10 +242,10 @@ public final class GameSessionSnapshotFactory {
                 continue;
             }
             highlights.add(
-                new PreviewHighlightSnapshot(
-                highlight.getPosition().getRow(),
-                highlight.getPosition().getCol(),
-                highlight.getHighlightType()));
+                    new PreviewHighlightSnapshot(
+                            highlight.getPosition().getRow(),
+                            highlight.getPosition().getCol(),
+                            highlight.getHighlightType()));
         }
         return highlights;
     }
@@ -262,7 +261,7 @@ public final class GameSessionSnapshotFactory {
                 continue;
             }
             coveredPositions.add(
-                new PreviewPositionSnapshot(position.getRow(), position.getCol()));
+                    new PreviewPositionSnapshot(position.getRow(), position.getCol()));
         }
         return coveredPositions;
     }
@@ -285,9 +284,9 @@ public final class GameSessionSnapshotFactory {
     }
 
     private static void collectPreviewHighlightPositions(
-        PreviewSnapshot previewSnapshot,
-        Set<BoardPositionKey> previewValidPositions,
-        Set<BoardPositionKey> previewInvalidPositions) {
+            PreviewSnapshot previewSnapshot,
+            Set<BoardPositionKey> previewValidPositions,
+            Set<BoardPositionKey> previewInvalidPositions) {
         if (previewSnapshot == null) {
             return;
         }
@@ -303,9 +302,9 @@ public final class GameSessionSnapshotFactory {
     }
 
     private static void collectPreviewWordPositions(
-        PreviewSnapshot previewSnapshot,
-        Set<BoardPositionKey> mainWordPositions,
-        Set<BoardPositionKey> crossWordPositions) {
+            PreviewSnapshot previewSnapshot,
+            Set<BoardPositionKey> mainWordPositions,
+            Set<BoardPositionKey> crossWordPositions) {
         if (previewSnapshot == null) {
             return;
         }
@@ -316,7 +315,7 @@ public final class GameSessionSnapshotFactory {
             }
 
             Set<BoardPositionKey> target =
-            word.getWordType() == WordType.MAIN_WORD ? mainWordPositions : crossWordPositions;
+                    word.getWordType() == WordType.MAIN_WORD ? mainWordPositions : crossWordPositions;
             for (PreviewPositionSnapshot position : word.getCoveredPositions()) {
                 target.add(new BoardPositionKey(position.getRow(), position.getCol()));
             }

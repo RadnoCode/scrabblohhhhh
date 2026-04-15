@@ -4,6 +4,11 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 
+/**
+ * TitleBanner is a reusable title component.
+ * It is currently used for the large SCRABBLE title on the home page,
+ * but later it can also be reused on mode, settings, or help pages.
+ */
 public class TitleBanner extends StackPane {
     private final Label titleLabel;
 
@@ -28,6 +33,10 @@ public class TitleBanner extends StackPane {
         return titleLabel.getText().replace(" ", "");
     }
 
+    /**
+     * JavaFX Label does not have a simple built-in letter-spacing property like web CSS.
+     * To keep the title style close to the sketch, we insert spaces between letters here.
+     */
     private String addLetterSpacing(String titleText) {
         String cleanText = titleText == null ? "" : titleText.trim().toUpperCase();
         StringBuilder builder = new StringBuilder();

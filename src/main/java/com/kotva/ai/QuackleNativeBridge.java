@@ -24,47 +24,47 @@ public final class QuackleNativeBridge {
     private static final long ERROR_BUFFER_CAPACITY = 1024L;
     private static final int MAX_MOVE_OPTION_COUNT = 10;
     private static final Set<Path> PRELOADED_NATIVE_DEPENDENCIES =
-    ConcurrentHashMap.newKeySet();
+            ConcurrentHashMap.newKeySet();
 
     private static final MemoryLayout BOARD_CELL_LAYOUT = MemoryLayout.structLayout(
-        ValueLayout.JAVA_INT.withName("occupied"),
-        ValueLayout.JAVA_INT.withName("letter"),
-        ValueLayout.JAVA_INT.withName("isBlank"),
-        ValueLayout.JAVA_INT.withName("assignedLetter"));
+            ValueLayout.JAVA_INT.withName("occupied"),
+            ValueLayout.JAVA_INT.withName("letter"),
+            ValueLayout.JAVA_INT.withName("isBlank"),
+            ValueLayout.JAVA_INT.withName("assignedLetter"));
 
     private static final MemoryLayout INIT_LAYOUT = MemoryLayout.structLayout(
-        ValueLayout.ADDRESS.withName("dataDir"),
-        ValueLayout.ADDRESS.withName("dictionaryId"),
-        ValueLayout.ADDRESS.withName("difficultyId"));
+            ValueLayout.ADDRESS.withName("dataDir"),
+            ValueLayout.ADDRESS.withName("dictionaryId"),
+            ValueLayout.ADDRESS.withName("difficultyId"));
 
     private static final MemoryLayout POSITION_LAYOUT = MemoryLayout.structLayout(
-        ValueLayout.ADDRESS.withName("boardCells"),
-        ValueLayout.ADDRESS.withName("rack"),
-        ValueLayout.ADDRESS.withName("unseenTiles"),
-        ValueLayout.JAVA_INT.withName("aiScore"),
-        ValueLayout.JAVA_INT.withName("opponentScore"));
+            ValueLayout.ADDRESS.withName("boardCells"),
+            ValueLayout.ADDRESS.withName("rack"),
+            ValueLayout.ADDRESS.withName("unseenTiles"),
+            ValueLayout.JAVA_INT.withName("aiScore"),
+            ValueLayout.JAVA_INT.withName("opponentScore"));
 
     private static final MemoryLayout PLACEMENT_LAYOUT = MemoryLayout.structLayout(
-        ValueLayout.JAVA_INT.withName("row"),
-        ValueLayout.JAVA_INT.withName("col"),
-        ValueLayout.JAVA_INT.withName("letter"),
-        ValueLayout.JAVA_INT.withName("isBlank"),
-        ValueLayout.JAVA_INT.withName("assignedLetter"));
+            ValueLayout.JAVA_INT.withName("row"),
+            ValueLayout.JAVA_INT.withName("col"),
+            ValueLayout.JAVA_INT.withName("letter"),
+            ValueLayout.JAVA_INT.withName("isBlank"),
+            ValueLayout.JAVA_INT.withName("assignedLetter"));
 
     private static final MemoryLayout RESULT_LAYOUT = MemoryLayout.structLayout(
-        ValueLayout.JAVA_INT.withName("action"),
-        ValueLayout.JAVA_INT.withName("placementCount"),
-        ValueLayout.JAVA_INT.withName("score"),
-        MemoryLayout.paddingLayout(4),
-        ValueLayout.JAVA_DOUBLE.withName("equity"),
-        ValueLayout.JAVA_DOUBLE.withName("win"),
-        MemoryLayout.sequenceLayout(7, PLACEMENT_LAYOUT).withName("placements"),
-        MemoryLayout.paddingLayout(4));
+            ValueLayout.JAVA_INT.withName("action"),
+            ValueLayout.JAVA_INT.withName("placementCount"),
+            ValueLayout.JAVA_INT.withName("score"),
+            MemoryLayout.paddingLayout(4),
+            ValueLayout.JAVA_DOUBLE.withName("equity"),
+            ValueLayout.JAVA_DOUBLE.withName("win"),
+            MemoryLayout.sequenceLayout(7, PLACEMENT_LAYOUT).withName("placements"),
+            MemoryLayout.paddingLayout(4));
 
     private static final MemoryLayout RESULT_LIST_LAYOUT = MemoryLayout.structLayout(
-        ValueLayout.JAVA_INT.withName("moveCount"),
-        MemoryLayout.paddingLayout(4),
-        MemoryLayout.sequenceLayout(MAX_MOVE_OPTION_COUNT, RESULT_LAYOUT).withName("moves"));
+            ValueLayout.JAVA_INT.withName("moveCount"),
+            MemoryLayout.paddingLayout(4),
+            MemoryLayout.sequenceLayout(MAX_MOVE_OPTION_COUNT, RESULT_LAYOUT).withName("moves"));
 
     private static final long INIT_DATA_DIR_OFFSET = offset(INIT_LAYOUT, "dataDir");
     private static final long INIT_DICTIONARY_ID_OFFSET = offset(INIT_LAYOUT, "dictionaryId");
@@ -107,11 +107,11 @@ public final class QuackleNativeBridge {
 
     public QuackleNativeBridge(Path libraryPath, Path dataDirectory) {
         this.libraryPath = Objects.requireNonNull(libraryPath, "libraryPath cannot be null.")
-            .toAbsolutePath()
-            .normalize();
+                .toAbsolutePath()
+                .normalize();
         this.dataDirectory = Objects.requireNonNull(dataDirectory, "dataDirectory cannot be null.")
-            .toAbsolutePath()
-            .normalize();
+                .toAbsolutePath()
+                .normalize();
     }
 
     public Engine createEngine(DictionaryType dictionaryType, AiDifficulty difficulty) {
@@ -126,9 +126,9 @@ public final class QuackleNativeBridge {
 
             MemorySegment errorBuffer = arena.allocate(ERROR_BUFFER_CAPACITY).fill((byte) 0);
             MemorySegment engineHandle = (MemorySegment) requireBindings().createHandle.invoke(
-                init,
-                errorBuffer,
-                ERROR_BUFFER_CAPACITY);
+                    init,
+                    errorBuffer,
+                    ERROR_BUFFER_CAPACITY);
             if (isNullAddress(engineHandle)) {
                 throw new IllegalStateException(readError(errorBuffer));
             }
@@ -176,26 +176,26 @@ public final class QuackleNativeBridge {
             Linker linker = Linker.nativeLinker();
 
             bindings = new Bindings(
-                libraryArena,
-                linker.downcallHandle(
-                lookup.findOrThrow("qa_create"),
-                FunctionDescriptor.of(
-                ValueLayout.ADDRESS,
-                ValueLayout.ADDRESS,
-                ValueLayout.ADDRESS,
-                ValueLayout.JAVA_LONG)),
-                linker.downcallHandle(
-                lookup.findOrThrow("qa_destroy"),
-                FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)),
-                linker.downcallHandle(
-                lookup.findOrThrow("qa_choose_move"),
-                FunctionDescriptor.of(
-                ValueLayout.JAVA_INT,
-                ValueLayout.ADDRESS,
-                ValueLayout.ADDRESS,
-                ValueLayout.ADDRESS,
-                ValueLayout.ADDRESS,
-                ValueLayout.JAVA_LONG)));
+                    libraryArena,
+                    linker.downcallHandle(
+                            lookup.findOrThrow("qa_create"),
+                            FunctionDescriptor.of(
+                                    ValueLayout.ADDRESS,
+                                    ValueLayout.ADDRESS,
+                                    ValueLayout.ADDRESS,
+                                    ValueLayout.JAVA_LONG)),
+                    linker.downcallHandle(
+                            lookup.findOrThrow("qa_destroy"),
+                            FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)),
+                    linker.downcallHandle(
+                            lookup.findOrThrow("qa_choose_move"),
+                            FunctionDescriptor.of(
+                                    ValueLayout.JAVA_INT,
+                                    ValueLayout.ADDRESS,
+                                    ValueLayout.ADDRESS,
+                                    ValueLayout.ADDRESS,
+                                    ValueLayout.ADDRESS,
+                                    ValueLayout.JAVA_LONG)));
             return bindings;
         }
     }
@@ -329,11 +329,11 @@ public final class QuackleNativeBridge {
                 MemorySegment errorBuffer = arena.allocate(ERROR_BUFFER_CAPACITY).fill((byte) 0);
 
                 int status = (int) bindings.chooseHandle.invoke(
-                    handle,
-                    position,
-                    result,
-                    errorBuffer,
-                    ERROR_BUFFER_CAPACITY);
+                        handle,
+                        position,
+                        result,
+                        errorBuffer,
+                        ERROR_BUFFER_CAPACITY);
                 if (status != 0) {
                     throw new IllegalStateException(readError(errorBuffer));
                 }
@@ -346,7 +346,7 @@ public final class QuackleNativeBridge {
             }
         }
 
-            @Override
+        @Override
         public synchronized void close() {
             if (closed) {
                 return;
@@ -369,7 +369,7 @@ public final class QuackleNativeBridge {
         }
 
         private static void encodeBoardCells(
-            List<AiPositionSnapshot.BoardCell> boardCells, MemorySegment target) {
+                List<AiPositionSnapshot.BoardCell> boardCells, MemorySegment target) {
             for (int index = 0; index < boardCells.size(); index++) {
                 AiPositionSnapshot.BoardCell boardCell = boardCells.get(index);
                 MemorySegment cellSegment = target.asSlice(index * BOARD_CELL_LAYOUT.byteSize(), BOARD_CELL_LAYOUT.byteSize());
@@ -377,9 +377,9 @@ public final class QuackleNativeBridge {
                 cellSegment.set(ValueLayout.JAVA_INT, BOARD_CELL_LETTER_OFFSET, boardCell.occupied() ? boardCell.letter() : 0);
                 cellSegment.set(ValueLayout.JAVA_INT, BOARD_CELL_IS_BLANK_OFFSET, boardCell.blank() ? 1 : 0);
                 cellSegment.set(
-                    ValueLayout.JAVA_INT,
-                    BOARD_CELL_ASSIGNED_LETTER_OFFSET,
-                    boardCell.assignedLetter() == null ? 0 : Character.toUpperCase(boardCell.assignedLetter()));
+                        ValueLayout.JAVA_INT,
+                        BOARD_CELL_ASSIGNED_LETTER_OFFSET,
+                        boardCell.assignedLetter() == null ? 0 : Character.toUpperCase(boardCell.assignedLetter()));
             }
         }
 
@@ -397,18 +397,18 @@ public final class QuackleNativeBridge {
             List<AiMove.Placement> placements = new ArrayList<>(placementCount);
             for (int index = 0; index < placementCount; index++) {
                 MemorySegment placement = result.asSlice(
-                    RESULT_PLACEMENTS_OFFSET + index * PLACEMENT_LAYOUT.byteSize(),
-                    PLACEMENT_LAYOUT.byteSize());
+                        RESULT_PLACEMENTS_OFFSET + index * PLACEMENT_LAYOUT.byteSize(),
+                        PLACEMENT_LAYOUT.byteSize());
                 char letter = (char) placement.get(ValueLayout.JAVA_INT, PLACEMENT_LETTER_OFFSET);
                 boolean blank = placement.get(ValueLayout.JAVA_INT, PLACEMENT_IS_BLANK_OFFSET) != 0;
                 int assignedLetterValue = placement.get(ValueLayout.JAVA_INT, PLACEMENT_ASSIGNED_LETTER_OFFSET);
                 Character assignedLetter = assignedLetterValue == 0 ? null : (char) assignedLetterValue;
                 placements.add(new AiMove.Placement(
-                    placement.get(ValueLayout.JAVA_INT, PLACEMENT_ROW_OFFSET),
-                    placement.get(ValueLayout.JAVA_INT, PLACEMENT_COL_OFFSET),
-                    letter,
-                    blank,
-                    assignedLetter));
+                        placement.get(ValueLayout.JAVA_INT, PLACEMENT_ROW_OFFSET),
+                        placement.get(ValueLayout.JAVA_INT, PLACEMENT_COL_OFFSET),
+                        letter,
+                        blank,
+                        assignedLetter));
             }
 
             return new AiMove(AiMove.Action.PLACE, placements, score, equity, win);
@@ -420,8 +420,8 @@ public final class QuackleNativeBridge {
             List<AiMove> moves = new ArrayList<>(boundedMoveCount);
             for (int index = 0; index < boundedMoveCount; index++) {
                 MemorySegment moveResult = resultList.asSlice(
-                    RESULT_LIST_MOVES_OFFSET + index * RESULT_LAYOUT.byteSize(),
-                    RESULT_LAYOUT.byteSize());
+                        RESULT_LIST_MOVES_OFFSET + index * RESULT_LAYOUT.byteSize(),
+                        RESULT_LAYOUT.byteSize());
                 moves.add(decodeMove(moveResult));
             }
             return new AiMoveOptionSet(moves);
@@ -429,9 +429,9 @@ public final class QuackleNativeBridge {
     }
 
     private record Bindings(
-        Arena libraryArena,
-        MethodHandle createHandle,
-        MethodHandle destroyHandle,
-        MethodHandle chooseHandle) {
+            Arena libraryArena,
+            MethodHandle createHandle,
+            MethodHandle destroyHandle,
+            MethodHandle chooseHandle) {
     }
 }

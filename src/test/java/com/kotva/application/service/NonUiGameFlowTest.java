@@ -20,26 +20,26 @@ import java.util.Set;
 import org.junit.Test;
 
 public class NonUiGameFlowTest {
-        @Test
+    @Test
     public void gameCanRunEndToEndWithoutUiThroughControllersAndServices() {
         ClockService clockService = new ClockServiceImpl();
         StubDictionaryRepository dictionaryRepository = new StubDictionaryRepository();
         GameSetupService setupService =
-        new GameSetupServiceImpl(dictionaryRepository, clockService, new Random(11L));
+                new GameSetupServiceImpl(dictionaryRepository, clockService, new Random(11L));
         GameApplicationService applicationService =
-        new GameApplicationServiceImpl(clockService, dictionaryRepository);
+                new GameApplicationServiceImpl(clockService, dictionaryRepository);
 
         GameSession session =
-        setupService.startNewGame(
-            new NewGameRequest(
-            GameMode.HOT_SEAT,
-            2,
-            List.of("Alice", "Bob"),
-            DictionaryType.AM,
-            null));
+                setupService.startNewGame(
+                        new NewGameRequest(
+                                GameMode.HOT_SEAT,
+                                2,
+                                List.of("Alice", "Bob"),
+                                DictionaryType.AM,
+                                null));
 
         PlayerController firstController =
-        session.getGameState().requireCurrentActivePlayer().getController();
+                session.getGameState().requireCurrentActivePlayer().getController();
         GameActionResult firstResult = firstController.passTurn(applicationService, session);
 
         assertTrue(firstResult.isSuccess());
@@ -47,7 +47,7 @@ public class NonUiGameFlowTest {
         assertNotNull(firstResult.getNextPlayerId());
 
         PlayerController secondController =
-        session.getGameState().requireCurrentActivePlayer().getController();
+                session.getGameState().requireCurrentActivePlayer().getController();
         GameActionResult secondResult = secondController.passTurn(applicationService, session);
 
         assertTrue(secondResult.isSuccess());
@@ -56,31 +56,31 @@ public class NonUiGameFlowTest {
         assertEquals(GameEndReason.ALL_PLAYERS_PASSED, session.getGameState().getGameEndReason());
         assertNotNull(session.getTurnCoordinator().getSettlementResult());
         assertEquals(
-            GameEndReason.ALL_PLAYERS_PASSED,
-            session.getTurnCoordinator().getSettlementResult().getEndReason());
+                GameEndReason.ALL_PLAYERS_PASSED,
+                session.getTurnCoordinator().getSettlementResult().getEndReason());
         assertEquals(2, session.getTurnCoordinator().getTurnNumber());
     }
 
-        @Test
+    @Test
     public void resigningPlayerLeavesMatchAndRemainingPlayersContinue() {
         ClockService clockService = new ClockServiceImpl();
         StubDictionaryRepository dictionaryRepository = new StubDictionaryRepository();
         GameSetupService setupService =
-        new GameSetupServiceImpl(dictionaryRepository, clockService, new Random(17L));
+                new GameSetupServiceImpl(dictionaryRepository, clockService, new Random(17L));
         GameApplicationService applicationService =
-        new GameApplicationServiceImpl(clockService, dictionaryRepository);
+                new GameApplicationServiceImpl(clockService, dictionaryRepository);
 
         GameSession session =
-        setupService.startNewGame(
-            new NewGameRequest(
-            GameMode.HOT_SEAT,
-            3,
-            List.of("Alice", "Bob", "Cleo"),
-            DictionaryType.AM,
-            null));
+                setupService.startNewGame(
+                        new NewGameRequest(
+                                GameMode.HOT_SEAT,
+                                3,
+                                List.of("Alice", "Bob", "Cleo"),
+                                DictionaryType.AM,
+                                null));
 
         PlayerController firstController =
-        session.getGameState().requireCurrentActivePlayer().getController();
+                session.getGameState().requireCurrentActivePlayer().getController();
         String resigningPlayerId = session.getGameState().requireCurrentActivePlayer().getPlayerId();
         GameActionResult result = firstController.resign(applicationService, session, "ui-resign-1");
 
@@ -90,26 +90,26 @@ public class NonUiGameFlowTest {
         assertEquals(SessionStatus.IN_PROGRESS, session.getSessionStatus());
         assertFalse(session.getGameState().getPlayerById(resigningPlayerId).getActive());
         assertFalse(
-            resigningPlayerId.equals(
-            session.getGameState().requireCurrentActivePlayer().getPlayerId()));
+                resigningPlayerId.equals(
+                        session.getGameState().requireCurrentActivePlayer().getPlayerId()));
     }
 
     private static class StubDictionaryRepository extends DictionaryRepository {
-            @Override
+        @Override
         public void loadDictionary(DictionaryType dictionaryType) {
         }
 
-            @Override
+        @Override
         public Set<String> getDictionary() {
             return Collections.singleton("BOOK");
         }
 
-            @Override
+        @Override
         public DictionaryType getLoadedDictionaryType() {
             return DictionaryType.AM;
         }
 
-            @Override
+        @Override
         public boolean isAccepted(String word) {
             return "BOOK".equalsIgnoreCase(word);
         }

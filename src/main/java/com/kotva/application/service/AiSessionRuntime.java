@@ -19,9 +19,9 @@ public final class AiSessionRuntime implements AiTurnRuntime {
     }
 
     public void requestTurnIfIdle(
-        GameSession session,
-        PlayerController controller,
-        Consumer<TurnCompletion> completionConsumer) {
+            GameSession session,
+            PlayerController controller,
+            Consumer<TurnCompletion> completionConsumer) {
         Objects.requireNonNull(session, "session cannot be null.");
         Objects.requireNonNull(controller, "controller cannot be null.");
         Objects.requireNonNull(completionConsumer, "completionConsumer cannot be null.");
@@ -44,64 +44,63 @@ public final class AiSessionRuntime implements AiTurnRuntime {
         }
 
         future.whenComplete((move, error) -> {
-                synchronized (this) {
-                    if (pendingAiMove == future) {
-                        pendingAiMove = null;
-                    }
+            synchronized (this) {
+                if (pendingAiMove == future) {
+                    pendingAiMove = null;
                 }
-                completionConsumer.accept(new TurnCompletion(expectedSessionId, expectedPlayerId, token, move, error));
-            });
+            }
+            completionConsumer.accept(new TurnCompletion(expectedSessionId, expectedPlayerId, token, move, error));
+        });
     }
 
-        @Override
+    @Override
     public synchronized void cancelPending() {
         requestToken++;
         pendingAiMove = null;
     }
 
-        @Override
+    @Override
     public synchronized boolean matchesCurrentTurn(
-        TurnCompletion completion,
-        GameSession session,
-        Player currentPlayer,
-        PlayerController controller) {
+            TurnCompletion completion,
+            GameSession session,
+            Player currentPlayer,
+            PlayerController controller) {
         Objects.requireNonNull(completion, "completion cannot be null.");
         Objects.requireNonNull(session, "session cannot be null.");
         Objects.requireNonNull(currentPlayer, "currentPlayer cannot be null.");
         Objects.requireNonNull(controller, "controller cannot be null.");
 
         return completion.requestToken() == requestToken
-        && Objects.equals(session.getSessionId(), completion.expectedSessionId())
-        && Objects.equals(currentPlayer.getPlayerId(), completion.expectedPlayerId())
-        && controller.supportsAutomatedTurn();
+                && Objects.equals(session.getSessionId(), completion.expectedSessionId())
+                && Objects.equals(currentPlayer.getPlayerId(), completion.expectedPlayerId())
+                && controller.supportsAutomatedTurn();
     }
 
-        @Override
+    @Override
     public AiTurnAttemptResult applyMove(
-        PlayerController controller,
-        GameApplicationService gameApplicationService,
-        GameSession session,
-        AiMove move) {
+            PlayerController controller,
+            GameApplicationService gameApplicationService,
+            GameSession session,
+            AiMove move) {
         return controller.applyAutomatedTurn(
-            aiTurnCoordinator,
-            gameApplicationService,
-            session,
-            Objects.requireNonNull(move, "move cannot be null."));
+                aiTurnCoordinator,
+                gameApplicationService,
+                session,
+                Objects.requireNonNull(move, "move cannot be null."));
     }
 
-        @Override
+    @Override
     public synchronized void close() {
         cancelPending();
         aiTurnCoordinator.close();
     }
 
     public record TurnCompletion(
-        String expectedSessionId,
-        String expectedPlayerId,
-        long requestToken,
-        AiMoveOptionSet moveOptions,
-        Throwable error) {
-
+            String expectedSessionId,
+            String expectedPlayerId,
+            long requestToken,
+            AiMoveOptionSet moveOptions,
+            Throwable error) {
         public TurnCompletion {
             expectedSessionId = Objects.requireNonNull(expectedSessionId, "expectedSessionId cannot be null.");
             expectedPlayerId = Objects.requireNonNull(expectedPlayerId, "expectedPlayerId cannot be null.");

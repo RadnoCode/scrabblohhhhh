@@ -12,6 +12,9 @@ import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.input.MouseEvent;
 
+/**
+ * GameInteractionCoordinator 负责把 JavaFX 事件接到控制器和纯视觉预览层。
+ */
 public class GameInteractionCoordinator {
     private final BoardView boardView;
     private final RackView rackView;
@@ -25,13 +28,13 @@ public class GameInteractionCoordinator {
     private Scene attachedScene;
 
     public GameInteractionCoordinator(
-        BoardView boardView,
-        RackView rackView,
-        ActionPanelView actionPanelView,
-        GameDraftState draftState,
-        PreviewRenderer previewRenderer,
-        GameRenderer gameRenderer,
-        GameActionPort actionPort) {
+            BoardView boardView,
+            RackView rackView,
+            ActionPanelView actionPanelView,
+            GameDraftState draftState,
+            PreviewRenderer previewRenderer,
+            GameRenderer gameRenderer,
+            GameActionPort actionPort) {
         this.boardView = Objects.requireNonNull(boardView, "boardView cannot be null.");
         this.rackView = Objects.requireNonNull(rackView, "rackView cannot be null.");
         this.actionPanelView = Objects.requireNonNull(actionPanelView, "actionPanelView cannot be null.");
@@ -48,9 +51,9 @@ public class GameInteractionCoordinator {
         bindBoardInteractions();
         bindWorkbenchButtons();
         boardView.sceneProperty().addListener((observable, oldScene, newScene) -> {
-                detachSceneHandlers(oldScene);
-                attachSceneHandlers(newScene);
-            });
+            detachSceneHandlers(oldScene);
+            attachSceneHandlers(newScene);
+        });
         attachSceneHandlers(boardView.getScene());
     }
 
@@ -159,14 +162,6 @@ public class GameInteractionCoordinator {
 
         BoardCoordinate targetCoordinate = previewRenderer.getHoveredCoordinate();
         String tileId = previewRenderer.getDraggedTileId();
-        Integer targetRackIndex = previewRenderer.getHoveredRackIndex();
-        if (previewRenderer.isDraggingFromBoard() && targetRackIndex != null) {
-            actionPort.onDraftTileRemoved(tileId);
-            previewRenderer.clear();
-            gameRenderer.refresh();
-            event.consume();
-            return;
-        }
         if (targetCoordinate == null || draftState.isCellOccupied(targetCoordinate, tileId)) {
             previewRenderer.clear();
             gameRenderer.refresh();

@@ -13,6 +13,7 @@ import com.kotva.policy.PlayerType;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
+// Action source adapter for a player. It forwards player-intent events into the application service.
 public class PlayerController {
     private final PlayerType type;
     private final String playerId;
@@ -27,9 +28,9 @@ public class PlayerController {
         Objects.requireNonNull(type, "type cannot be null.");
 
         return switch (type) {
-        case LOCAL -> new LocalPlayerController(playerId);
-        case LAN -> throw new IllegalArgumentException("LAN player type is not supported on this branch.");
-        case AI -> new AIPlayerController(playerId);
+            case LOCAL -> new LocalPlayerController(playerId);
+            case LAN -> throw new IllegalArgumentException("LAN player type is not supported on this branch.");
+            case AI -> new AIPlayerController(playerId);
         };
     }
 
@@ -44,17 +45,17 @@ public class PlayerController {
         requireService(service).assignLettertoBlank(session, tileId, assignedLetter);
     }
     public PreviewResult placeDraftTile(
-        GameApplicationService service, GameSession session, String tileId, Position position) {
+            GameApplicationService service, GameSession session, String tileId, Position position) {
         return requireService(service).placeDraftTile(session, tileId, position);
     }
 
     public PreviewResult moveDraftTile(
-        GameApplicationService service, GameSession session, String tileId, Position newPosition) {
+            GameApplicationService service, GameSession session, String tileId, Position newPosition) {
         return requireService(service).moveDraftTile(session, tileId, newPosition);
     }
 
     public PreviewResult removeDraftTile(
-        GameApplicationService service, GameSession session, String tileId) {
+            GameApplicationService service, GameSession session, String tileId) {
         return requireService(service).removeDraftTile(session, tileId);
     }
 
@@ -67,7 +68,7 @@ public class PlayerController {
     }
 
     public GameActionResult submitDraft(
-        GameApplicationService service, GameSession session, String clientActionId) {
+            GameApplicationService service, GameSession session, String clientActionId) {
         return requireService(service).submitDraft(session, clientActionId);
     }
 
@@ -76,7 +77,7 @@ public class PlayerController {
     }
 
     public GameActionResult passTurn(
-        GameApplicationService service, GameSession session, String clientActionId) {
+            GameApplicationService service, GameSession session, String clientActionId) {
         return requireService(service).passTurn(session, clientActionId);
     }
 
@@ -85,7 +86,7 @@ public class PlayerController {
     }
 
     public GameActionResult resign(
-        GameApplicationService service, GameSession session, String clientActionId) {
+            GameApplicationService service, GameSession session, String clientActionId) {
         return requireService(service).resign(session, clientActionId);
     }
 
@@ -94,15 +95,15 @@ public class PlayerController {
     }
 
     public CompletableFuture<AiMoveOptionSet> requestAutomatedTurn(
-        AiTurnCoordinator aiTurnCoordinator, GameSession session) {
+            AiTurnCoordinator aiTurnCoordinator, GameSession session) {
         throw new UnsupportedOperationException("This player controller does not support automated turns.");
     }
 
     public AiTurnAttemptResult applyAutomatedTurn(
-        AiTurnCoordinator aiTurnCoordinator,
-        GameApplicationService gameApplicationService,
-        GameSession session,
-        AiMove move) {
+            AiTurnCoordinator aiTurnCoordinator,
+            GameApplicationService gameApplicationService,
+            GameSession session,
+            AiMove move) {
         throw new UnsupportedOperationException("This player controller does not support automated turns.");
     }
 

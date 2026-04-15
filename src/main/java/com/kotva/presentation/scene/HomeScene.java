@@ -14,6 +14,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
+/**
+ * HomeScene builds the current home page layout.
+ * The structure is kept simple on purpose:
+ * top title area + center content area with envelope on the left and buttons on the right.
+ */
 public class HomeScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
@@ -62,6 +67,10 @@ public class HomeScene extends Scene {
         return root;
     }
 
+    /**
+     * Load CSS files for the page and shared components.
+     * The files live under src/main/resources.
+     */
     private void loadStyleSheets() {
         getStylesheets().add(getClass().getResource("/css/base.css").toExternalForm());
         getStylesheets().add(getClass().getResource("/css/theme.css").toExternalForm());

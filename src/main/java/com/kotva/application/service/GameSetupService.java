@@ -5,7 +5,6 @@ import com.kotva.application.session.GameSession;
 import com.kotva.application.setup.NewGameRequest;
 
 public interface GameSetupService {
-
     GameConfig buildConfig(NewGameRequest request);
 
     GameSession startNewGame(NewGameRequest request);

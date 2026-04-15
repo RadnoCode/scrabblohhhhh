@@ -9,32 +9,33 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+/**
+ * PlayerInfoCardView 是玩家信息卡组件。
+ */
 public class PlayerInfoCardView extends StackPane {
     private final Label avatarLabel;
     private final Label playerNameLabel;
     private final Label playerIdLabel;
     private final Label playerScoreLabel;
-    private final Label stepMarkTitleLabel;
-    private final Label stepMarkValueLabel;
 
     public PlayerInfoCardView() {
         this.avatarLabel = new Label();
         this.playerNameLabel = new Label();
         this.playerIdLabel = new Label();
         this.playerScoreLabel = new Label();
-        this.stepMarkTitleLabel = new Label("Step Mark:");
-        this.stepMarkValueLabel = new Label();
         initializeCard();
         clear();
     }
 
     private void initializeCard() {
+        // 先设置卡片本体的圆角面板尺寸。
         getStyleClass().add("game-player-card");
-        setPrefSize(236, 140);
-        setMinSize(236, 140);
-        setMaxSize(236, 140);
-        setPadding(new Insets(14, 18, 14, 18));
+        setPrefSize(236, 124);
+        setMinSize(236, 124);
+        setMaxSize(236, 124);
+        setPadding(new Insets(16, 18, 16, 18));
 
+        // 左侧头像区域本质上也是一个小的 StackPane。
         StackPane avatarPane = new StackPane(avatarLabel);
         avatarPane.getStyleClass().add("game-player-avatar");
         avatarPane.setPrefSize(62, 62);
@@ -46,12 +47,12 @@ public class PlayerInfoCardView extends StackPane {
         playerNameLabel.getStyleClass().add("game-player-name");
         playerIdLabel.getStyleClass().add("game-player-meta");
         playerScoreLabel.getStyleClass().add("game-player-score");
-        stepMarkTitleLabel.getStyleClass().add("game-player-step-mark-title");
-        stepMarkValueLabel.getStyleClass().add("game-player-step-mark-value");
 
+        // scoreSpacer 用来把右侧“领先占位”顶到最右边。
         Region scoreSpacer = new Region();
         HBox.setHgrow(scoreSpacer, Priority.ALWAYS);
 
+        // 这个小占位块后续可以替换成真正的领先标识。
         Region leaderPlaceholder = new Region();
         leaderPlaceholder.getStyleClass().add("game-player-lead-placeholder");
         leaderPlaceholder.setPrefSize(22, 14);
@@ -61,37 +62,30 @@ public class PlayerInfoCardView extends StackPane {
         HBox scoreRow = new HBox(10, playerScoreLabel, scoreSpacer, leaderPlaceholder);
         scoreRow.setAlignment(Pos.CENTER_LEFT);
 
-        HBox stepMarkRow = new HBox(6, stepMarkTitleLabel, stepMarkValueLabel);
-        stepMarkRow.setAlignment(Pos.CENTER_LEFT);
-
-        VBox textColumn = new VBox(6, playerNameLabel, playerIdLabel, scoreRow, stepMarkRow);
+        VBox textColumn = new VBox(8, playerNameLabel, playerIdLabel, scoreRow);
         textColumn.setAlignment(Pos.CENTER_LEFT);
 
+        // 最终整张卡片由“头像 + 文本列”组成。
         HBox content = new HBox(16, avatarPane, textColumn);
         content.setAlignment(Pos.CENTER_LEFT);
         getChildren().add(content);
     }
 
-    public void setPlayer(
-        String playerName,
-        String playerId,
-        int score,
-        String stepMarkText,
-        boolean currentTurn,
-        boolean active) {
+    public void setPlayer(String playerName, String playerId, int score, boolean currentTurn, boolean active) {
+        // 写入玩家基础信息。
         playerNameLabel.setText(playerName);
         playerIdLabel.setText(playerId);
         playerScoreLabel.setText("Score  " + score);
-        stepMarkValueLabel.setText(stepMarkText);
         avatarLabel.setText(buildInitials(playerName));
+        // 再根据当前轮次和是否存活切换卡片状态样式。
         updateStateClasses(currentTurn, active);
     }
 
     public void clear() {
+        // 清空文案，让这个卡位回到“空占位”视觉。
         playerNameLabel.setText("");
         playerIdLabel.setText("");
         playerScoreLabel.setText("");
-        stepMarkValueLabel.setText("--");
         avatarLabel.setText("");
         getStyleClass().removeAll("game-player-card-current", "game-player-card-inactive");
         if (!getStyleClass().contains("game-player-card-empty")) {
@@ -100,6 +94,7 @@ public class PlayerInfoCardView extends StackPane {
     }
 
     private void updateStateClasses(boolean currentTurn, boolean active) {
+        // 每次先把几种互斥状态类全部移除。
         getStyleClass().removeAll("game-player-card-current", "game-player-card-inactive", "game-player-card-empty");
         if (currentTurn) {
             getStyleClass().add("game-player-card-current");
@@ -110,6 +105,7 @@ public class PlayerInfoCardView extends StackPane {
     }
 
     private String buildInitials(String playerName) {
+        // 用名字首字母生成头像缩写。
         String[] parts = playerName.trim().split("\\s+");
         if (parts.length == 0 || parts[0].isBlank()) {
             return "--";

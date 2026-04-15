@@ -32,19 +32,19 @@ public interface GameRuntime {
 
     void submitDraft();
 
-default void submitDraft(String clientActionId) {
+    default void submitDraft(String clientActionId) {
         submitDraft();
     }
 
     void passTurn();
 
-default void passTurn(String clientActionId) {
+    default void passTurn(String clientActionId) {
         passTurn();
     }
 
     void resign();
 
-default void resign(String clientActionId) {
+    default void resign(String clientActionId) {
         resign();
     }
 
@@ -53,7 +53,7 @@ default void resign(String clientActionId) {
     boolean isCurrentTurnAutomated();
 
     void requestAutomatedTurnIfIdle(
-        Consumer<AiSessionRuntime.TurnCompletion> completionConsumer);
+            Consumer<AiSessionRuntime.TurnCompletion> completionConsumer);
 
     boolean matchesAutomatedTurn(AiSessionRuntime.TurnCompletion completion);
 

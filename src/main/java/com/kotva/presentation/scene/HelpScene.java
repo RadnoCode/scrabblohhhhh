@@ -16,6 +16,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 
+/**
+ * HelpScene builds the help page.
+ * The right panel uses a ScrollPane so the vertical bar can control long rules text.
+ */
 public class HelpScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;

@@ -8,8 +8,12 @@ import javafx.scene.shape.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * RoomPanelView draws the reusable online-room frame used by room search
+ * and room waiting pages. It replaces the old ticket component with a
+ * more neutral room panel component while keeping the same visual idea.
+ */
 public class RoomPanelView extends Pane {
-
     private enum Variant {
         SEARCH,
         WAITING
@@ -55,7 +59,7 @@ public class RoomPanelView extends Pane {
         return new RoomPanelView(Variant.WAITING, 500, 280);
     }
 
-        @Override
+    @Override
     protected void layoutChildren() {
         clearDynamicShapes();
 

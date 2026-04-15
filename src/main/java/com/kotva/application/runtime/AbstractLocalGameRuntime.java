@@ -20,15 +20,15 @@ abstract class AbstractLocalGameRuntime implements GameRuntime {
     private GameSession session;
 
     protected AbstractLocalGameRuntime(
-        GameSetupService gameSetupService,
-        GameApplicationService gameApplicationService) {
+            GameSetupService gameSetupService,
+            GameApplicationService gameApplicationService) {
         this.gameSetupService =
-        Objects.requireNonNull(gameSetupService, "gameSetupService cannot be null.");
+                Objects.requireNonNull(gameSetupService, "gameSetupService cannot be null.");
         this.gameApplicationService = Objects.requireNonNull(
-            gameApplicationService, "gameApplicationService cannot be null.");
+                gameApplicationService, "gameApplicationService cannot be null.");
     }
 
-        @Override
+    @Override
     public void start(NewGameRequest request) {
         Objects.requireNonNull(request, "request cannot be null.");
         shutdown();
@@ -36,142 +36,142 @@ abstract class AbstractLocalGameRuntime implements GameRuntime {
         afterSessionStarted();
     }
 
-        @Override
+    @Override
     public boolean hasSession() {
         return session != null;
     }
 
-        @Override
+    @Override
     public GameSession getSession() {
         return session;
     }
 
-        @Override
+    @Override
     public boolean hasTimeControl() {
         return session != null && session.getConfig().hasTimeControl();
     }
 
-        @Override
+    @Override
     public boolean isSessionInProgress() {
         return session != null && session.getSessionStatus() == SessionStatus.IN_PROGRESS;
     }
 
-        @Override
+    @Override
     public GameSessionSnapshot getSessionSnapshot() {
         return decorateSnapshot(gameApplicationService.getSessionSnapshot(requireSession()));
     }
 
-        @Override
+    @Override
     public GameSessionSnapshot tickClock(long elapsedMillis) {
         return decorateSnapshot(gameApplicationService.tickClock(requireSession(), elapsedMillis));
     }
 
-        @Override
+    @Override
     public void placeDraftTile(String tileId, Position position) {
         requireCurrentPlayerController().placeDraftTile(
-            gameApplicationService,
-            requireSession(),
-            tileId,
-            Objects.requireNonNull(position, "position cannot be null."));
+                gameApplicationService,
+                requireSession(),
+                tileId,
+                Objects.requireNonNull(position, "position cannot be null."));
     }
 
-        @Override
+    @Override
     public void moveDraftTile(String tileId, Position position) {
         requireCurrentPlayerController().moveDraftTile(
-            gameApplicationService,
-            requireSession(),
-            tileId,
-            Objects.requireNonNull(position, "position cannot be null."));
+                gameApplicationService,
+                requireSession(),
+                tileId,
+                Objects.requireNonNull(position, "position cannot be null."));
     }
 
-        @Override
+    @Override
     public void removeDraftTile(String tileId) {
         requireCurrentPlayerController().removeDraftTile(
-            gameApplicationService,
-            requireSession(),
-            tileId);
+                gameApplicationService,
+                requireSession(),
+                tileId);
     }
 
-        @Override
+    @Override
     public void recallAllDraftTiles() {
         requireCurrentPlayerController().recallAllDraftTiles(
-            gameApplicationService,
-            requireSession());
+                gameApplicationService,
+                requireSession());
     }
 
-        @Override
+    @Override
     public void submitDraft() {
         requireCurrentPlayerController().submitDraft(gameApplicationService, requireSession());
     }
 
-        @Override
+    @Override
     public void submitDraft(String clientActionId) {
         requireCurrentPlayerController().submitDraft(
-            gameApplicationService,
-            requireSession(),
-            clientActionId);
+                gameApplicationService,
+                requireSession(),
+                clientActionId);
     }
 
-        @Override
+    @Override
     public void passTurn() {
         requireCurrentPlayerController().passTurn(gameApplicationService, requireSession());
     }
 
-        @Override
+    @Override
     public void passTurn(String clientActionId) {
         requireCurrentPlayerController().passTurn(
-            gameApplicationService,
-            requireSession(),
-            clientActionId);
+                gameApplicationService,
+                requireSession(),
+                clientActionId);
     }
 
-        @Override
+    @Override
     public void resign() {
         requireCurrentPlayerController().resign(gameApplicationService, requireSession());
     }
 
-        @Override
+    @Override
     public void resign(String clientActionId) {
         requireCurrentPlayerController().resign(
-            gameApplicationService,
-            requireSession(),
-            clientActionId);
+                gameApplicationService,
+                requireSession(),
+                clientActionId);
     }
 
-        @Override
+    @Override
     public boolean hasAutomatedTurnSupport() {
         return false;
     }
 
-        @Override
+    @Override
     public boolean isCurrentTurnAutomated() {
         return false;
     }
 
-        @Override
+    @Override
     public void requestAutomatedTurnIfIdle(
-        Consumer<AiSessionRuntime.TurnCompletion> completionConsumer) {
+            Consumer<AiSessionRuntime.TurnCompletion> completionConsumer) {
     }
 
-        @Override
+    @Override
     public boolean matchesAutomatedTurn(AiSessionRuntime.TurnCompletion completion) {
         return false;
     }
 
-        @Override
+    @Override
     public void applyAutomatedTurn(AiSessionRuntime.TurnCompletion completion) {
         throw new IllegalStateException("Automated turn support is not available.");
     }
 
-        @Override
+    @Override
     public void cancelPendingAutomatedTurn() {
     }
 
-        @Override
+    @Override
     public void disableAutomatedTurnSupport() {
     }
 
-        @Override
+    @Override
     public void shutdown() {
         disableAutomatedTurnSupport();
         session = null;
@@ -194,8 +194,8 @@ abstract class AbstractLocalGameRuntime implements GameRuntime {
             throw new IllegalStateException("current player is unavailable.");
         }
         return Objects.requireNonNull(
-            currentPlayer.getController(),
-            "current player controller cannot be null.");
+                currentPlayer.getController(),
+                "current player controller cannot be null.");
     }
 
     private Player resolveCurrentPlayer() {

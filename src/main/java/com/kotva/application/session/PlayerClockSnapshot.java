@@ -12,12 +12,12 @@ public class PlayerClockSnapshot {
     private final boolean active;
 
     public PlayerClockSnapshot(
-        String playerId,
-        String playerName,
-        long mainTimeRemainingMillis,
-        long byoYomiRemainingMillis,
-        ClockPhase phase,
-        boolean active) {
+            String playerId,
+            String playerName,
+            long mainTimeRemainingMillis,
+            long byoYomiRemainingMillis,
+            ClockPhase phase,
+            boolean active) {
         this.playerId = Objects.requireNonNull(playerId, "playerId cannot be null.");
         this.playerName = Objects.requireNonNull(playerName, "playerName cannot be null.");
         this.mainTimeRemainingMillis = mainTimeRemainingMillis;

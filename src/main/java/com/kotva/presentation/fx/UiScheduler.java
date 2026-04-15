@@ -6,6 +6,10 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
 
+/**
+ * UiScheduler is a thin wrapper around a JavaFX Timeline.
+ * It keeps the polling loop wiring readable inside controllers.
+ */
 public class UiScheduler {
     private final Timeline timeline;
 

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Objects;
 
 public final class TurnDraftActionMapper {
-
     private TurnDraftActionMapper() {
     }
 

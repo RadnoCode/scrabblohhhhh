@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Objects;
 
 public record AiMove(Action action, List<Placement> placements, int score, double equity, double win) {
-
     public AiMove {
         action = Objects.requireNonNull(action, "action cannot be null.");
         placements = List.copyOf(Objects.requireNonNull(placements, "placements cannot be null."));
@@ -19,7 +18,6 @@ public record AiMove(Action action, List<Placement> placements, int score, doubl
     }
 
     public record Placement(int row, int col, char letter, boolean blank, Character assignedLetter) {
-
         public Placement {
             if (row < 0 || row >= AiPositionSnapshot.BOARD_SIDE) {
                 throw new IllegalArgumentException("row out of bounds: " + row);

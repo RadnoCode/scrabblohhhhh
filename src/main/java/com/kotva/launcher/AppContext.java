@@ -23,34 +23,34 @@ public class AppContext {
 
     public AppContext() {
         this(
-            new ClockServiceImpl(),
-            new SettlementServiceImpl(),
-            new DictionaryRepository(),
-            new SettingsRepository(),
-            new Random());
+                new ClockServiceImpl(),
+                new SettlementServiceImpl(),
+                new DictionaryRepository(),
+                new SettingsRepository(),
+                new Random());
     }
 
     public AppContext(
-        ClockService clockService,
-        SettlementService settlementService,
-        DictionaryRepository dictionaryRepository,
-        SettingsRepository settingsRepository,
-        Random random) {
+            ClockService clockService,
+            SettlementService settlementService,
+            DictionaryRepository dictionaryRepository,
+            SettingsRepository settingsRepository,
+            Random random) {
         this.clockService = Objects.requireNonNull(clockService, "clockService cannot be null.");
         this.settlementService =
-        Objects.requireNonNull(settlementService, "settlementService cannot be null.");
+                Objects.requireNonNull(settlementService, "settlementService cannot be null.");
         this.dictionaryRepository =
-        Objects.requireNonNull(dictionaryRepository, "dictionaryRepository cannot be null.");
+                Objects.requireNonNull(dictionaryRepository, "dictionaryRepository cannot be null.");
         this.settingsRepository =
-        Objects.requireNonNull(settingsRepository, "settingsRepository cannot be null.");
+                Objects.requireNonNull(settingsRepository, "settingsRepository cannot be null.");
         Random nonNullRandom = Objects.requireNonNull(random, "random cannot be null.");
         GameApplicationService gameApplicationService =
-        new GameApplicationServiceImpl(this.clockService, this.dictionaryRepository);
+                new GameApplicationServiceImpl(this.clockService, this.dictionaryRepository);
         GameSetupService gameSetupService =
-        new GameSetupServiceImpl(this.dictionaryRepository, this.clockService, nonNullRandom);
+                new GameSetupServiceImpl(this.dictionaryRepository, this.clockService, nonNullRandom);
         this.gameRuntimeFactory = new GameRuntimeFactory(
-            gameSetupService,
-            gameApplicationService);
+                gameSetupService,
+                gameApplicationService);
     }
 
     public ClockService getClockService() {

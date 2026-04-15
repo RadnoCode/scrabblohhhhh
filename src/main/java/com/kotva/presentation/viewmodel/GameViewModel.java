@@ -1,10 +1,14 @@
 package com.kotva.presentation.viewmodel;
 
-import com.kotva.policy.BonusType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * GameViewModel keeps the UI-facing state for the first game-page iteration.
+ * It deliberately mirrors what the renderer needs, rather than exposing
+ * mutable domain objects to the presentation layer.
+ */
 public class GameViewModel {
     private static final int DEFAULT_RACK_SLOT_COUNT = 7;
 
@@ -16,12 +20,9 @@ public class GameViewModel {
     private String stepTimerText;
     private String totalTimerTitle;
     private String totalTimerText;
-    private WordOutlineModel wordOutline;
     private boolean interactionLocked;
     private String aiErrorSummary;
     private String aiErrorDetails;
-    private String transientMessageText;
-    private long transientMessageVersion;
 
     public GameViewModel(String titleText) {
         this.titleText = Objects.requireNonNull(titleText, "titleText cannot be null.");
@@ -32,12 +33,9 @@ public class GameViewModel {
         this.stepTimerText = "--:--";
         this.totalTimerTitle = "Total Time";
         this.totalTimerText = "--:--";
-        this.wordOutline = null;
         this.interactionLocked = false;
         this.aiErrorSummary = "";
         this.aiErrorDetails = "";
-        this.transientMessageText = "";
-        this.transientMessageVersion = 0L;
         resetPlaceholders();
     }
 
@@ -104,14 +102,6 @@ public class GameViewModel {
         this.totalTimerText = Objects.requireNonNull(totalTimerText, "totalTimerText cannot be null.");
     }
 
-    public WordOutlineModel getWordOutline() {
-        return wordOutline;
-    }
-
-    public void setWordOutline(WordOutlineModel wordOutline) {
-        this.wordOutline = wordOutline;
-    }
-
     public boolean isInteractionLocked() {
         return interactionLocked;
     }
@@ -136,29 +126,13 @@ public class GameViewModel {
         this.aiErrorDetails = Objects.requireNonNull(aiErrorDetails, "aiErrorDetails cannot be null.");
     }
 
-    public String getTransientMessageText() {
-        return transientMessageText;
-    }
-
-    public long getTransientMessageVersion() {
-        return transientMessageVersion;
-    }
-
-    public void pushTransientMessage(String transientMessageText) {
-        this.transientMessageText =
-        Objects.requireNonNull(transientMessageText, "transientMessageText cannot be null.");
-        this.transientMessageVersion++;
-    }
-
     public void resetPlaceholders() {
         playerCards.clear();
         rackTiles.clear();
         boardTiles.clear();
-        wordOutline = null;
         interactionLocked = false;
         aiErrorSummary = "";
         aiErrorDetails = "";
-        transientMessageText = "";
         for (int index = 0; index < DEFAULT_RACK_SLOT_COUNT; index++) {
             rackTiles.add(TileModel.empty());
         }
@@ -168,21 +142,13 @@ public class GameViewModel {
         private final String playerName;
         private final String playerId;
         private final int score;
-        private final String stepMarkText;
         private final boolean currentTurn;
         private final boolean active;
 
-        public PlayerCardModel(
-            String playerName,
-            String playerId,
-            int score,
-            String stepMarkText,
-            boolean currentTurn,
-            boolean active) {
+        public PlayerCardModel(String playerName, String playerId, int score, boolean currentTurn, boolean active) {
             this.playerName = Objects.requireNonNull(playerName, "playerName cannot be null.");
             this.playerId = Objects.requireNonNull(playerId, "playerId cannot be null.");
             this.score = score;
-            this.stepMarkText = Objects.requireNonNull(stepMarkText, "stepMarkText cannot be null.");
             this.currentTurn = currentTurn;
             this.active = active;
         }
@@ -197,10 +163,6 @@ public class GameViewModel {
 
         public int getScore() {
             return score;
-        }
-
-        public String getStepMarkText() {
-            return stepMarkText;
         }
 
         public boolean isCurrentTurn() {
@@ -253,36 +215,27 @@ public class GameViewModel {
     public static final class BoardTileModel {
         private final BoardCoordinate coordinate;
         private final TileModel tile;
-        private final BonusType bonusType;
         private final boolean draft;
         private final boolean previewValid;
         private final boolean previewInvalid;
         private final boolean mainWordHighlighted;
         private final boolean crossWordHighlighted;
-        private final boolean mainWordPreviewValid;
-        private final boolean mainWordPreviewInvalid;
 
         public BoardTileModel(
-            BoardCoordinate coordinate,
-            TileModel tile,
-            BonusType bonusType,
-            boolean draft,
-            boolean previewValid,
-            boolean previewInvalid,
-            boolean mainWordHighlighted,
-            boolean crossWordHighlighted,
-            boolean mainWordPreviewValid,
-            boolean mainWordPreviewInvalid) {
+                BoardCoordinate coordinate,
+                TileModel tile,
+                boolean draft,
+                boolean previewValid,
+                boolean previewInvalid,
+                boolean mainWordHighlighted,
+                boolean crossWordHighlighted) {
             this.coordinate = Objects.requireNonNull(coordinate, "coordinate cannot be null.");
             this.tile = Objects.requireNonNull(tile, "tile cannot be null.");
-            this.bonusType = Objects.requireNonNull(bonusType, "bonusType cannot be null.");
             this.draft = draft;
             this.previewValid = previewValid;
             this.previewInvalid = previewInvalid;
             this.mainWordHighlighted = mainWordHighlighted;
             this.crossWordHighlighted = crossWordHighlighted;
-            this.mainWordPreviewValid = mainWordPreviewValid;
-            this.mainWordPreviewInvalid = mainWordPreviewInvalid;
         }
 
         public BoardCoordinate getCoordinate() {
@@ -291,10 +244,6 @@ public class GameViewModel {
 
         public TileModel getTile() {
             return tile;
-        }
-
-        public BonusType getBonusType() {
-            return bonusType;
         }
 
         public boolean isDraft() {
@@ -315,55 +264,6 @@ public class GameViewModel {
 
         public boolean isCrossWordHighlighted() {
             return crossWordHighlighted;
-        }
-
-        public boolean isMainWordPreviewValid() {
-            return mainWordPreviewValid;
-        }
-
-        public boolean isMainWordPreviewInvalid() {
-            return mainWordPreviewInvalid;
-        }
-    }
-
-    public static final class WordOutlineModel {
-        private final int startRow;
-        private final int startCol;
-        private final int endRow;
-        private final int endCol;
-        private final boolean valid;
-
-        public WordOutlineModel(
-            int startRow,
-            int startCol,
-            int endRow,
-            int endCol,
-            boolean valid) {
-            this.startRow = startRow;
-            this.startCol = startCol;
-            this.endRow = endRow;
-            this.endCol = endCol;
-            this.valid = valid;
-        }
-
-        public int getStartRow() {
-            return startRow;
-        }
-
-        public int getStartCol() {
-            return startCol;
-        }
-
-        public int getEndRow() {
-            return endRow;
-        }
-
-        public int getEndCol() {
-            return endCol;
-        }
-
-        public boolean isValid() {
-            return valid;
         }
     }
 }

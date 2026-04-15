@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.Objects;
 
 public record AiPositionSnapshot(
-    List<BoardCell> boardCells,
-    String rack,
-    String unseenTiles,
-    int aiScore,
-    int opponentScore) {
+        List<BoardCell> boardCells,
+        String rack,
+        String unseenTiles,
+        int aiScore,
+        int opponentScore) {
     public static final int BOARD_SIDE = 15;
     public static final int BOARD_CELL_COUNT = BOARD_SIDE * BOARD_SIDE;
 
@@ -25,7 +25,7 @@ public record AiPositionSnapshot(
         boardCells = List.copyOf(Objects.requireNonNull(boardCells, "boardCells cannot be null."));
         if (boardCells.size() != BOARD_CELL_COUNT) {
             throw new IllegalArgumentException(
-                "boardCells must contain exactly " + BOARD_CELL_COUNT + " cells.");
+                    "boardCells must contain exactly " + BOARD_CELL_COUNT + " cells.");
         }
 
         rack = Objects.requireNonNull(rack, "rack cannot be null.");
@@ -42,18 +42,18 @@ public record AiPositionSnapshot(
 
         Player opponent = resolveOpponent(session, currentPlayer);
         return new AiPositionSnapshot(
-            buildBoardCells(session.getGameState().getBoard()),
-            encodeRack(currentPlayer),
-            buildUnseenTiles(session, opponent),
-            currentPlayer.getScore(),
-            opponent.getScore());
+                buildBoardCells(session.getGameState().getBoard()),
+                encodeRack(currentPlayer),
+                buildUnseenTiles(session, opponent),
+                currentPlayer.getScore(),
+                opponent.getScore());
     }
 
     private static Player resolveOpponent(GameSession session, Player currentPlayer) {
         return session.getGameState().getPlayers().stream()
-            .filter(player -> !Objects.equals(player.getPlayerId(), currentPlayer.getPlayerId()))
-            .findFirst()
-            .orElseThrow(() -> new IllegalStateException("AI game requires an opponent."));
+                .filter(player -> !Objects.equals(player.getPlayerId(), currentPlayer.getPlayerId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("AI game requires an opponent."));
     }
 
     private static List<BoardCell> buildBoardCells(Board board) {
@@ -115,7 +115,6 @@ public record AiPositionSnapshot(
     }
 
     public record BoardCell(boolean occupied, char letter, boolean blank, Character assignedLetter) {
-
         public BoardCell {
             if (!occupied) {
                 letter = '\0';

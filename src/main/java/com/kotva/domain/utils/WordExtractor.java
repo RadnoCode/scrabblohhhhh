@@ -16,7 +16,6 @@ import com.kotva.domain.model.Tile;
 import com.kotva.domain.model.TileBag;
 
 public final class WordExtractor {
-
     private WordExtractor() {
     }
 
@@ -38,18 +37,18 @@ public final class WordExtractor {
             int col = position.getCol();
 
             if (hasTileAt(row, col - 1, draftTileByPoint, board)
-                || hasTileAt(row, col + 1, draftTileByPoint, board)) {
+                    || hasTileAt(row, col + 1, draftTileByPoint, board)) {
                 CandidateWord horizontal =
-                collectHorizontalWord(row, col, draftTileByPoint, board, tileBag);
+                        collectHorizontalWord(row, col, draftTileByPoint, board, tileBag);
                 if (horizontal.getWord().length() >= 2) {
                     candidateWords.add(horizontal);
                 }
             }
 
             if (hasTileAt(row - 1, col, draftTileByPoint, board)
-                || hasTileAt(row + 1, col, draftTileByPoint, board)) {
+                    || hasTileAt(row + 1, col, draftTileByPoint, board)) {
                 CandidateWord vertical =
-                collectVerticalWord(row, col, draftTileByPoint, board, tileBag);
+                        collectVerticalWord(row, col, draftTileByPoint, board, tileBag);
                 if (vertical.getWord().length() >= 2) {
                     candidateWords.add(vertical);
                 }
@@ -69,7 +68,7 @@ public final class WordExtractor {
     }
 
     private static boolean hasTileAt(
-        int row, int col, Map<String, ActionPlacement> index, Board board) {
+            int row, int col, Map<String, ActionPlacement> index, Board board) {
         if (row < 0 || row >= Board.SIZE || col < 0 || col >= Board.SIZE) {
             return false;
         }
@@ -84,7 +83,7 @@ public final class WordExtractor {
     }
 
     private static CandidateWord collectHorizontalWord(
-        int row, int col, Map<String, ActionPlacement> index, Board board, TileBag tileBag) {
+            int row, int col, Map<String, ActionPlacement> index, Board board, TileBag tileBag) {
         int left = col;
         while (hasTileAt(row, left - 1, index, board)) {
             left--;
@@ -100,11 +99,11 @@ public final class WordExtractor {
             wordBuilder.append(getLetterAt(row, currentCol, index, board, tileBag));
         }
         return new CandidateWord(
-            wordBuilder.toString(), new Position(row, left), new Position(row, right));
+                wordBuilder.toString(), new Position(row, left), new Position(row, right));
     }
 
     private static CandidateWord collectVerticalWord(
-        int row, int col, Map<String, ActionPlacement> index, Board board, TileBag tileBag) {
+            int row, int col, Map<String, ActionPlacement> index, Board board, TileBag tileBag) {
         int top = row;
         while (hasTileAt(top - 1, col, index, board)) {
             top--;
@@ -120,11 +119,11 @@ public final class WordExtractor {
             wordBuilder.append(getLetterAt(currentRow, col, index, board, tileBag));
         }
         return new CandidateWord(
-            wordBuilder.toString(), new Position(top, col), new Position(bottom, col));
+                wordBuilder.toString(), new Position(top, col), new Position(bottom, col));
     }
 
     private static String getLetterAt(
-        int row, int col, Map<String, ActionPlacement> index, Board board, TileBag tileBag) {
+            int row, int col, Map<String, ActionPlacement> index, Board board, TileBag tileBag) {
         String key = toPointKey(row, col);
         if (index.containsKey(key)) {
             return resolveLetter(index.get(key), tileBag);

@@ -7,6 +7,9 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 
+/**
+ * HelpIconView draws a simple question-bulb style icon for the Help page.
+ */
 public class HelpIconView extends Pane {
     private final Rectangle panelFrame;
     private final Circle bulbCircle;
@@ -36,7 +39,7 @@ public class HelpIconView extends Pane {
         questionLabel.getStyleClass().add("help-question-label");
     }
 
-        @Override
+    @Override
     protected void layoutChildren() {
         double width = getWidth();
         double height = getHeight();
@@ -55,10 +58,10 @@ public class HelpIconView extends Pane {
         bulbCircle.setRadius(bulbRadius);
 
         questionContainer.resizeRelocate(
-            centerX - bulbRadius * 0.42,
-            bulbCenterY - bulbRadius * 0.62,
-            bulbRadius * 0.84,
-            bulbRadius * 1.10
+                centerX - bulbRadius * 0.42,
+                bulbCenterY - bulbRadius * 0.62,
+                bulbRadius * 0.84,
+                bulbRadius * 1.10
         );
 
         double baseWidth = bulbRadius * 0.58;
@@ -72,9 +75,9 @@ public class HelpIconView extends Pane {
         base.setHeight(baseHeight);
 
         bottomTriangle.getPoints().setAll(
-            centerX - baseWidth * 0.20, baseY + baseHeight + 12,
-            centerX + baseWidth * 0.20, baseY + baseHeight + 12,
-            centerX, baseY + baseHeight + 32
+                centerX - baseWidth * 0.20, baseY + baseHeight + 12,
+                centerX + baseWidth * 0.20, baseY + baseHeight + 12,
+                centerX, baseY + baseHeight + 32
         );
     }
 }

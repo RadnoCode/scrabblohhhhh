@@ -10,8 +10,7 @@ import java.util.List;
 import org.junit.Test;
 
 public class AiTurnMapperTest {
-
-        @Test
+    @Test
     public void resolveSelectsRackTilesAndPreservesBlankAssignment() {
         Player player = new Player("ai-1", "AI", PlayerType.AI);
         Tile blank = new Tile("blank", ' ', 0, true);
@@ -22,14 +21,14 @@ public class AiTurnMapperTest {
         player.getRack().setTileAt(2, letterT);
 
         AiMove move = new AiMove(
-            AiMove.Action.PLACE,
-            List.of(
-            new AiMove.Placement(7, 7, 'A', false, null),
-            new AiMove.Placement(7, 8, 'E', true, 'E'),
-            new AiMove.Placement(7, 9, 'T', false, null)),
-            22,
-            0.0,
-            0.0);
+                AiMove.Action.PLACE,
+                List.of(
+                        new AiMove.Placement(7, 7, 'A', false, null),
+                        new AiMove.Placement(7, 8, 'E', true, 'E'),
+                        new AiMove.Placement(7, 9, 'T', false, null)),
+                22,
+                0.0,
+                0.0);
 
         AiTurnMapper.ResolvedMove resolvedMove = AiTurnMapper.resolve(player, move);
 
@@ -42,17 +41,17 @@ public class AiTurnMapperTest {
         assertEquals("tile-t", resolvedMove.placements().get(2).tile().getTileID());
     }
 
-        @Test
+    @Test
     public void resolveUsesBlankPlacementLetterAsDefaultAssignment() {
         Player player = new Player("ai-1", "AI", PlayerType.AI);
         player.getRack().setTileAt(0, new Tile("blank", ' ', 0, true));
 
         AiMove move = new AiMove(
-            AiMove.Action.PLACE,
-            List.of(new AiMove.Placement(7, 7, 'E', true, null)),
-            0,
-            0.0,
-            0.0);
+                AiMove.Action.PLACE,
+                List.of(new AiMove.Placement(7, 7, 'E', true, null)),
+                0,
+                0.0,
+                0.0);
 
         AiTurnMapper.ResolvedMove resolvedMove = AiTurnMapper.resolve(player, move);
 

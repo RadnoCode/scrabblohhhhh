@@ -9,6 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * GameLaunchContext bridges setup-page selections into the game page.
+ * It keeps the backend request and the UI-facing labels together so the game
+ * page can both start a real session and prepare future rendering.
+ */
 public class GameLaunchContext {
     private static final long DEFAULT_STEP_TIME_MILLIS = 30_000L;
 
@@ -21,13 +26,13 @@ public class GameLaunchContext {
     private final AiDifficulty aiDifficulty;
 
     public GameLaunchContext(
-        NewGameRequest request,
-        String modeLabel,
-        String gameTimeLabel,
-        String languageLabel,
-        String playerCountLabel,
-        String difficultyLabel,
-        AiDifficulty aiDifficulty) {
+            NewGameRequest request,
+            String modeLabel,
+            String gameTimeLabel,
+            String languageLabel,
+            String playerCountLabel,
+            String difficultyLabel,
+            AiDifficulty aiDifficulty) {
         this.request = Objects.requireNonNull(request, "request cannot be null.");
         this.modeLabel = Objects.requireNonNull(modeLabel, "modeLabel cannot be null.");
         this.gameTimeLabel = Objects.requireNonNull(gameTimeLabel, "gameTimeLabel cannot be null.");
@@ -38,50 +43,47 @@ public class GameLaunchContext {
     }
 
     public static GameLaunchContext defaultContext() {
-        return forLocalMultiplayer("15min", "North American", "4");
+        return forLocalMultiplayer("15min", "American", "4");
     }
 
-    public static GameLaunchContext forLocalMultiplayer(
-        String gameTimeLabel, String languageLabel, String playerCountLabel) {
+    public static GameLaunchContext forLocalMultiplayer(String gameTimeLabel, String languageLabel, String playerCountLabel) {
         int playerCount = Integer.parseInt(playerCountLabel);
         List<String> playerNames = buildSequentialNames("Player ", playerCount);
         return new GameLaunchContext(
-            new NewGameRequest(
-            GameMode.HOT_SEAT,
-            playerCount,
-            playerNames,
-            mapDictionaryType(languageLabel),
-            mapTimeControl(gameTimeLabel)),
-            "Local Multiplayer",
-            gameTimeLabel,
-            languageLabel,
-            playerCountLabel,
-            "--",
-            null);
+                new NewGameRequest(
+                        GameMode.HOT_SEAT,
+                        playerCount,
+                        playerNames,
+                        mapDictionaryType(languageLabel),
+                        mapTimeControl(gameTimeLabel)),
+                "Local Multiplayer",
+                gameTimeLabel,
+                languageLabel,
+                playerCountLabel,
+                "--",
+                null);
     }
 
-    public static GameLaunchContext forLocalAi(
-        String gameTimeLabel, String languageLabel, String difficultyLabel) {
+    public static GameLaunchContext forLocalAi(String gameTimeLabel, String languageLabel, String difficultyLabel) {
         AiDifficulty aiDifficulty = AiDifficulty.fromSetupLabel(difficultyLabel);
         List<String> playerNames = List.of("Player", difficultyLabel + " Bot");
         return new GameLaunchContext(
-            new NewGameRequest(
-            GameMode.HUMAN_VS_AI,
-            2,
-            playerNames,
-            mapDictionaryType(languageLabel),
-            mapTimeControl(gameTimeLabel),
-            aiDifficulty),
-            "Local AI",
-            gameTimeLabel,
-            languageLabel,
-            "2",
-            aiDifficulty.getSetupLabel(),
-            aiDifficulty);
+                new NewGameRequest(
+                        GameMode.HUMAN_VS_AI,
+                        2,
+                        playerNames,
+                        mapDictionaryType(languageLabel),
+                        mapTimeControl(gameTimeLabel),
+                        aiDifficulty),
+                "Local AI",
+                gameTimeLabel,
+                languageLabel,
+                "2",
+                aiDifficulty.getSetupLabel(),
+                aiDifficulty);
     }
 
-    public static GameLaunchContext forRoomCreate(
-        String gameTimeLabel, String languageLabel, String playerCountLabel) {
+    public static GameLaunchContext forRoomCreate(String gameTimeLabel, String languageLabel, String playerCountLabel) {
         int playerCount = Integer.parseInt(playerCountLabel);
         List<String> playerNames = new ArrayList<>();
         playerNames.add("Host");
@@ -90,18 +92,18 @@ public class GameLaunchContext {
         }
 
         return new GameLaunchContext(
-            new NewGameRequest(
-            GameMode.LAN_MULTIPLAYER,
-            playerCount,
-            playerNames,
-            mapDictionaryType(languageLabel),
-            mapTimeControl(gameTimeLabel)),
-            "Create Room",
-            gameTimeLabel,
-            languageLabel,
-            playerCountLabel,
-            "--",
-            null);
+                new NewGameRequest(
+                        GameMode.LAN_MULTIPLAYER,
+                        playerCount,
+                        playerNames,
+                        mapDictionaryType(languageLabel),
+                        mapTimeControl(gameTimeLabel)),
+                "Create Room",
+                gameTimeLabel,
+                languageLabel,
+                playerCountLabel,
+                "--",
+                null);
     }
 
     public NewGameRequest getRequest() {
@@ -137,26 +139,13 @@ public class GameLaunchContext {
     }
 
     private static TimeControlConfig mapTimeControl(String gameTimeLabel) {
-        int minutes = parseGameTimeMinutes(gameTimeLabel);
+        int minutes = switch (gameTimeLabel) {
+            case "30min" -> 30;
+            case "45min" -> 45;
+            default -> 15;
+        };
+
         return new TimeControlConfig(minutes * 60L * 1000L, DEFAULT_STEP_TIME_MILLIS);
-    }
-
-    private static int parseGameTimeMinutes(String gameTimeLabel) {
-        if (gameTimeLabel == null) {
-            return 15;
-        }
-
-        String digitsOnly = gameTimeLabel.replaceAll("[^0-9]", "");
-        if (digitsOnly.isEmpty()) {
-            return 15;
-        }
-
-        try {
-            int minutes = Integer.parseInt(digitsOnly);
-            return minutes > 0 ? minutes : 15;
-        } catch (NumberFormatException exception) {
-            return 15;
-        }
     }
 
     private static List<String> buildSequentialNames(String prefix, int count) {

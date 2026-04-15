@@ -1,5 +1,9 @@
 package com.kotva.presentation.viewmodel;
 
+/**
+ * GameBranchSetupViewModel stores the common texts used by the second-level setup pages.
+ * Some pages have two options, while others have three, so the third option may be null.
+ */
 public class GameBranchSetupViewModel {
     private final String titleText;
     private final String viceTitleText;
@@ -8,11 +12,11 @@ public class GameBranchSetupViewModel {
     private final String thirdOptionText;
 
     public GameBranchSetupViewModel(
-        String titleText,
-        String viceTitleText,
-        String firstOptionText,
-        String secondOptionText,
-        String thirdOptionText) {
+            String titleText,
+            String viceTitleText,
+            String firstOptionText,
+            String secondOptionText,
+            String thirdOptionText) {
         this.titleText = titleText;
         this.viceTitleText = viceTitleText;
         this.firstOptionText = firstOptionText;

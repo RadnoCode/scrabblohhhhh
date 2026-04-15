@@ -7,26 +7,25 @@ import com.kotva.mode.PlayerController;
 import java.util.function.Consumer;
 
 public interface AiTurnRuntime extends AutoCloseable {
-
     void requestTurnIfIdle(
-        GameSession session,
-        PlayerController controller,
-        Consumer<AiSessionRuntime.TurnCompletion> completionConsumer);
+            GameSession session,
+            PlayerController controller,
+            Consumer<AiSessionRuntime.TurnCompletion> completionConsumer);
 
     void cancelPending();
 
     boolean matchesCurrentTurn(
-        AiSessionRuntime.TurnCompletion completion,
-        GameSession session,
-        Player currentPlayer,
-        PlayerController controller);
+            AiSessionRuntime.TurnCompletion completion,
+            GameSession session,
+            Player currentPlayer,
+            PlayerController controller);
 
     AiTurnAttemptResult applyMove(
-        PlayerController controller,
-        GameApplicationService gameApplicationService,
-        GameSession session,
-        AiMove move);
+            PlayerController controller,
+            GameApplicationService gameApplicationService,
+            GameSession session,
+            AiMove move);
 
-        @Override
+    @Override
     void close();
 }

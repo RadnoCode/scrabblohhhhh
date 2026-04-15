@@ -12,10 +12,9 @@ import com.kotva.presentation.controller.RoomCreateController;
 import com.kotva.presentation.controller.RoomSearchController;
 import com.kotva.presentation.controller.RoomWaitingController;
 import com.kotva.presentation.controller.SettingsController;
-import com.kotva.presentation.controller.SettlementController;
-import com.kotva.presentation.scene.GameScene;
 import com.kotva.presentation.scene.HelpScene;
 import com.kotva.presentation.scene.HomeScene;
+import com.kotva.presentation.scene.GameScene;
 import com.kotva.presentation.scene.LocalAiSetupScene;
 import com.kotva.presentation.scene.LocalMultiplayerSetupScene;
 import com.kotva.presentation.scene.ModeSelectScene;
@@ -24,13 +23,17 @@ import com.kotva.presentation.scene.RoomCreateScene;
 import com.kotva.presentation.scene.RoomSearchScene;
 import com.kotva.presentation.scene.RoomWaitingScene;
 import com.kotva.presentation.scene.SettingsScene;
-import com.kotva.presentation.scene.SettlementScene;
 import com.kotva.presentation.viewmodel.GameLaunchContext;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Objects;
 import javafx.stage.Stage;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+/**
+ * SceneNavigator centralizes page switching logic.
+ * Controllers only need to ask the navigator to show a target page,
+ * and do not need to know how scenes are created.
+ */
 public class SceneNavigator {
     private final Stage stage;
     private final AppContext appContext;
@@ -40,8 +43,8 @@ public class SceneNavigator {
     private GameController gameController;
 
     public SceneNavigator(Stage stage, AppContext appContext) {
-        this.stage = Objects.requireNonNull(stage, "stage cannot be null.");
-        this.appContext = Objects.requireNonNull(appContext, "appContext cannot be null.");
+        this.stage = java.util.Objects.requireNonNull(stage, "stage cannot be null.");
+        this.appContext = java.util.Objects.requireNonNull(appContext, "appContext cannot be null.");
         this.history = new ArrayDeque<>();
     }
 
@@ -94,10 +97,6 @@ public class SceneNavigator {
         showPage(PageType.ROOM_WAITING, true);
     }
 
-    public void showSettlement() {
-        showPage(PageType.SETTLEMENT, false);
-    }
-
     public void goBack() {
         if (history.isEmpty()) {
             showPage(PageType.HOME, false);
@@ -105,12 +104,6 @@ public class SceneNavigator {
         }
 
         PageType previousPage = history.pop();
-        if (currentPage == PageType.GAME_SETTING && previousPage == PageType.SETTLEMENT) {
-            history.clear();
-            showPage(PageType.HOME, false);
-            return;
-        }
-
         showPage(previousPage, false);
     }
 
@@ -123,18 +116,17 @@ public class SceneNavigator {
         currentPage = pageType;
 
         switch (pageType) {
-        case HOME -> showHomeScene();
-        case GAME_SETTING -> showGameSettingScene();
-        case GAME -> showGameScene();
-        case SETTINGS -> showSettingsScene();
-        case HELP -> showHelpScene();
-        case LOCAL_MULTIPLAYER_SETUP -> showLocalMultiplayerSetupScene();
-        case LOCAL_AI_SETUP -> showLocalAiSetupScene();
-        case ONLINE_SETUP -> showOnlineSetupScene();
-        case ROOM_SEARCH -> showRoomSearchScene();
-        case ROOM_CREATE -> showRoomCreateScene();
-        case ROOM_WAITING -> showRoomWaitingScene();
-        case SETTLEMENT -> showSettlementScene();
+            case HOME -> showHomeScene();
+            case GAME_SETTING -> showGameSettingScene();
+            case GAME -> showGameScene();
+            case SETTINGS -> showSettingsScene();
+            case HELP -> showHelpScene();
+            case LOCAL_MULTIPLAYER_SETUP -> showLocalMultiplayerSetupScene();
+            case LOCAL_AI_SETUP -> showLocalAiSetupScene();
+            case ONLINE_SETUP -> showOnlineSetupScene();
+            case ROOM_SEARCH -> showRoomSearchScene();
+            case ROOM_CREATE -> showRoomCreateScene();
+            case ROOM_WAITING -> showRoomWaitingScene();
         }
     }
 
@@ -155,9 +147,9 @@ public class SceneNavigator {
     }
 
     private void showGameScene() {
-        GameController controller = new GameController(
-            this,
-            gameLaunchContext != null ? gameLaunchContext : GameLaunchContext.defaultContext());
+        GameController controller = new GameController(this, gameLaunchContext != null
+                ? gameLaunchContext
+                : GameLaunchContext.defaultContext());
         gameController = controller;
         GameScene scene = new GameScene(controller);
         stage.setTitle("Scrabble Game");
@@ -236,14 +228,6 @@ public class SceneNavigator {
         stage.show();
     }
 
-    private void showSettlementScene() {
-        SettlementController controller = new SettlementController(this);
-        SettlementScene scene = new SettlementScene(controller);
-        stage.setTitle("Scrabble Settlement");
-        stage.setScene(scene);
-        stage.show();
-    }
-
     private enum PageType {
         HOME,
         GAME_SETTING,
@@ -255,7 +239,6 @@ public class SceneNavigator {
         ONLINE_SETUP,
         ROOM_SEARCH,
         ROOM_CREATE,
-        ROOM_WAITING,
-        SETTLEMENT
+        ROOM_WAITING
     }
 }

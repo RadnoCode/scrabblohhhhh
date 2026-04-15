@@ -1,13 +1,14 @@
 package com.kotva.presentation.component;
 
 import javafx.geometry.Pos;
-import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.BorderPane;
 
+/**
+ * InputButton is a special common component used for a label plus a single-line input field.
+ */
 public class InputButton extends CommonButton {
     private final Label leftLabel;
     private final TextField textField;
@@ -29,8 +30,6 @@ public class InputButton extends CommonButton {
         textField.getStyleClass().add("input-button-field");
         textField.setPromptText("Enter here");
         textField.setPrefWidth(180);
-        textField.setContextMenu(null);
-        textField.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, ContextMenuEvent::consume);
 
         BorderPane content = new BorderPane();
         content.getStyleClass().add("setting-item-content");
@@ -48,12 +47,5 @@ public class InputButton extends CommonButton {
 
     public void setInputText(String text) {
         textField.setText(text);
-    }
-
-    public void enableNumericOnlyInput() {
-        textField.setTextFormatter(new TextFormatter<>(change -> {
-                String nextText = change.getControlNewText();
-                return nextText.matches("\\d*") ? change : null;
-            }));
     }
 }

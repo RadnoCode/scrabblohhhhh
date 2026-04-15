@@ -5,6 +5,8 @@ import com.kotva.presentation.component.InputButton;
 import com.kotva.presentation.component.LockedButton;
 import com.kotva.presentation.component.SettingsGearIconView;
 import com.kotva.presentation.component.SliderButton;
+import com.kotva.presentation.component.SwitchButton;
+import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.controller.SettingsController;
 import com.kotva.presentation.viewmodel.SettingsViewModel;
@@ -18,6 +20,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+/**
+ * SettingsScene builds the settings page using four special common components.
+ */
 public class SettingsScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
@@ -43,14 +48,15 @@ public class SettingsScene extends Scene {
         settingsGearIconView.setPrefSize(360, 360);
 
         InputButton nameButton = new InputButton("Name");
+        SwitchButton languageButton = new SwitchButton("Language");
         SliderButton musicButton = new SliderButton("Music");
         LockedButton lockedButton = new LockedButton("ID", viewModel.getUserId());
 
-        controller.bindControls(nameButton, musicButton);
+        controller.bindControls(nameButton, languageButton, musicButton);
 
         VBox settingColumn = new VBox(26);
         settingColumn.setAlignment(Pos.CENTER_LEFT);
-        settingColumn.getChildren().addAll(nameButton, musicButton, lockedButton);
+        settingColumn.getChildren().addAll(nameButton, languageButton, musicButton, lockedButton);
 
         Region spacer = new Region();
         spacer.setMinWidth(90);

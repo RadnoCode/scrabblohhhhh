@@ -4,6 +4,9 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 
+/**
+ * SearchIconView draws a small magnifier icon for the room search field.
+ */
 public class SearchIconView extends Pane {
     private final Circle lens;
     private final Line handle;
@@ -23,7 +26,7 @@ public class SearchIconView extends Pane {
         getChildren().addAll(lens, handle);
     }
 
-        @Override
+    @Override
     protected void layoutChildren() {
         double width = getWidth();
         double height = getHeight();

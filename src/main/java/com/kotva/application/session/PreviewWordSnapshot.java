@@ -12,18 +12,18 @@ public class PreviewWordSnapshot {
     private final WordType wordType;
 
     public PreviewWordSnapshot(
-        String word,
-        boolean valid,
-        int scoreContribution,
-        List<PreviewPositionSnapshot> coveredPositions,
-        WordType wordType) {
+            String word,
+            boolean valid,
+            int scoreContribution,
+            List<PreviewPositionSnapshot> coveredPositions,
+            WordType wordType) {
         this.word = word;
         this.valid = valid;
         this.scoreContribution = scoreContribution;
         this.coveredPositions =
-        List.copyOf(
-            Objects.requireNonNull(
-            coveredPositions, "coveredPositions cannot be null."));
+                List.copyOf(
+                        Objects.requireNonNull(
+                                coveredPositions, "coveredPositions cannot be null."));
         this.wordType = wordType;
     }
 

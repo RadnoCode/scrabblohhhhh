@@ -25,17 +25,17 @@ public class GameSession {
     }
 
     public GameSession(
-        String sessionId,
-        GameConfig config,
-        GameState gameState,
-        SettlementService settlementService) {
+            String sessionId,
+            GameConfig config,
+            GameState gameState,
+            SettlementService settlementService) {
         this.sessionId = Objects.requireNonNull(sessionId, "sessionId cannot be null.");
         this.config = Objects.requireNonNull(config, "config cannot be null.");
         this.gameState = Objects.requireNonNull(gameState, "gameState cannot be null.");
         this.turnDraft = new TurnDraft();
         this.sessionStatus = SessionStatus.WAITING_FOR_PLAYERS;
         this.settlementService =
-        Objects.requireNonNull(settlementService, "settlementService cannot be null.");
+                Objects.requireNonNull(settlementService, "settlementService cannot be null.");
         this.turnCoordinator = new TurnCoordinator(gameState, this.settlementService);
         this.nextActionSequence = 1L;
     }
@@ -90,6 +90,6 @@ public class GameSession {
 
     public void setLatestActionResult(GameActionResult latestActionResult) {
         this.latestActionResult =
-        Objects.requireNonNull(latestActionResult, "latestActionResult cannot be null.");
+                Objects.requireNonNull(latestActionResult, "latestActionResult cannot be null.");
     }
 }

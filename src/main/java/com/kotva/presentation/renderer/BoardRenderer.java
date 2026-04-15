@@ -5,6 +5,10 @@ import com.kotva.presentation.interaction.GameDraftState;
 import com.kotva.presentation.viewmodel.BoardCoordinate;
 import java.util.Objects;
 
+/**
+ * BoardRenderer applies the merged committed-board and local-draft state to the
+ * reusable BoardView.
+ */
 public class BoardRenderer {
     private final BoardView boardView;
     private final GameDraftState draftState;

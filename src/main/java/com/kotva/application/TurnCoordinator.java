@@ -23,7 +23,7 @@ public class TurnCoordinator {
     public TurnCoordinator(GameState gameState, SettlementService settlementService) {
         this.gameState = Objects.requireNonNull(gameState, "gameState cannot be null.");
         this.settlementService =
-        Objects.requireNonNull(settlementService, "settlementService cannot be null.");
+                Objects.requireNonNull(settlementService, "settlementService cannot be null.");
         this.roundTracker = new RoundTracker();
         this.endGameChecker = new EndGameChecker();
         this.turnNumber = 0;
@@ -44,8 +44,8 @@ public class TurnCoordinator {
         boolean roundComplete = roundTracker.isRoundComplete();
         boolean allPassedInRound = roundTracker.isAllPassedInRound();
         Optional<GameEndReason> endReason =
-        endGameChecker.evaluate(
-            gameState, actingPlayer, action, roundComplete, allPassedInRound);
+                endGameChecker.evaluate(
+                        gameState, actingPlayer, action, roundComplete, allPassedInRound);
         if (endReason.isPresent()) {
             endGame(endReason.get());
             return settlementResult;
