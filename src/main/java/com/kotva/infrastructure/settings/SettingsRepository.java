@@ -18,7 +18,6 @@ public class SettingsRepository {
     public SettingsRepository() {
         this(defaultStoragePath());
     }
-    
 
     public SettingsRepository(Path storagePath) {
         if (storagePath == null) {
@@ -36,8 +35,8 @@ public class SettingsRepository {
         try (Reader reader = Files.newBufferedReader(storagePath, StandardCharsets.UTF_8)) {
             properties.load(reader);
             return new AppSettings(
-                    readVolume(properties, MUSIC_VOLUME_KEY, AppSettings.DEFAULT_MUSIC_VOLUME),
-                    readVolume(properties, SFX_VOLUME_KEY, AppSettings.DEFAULT_SFX_VOLUME));
+                readVolume(properties, MUSIC_VOLUME_KEY, AppSettings.DEFAULT_MUSIC_VOLUME),
+                readVolume(properties, SFX_VOLUME_KEY, AppSettings.DEFAULT_SFX_VOLUME));
         } catch (IOException e) {
             return AppSettings.defaults();
         } catch (IllegalArgumentException e) {
@@ -70,9 +69,9 @@ public class SettingsRepository {
 
     static Path defaultStoragePath() {
         return Path.of(
-                System.getProperty("user.home"),
-                ".scrabblohhhhh",
-                "settings.properties");
+            System.getProperty("user.home"),
+            ".scrabblohhhhh",
+            "settings.properties");
     }
 
     private double readVolume(Properties properties, String key, double defaultValue) {

@@ -4,9 +4,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 
-/**
- * CardStackIconView draws simple stacked cards for the GameSetting page.
- */
 public class CardStackIconView extends Pane {
     private final Rectangle leftCard;
     private final Rectangle rightCard;
@@ -31,15 +28,15 @@ public class CardStackIconView extends Pane {
 
         initializeShapes();
         getChildren().addAll(
-                leftCard,
-                rightCard,
-                centerCard,
-                upperSquare,
-                lowerSquare,
-                leftStrokeTop,
-                leftStrokeBottom,
-                rightStrokeTop,
-                rightStrokeBottom
+            leftCard,
+            rightCard,
+            centerCard,
+            upperSquare,
+            lowerSquare,
+            leftStrokeTop,
+            leftStrokeBottom,
+            rightStrokeTop,
+            rightStrokeBottom
         );
     }
 
@@ -57,7 +54,7 @@ public class CardStackIconView extends Pane {
         rightStrokeBottom.getStyleClass().add("cards-line");
     }
 
-    @Override
+        @Override
     protected void layoutChildren() {
         double width = getWidth();
         double height = getHeight();

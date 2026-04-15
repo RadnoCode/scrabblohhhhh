@@ -39,17 +39,18 @@ import java.util.function.Supplier;
 import org.junit.Test;
 
 public class LocalAiGameRuntimeTest {
-    @Test
+
+        @Test
     public void aiInitializationRetriesOnceAndSucceeds() {
         StubAiTurnRuntime aiTurnRuntime = new StubAiTurnRuntime();
         AtomicInteger bootstrapperAttempts = new AtomicInteger();
         LocalAiGameRuntime runtime = createRuntime(() -> {
-            int attempt = bootstrapperAttempts.incrementAndGet();
-            if (attempt == 1) {
-                return new FailingBootstrapper("native load failed");
-            }
-            return new StubBootstrapper(aiTurnRuntime);
-        });
+                int attempt = bootstrapperAttempts.incrementAndGet();
+                if (attempt == 1) {
+                    return new FailingBootstrapper("native load failed");
+                }
+                return new StubBootstrapper(aiTurnRuntime);
+            });
 
         runtime.start(createAiRequest());
 
@@ -60,13 +61,13 @@ public class LocalAiGameRuntimeTest {
         assertNull(runtime.getSessionSnapshot().getAiRuntimeSnapshot());
     }
 
-    @Test
+        @Test
     public void aiInitializationFailureEndsMatchInFrozenState() {
         AtomicInteger bootstrapperAttempts = new AtomicInteger();
         LocalAiGameRuntime runtime = createRuntime(() -> {
-            bootstrapperAttempts.incrementAndGet();
-            return new FailingBootstrapper("missing native library");
-        });
+                bootstrapperAttempts.incrementAndGet();
+                return new FailingBootstrapper("missing native library");
+            });
 
         runtime.start(createAiRequest());
 
@@ -76,8 +77,8 @@ public class LocalAiGameRuntimeTest {
         assertFalse(runtime.hasAutomatedTurnSupport());
         assertEquals(SessionStatus.COMPLETED, runtime.getSession().getSessionStatus());
         assertEquals(
-                GameEndReason.AI_RUNTIME_FAILURE,
-                runtime.getSession().getGameState().getGameEndReason());
+            GameEndReason.AI_RUNTIME_FAILURE,
+            runtime.getSession().getGameState().getGameEndReason());
 
         AiRuntimeSnapshot snapshot = runtime.getSessionSnapshot().getAiRuntimeSnapshot();
         assertNotNull(snapshot);
@@ -86,30 +87,30 @@ public class LocalAiGameRuntimeTest {
         assertEquals(AiRuntimeFailureKind.INIT_RETRY_EXHAUSTED, snapshot.failureKind());
     }
 
-    @Test
+        @Test
     public void aiCandidateFallbackUsesNextOptionAndResetsIllegalCounterOnSuccess() {
         StubAiTurnRuntime aiTurnRuntime = new StubAiTurnRuntime();
         AiMove firstMove = passMove(1);
         AiMove secondMove = passMove(2);
         aiTurnRuntime.queueResult(AiTurnAttemptResult.rejected(
-                firstMove,
-                "SUBMIT_REJECTED",
-                "First AI move is illegal.",
-                null));
+            firstMove,
+            "SUBMIT_REJECTED",
+            "First AI move is illegal.",
+            null));
         aiTurnRuntime.queueResult(AiTurnAttemptResult.accepted(secondMove, 12, "p1"));
         aiTurnRuntime.queueResult(AiTurnAttemptResult.rejected(
-                firstMove,
-                "SUBMIT_REJECTED",
-                "Illegal move after reset.",
-                null));
+            firstMove,
+            "SUBMIT_REJECTED",
+            "Illegal move after reset.",
+            null));
 
         LocalAiGameRuntime runtime = createRuntime(() -> new StubBootstrapper(aiTurnRuntime));
         runtime.start(createAiRequest());
         runtime.passTurn();
 
         runtime.applyAutomatedTurn(completionForCurrentTurn(
-                runtime,
-                new AiMoveOptionSet(List.of(firstMove, secondMove))));
+            runtime,
+            new AiMoveOptionSet(List.of(firstMove, secondMove))));
 
         assertEquals(List.of(firstMove, secondMove), aiTurnRuntime.getAppliedMoves());
         assertNull(runtime.getSessionSnapshot().getAiRuntimeSnapshot());
@@ -124,25 +125,25 @@ public class LocalAiGameRuntimeTest {
         assertEquals(1, retrySnapshot.attemptedCandidateCount());
     }
 
-    @Test
+        @Test
     public void repeatedIllegalAiMovesTripCircuitBreaker() {
         StubAiTurnRuntime aiTurnRuntime = new StubAiTurnRuntime();
         AiMove move = passMove(1);
         aiTurnRuntime.queueResult(AiTurnAttemptResult.rejected(
-                move,
-                "SUBMIT_REJECTED",
-                "illegal move #1",
-                null));
+            move,
+            "SUBMIT_REJECTED",
+            "illegal move #1",
+            null));
         aiTurnRuntime.queueResult(AiTurnAttemptResult.rejected(
-                move,
-                "SUBMIT_REJECTED",
-                "illegal move #2",
-                null));
+            move,
+            "SUBMIT_REJECTED",
+            "illegal move #2",
+            null));
         aiTurnRuntime.queueResult(AiTurnAttemptResult.rejected(
-                move,
-                "SUBMIT_REJECTED",
-                "illegal move #3",
-                null));
+            move,
+            "SUBMIT_REJECTED",
+            "illegal move #3",
+            null));
 
         LocalAiGameRuntime runtime = createRuntime(() -> new StubBootstrapper(aiTurnRuntime));
         runtime.start(createAiRequest());
@@ -160,8 +161,8 @@ public class LocalAiGameRuntimeTest {
 
         assertEquals(SessionStatus.COMPLETED, runtime.getSession().getSessionStatus());
         assertEquals(
-                GameEndReason.AI_RUNTIME_FAILURE,
-                runtime.getSession().getGameState().getGameEndReason());
+            GameEndReason.AI_RUNTIME_FAILURE,
+            runtime.getSession().getGameState().getGameEndReason());
 
         AiRuntimeSnapshot snapshot = runtime.getSessionSnapshot().getAiRuntimeSnapshot();
         assertNotNull(snapshot);
@@ -175,20 +176,20 @@ public class LocalAiGameRuntimeTest {
         ClockService clockService = new ClockServiceImpl();
         DictionaryRepository dictionaryRepository = new StubDictionaryRepository();
         GameSetupService gameSetupService =
-                new GameSetupServiceImpl(dictionaryRepository, clockService, new Random(19L));
+        new GameSetupServiceImpl(dictionaryRepository, clockService, new Random(19L));
         GameApplicationService gameApplicationService =
-                new GameApplicationServiceImpl(clockService, dictionaryRepository);
+        new GameApplicationServiceImpl(clockService, dictionaryRepository);
         return new LocalAiGameRuntime(gameSetupService, gameApplicationService, bootstrapperSupplier);
     }
 
     private static NewGameRequest createAiRequest() {
         return new NewGameRequest(
-                GameMode.HUMAN_VS_AI,
-                2,
-                List.of("Player", "Bot"),
-                DictionaryType.AM,
-                null,
-                AiDifficulty.EASY);
+            GameMode.HUMAN_VS_AI,
+            2,
+            List.of("Player", "Bot"),
+            DictionaryType.AM,
+            null,
+            AiDifficulty.EASY);
     }
 
     private static AiMove passMove(int score) {
@@ -196,10 +197,10 @@ public class LocalAiGameRuntimeTest {
     }
 
     private static AiSessionRuntime.TurnCompletion completionForCurrentTurn(
-            LocalAiGameRuntime runtime, AiMoveOptionSet moveOptions) {
+        LocalAiGameRuntime runtime, AiMoveOptionSet moveOptions) {
         String sessionId = runtime.getSession().getSessionId();
         String currentPlayerId =
-                runtime.getSession().getGameState().requireCurrentActivePlayer().getPlayerId();
+        runtime.getSession().getGameState().requireCurrentActivePlayer().getPlayerId();
         return new AiSessionRuntime.TurnCompletion(sessionId, currentPlayerId, 0L, moveOptions, null);
     }
 
@@ -210,22 +211,22 @@ public class LocalAiGameRuntimeTest {
             this.aiTurnRuntime = aiTurnRuntime;
         }
 
-        @Override
+            @Override
         public AiTurnRuntime create(com.kotva.application.session.GameConfig gameConfig) {
             return aiTurnRuntime;
         }
 
-        @Override
+            @Override
         public String getLibraryPath() {
             return "/stub/native/library";
         }
 
-        @Override
+            @Override
         public String getDataDirectory() {
             return "/stub/data";
         }
 
-        @Override
+            @Override
         public String getPlatform() {
             return "stub-os";
         }
@@ -238,17 +239,17 @@ public class LocalAiGameRuntimeTest {
             this.message = message;
         }
 
-        @Override
+            @Override
         public AiTurnRuntime create(com.kotva.application.session.GameConfig gameConfig) {
             throw new IllegalStateException(message);
         }
 
-        @Override
+            @Override
         public String getLibraryPath() {
             return "/missing/library";
         }
 
-        @Override
+            @Override
         public String getDataDirectory() {
             return "/missing/data";
         }
@@ -258,32 +259,32 @@ public class LocalAiGameRuntimeTest {
         private final Queue<AiTurnAttemptResult> queuedResults = new ArrayDeque<>();
         private final List<AiMove> appliedMoves = new ArrayList<>();
 
-        @Override
+            @Override
         public void requestTurnIfIdle(
-                com.kotva.application.session.GameSession session,
-                com.kotva.mode.PlayerController controller,
-                java.util.function.Consumer<AiSessionRuntime.TurnCompletion> completionConsumer) {
+            com.kotva.application.session.GameSession session,
+            com.kotva.mode.PlayerController controller,
+            java.util.function.Consumer<AiSessionRuntime.TurnCompletion> completionConsumer) {
         }
 
-        @Override
+            @Override
         public void cancelPending() {
         }
 
-        @Override
+            @Override
         public boolean matchesCurrentTurn(
-                AiSessionRuntime.TurnCompletion completion,
-                com.kotva.application.session.GameSession session,
-                com.kotva.domain.model.Player currentPlayer,
-                com.kotva.mode.PlayerController controller) {
+            AiSessionRuntime.TurnCompletion completion,
+            com.kotva.application.session.GameSession session,
+            com.kotva.domain.model.Player currentPlayer,
+            com.kotva.mode.PlayerController controller) {
             return true;
         }
 
-        @Override
+            @Override
         public AiTurnAttemptResult applyMove(
-                com.kotva.mode.PlayerController controller,
-                GameApplicationService gameApplicationService,
-                com.kotva.application.session.GameSession session,
-                AiMove move) {
+            com.kotva.mode.PlayerController controller,
+            GameApplicationService gameApplicationService,
+            com.kotva.application.session.GameSession session,
+            AiMove move) {
             appliedMoves.add(move);
             if (queuedResults.isEmpty()) {
                 throw new AssertionError("No queued AI result for move " + move);
@@ -291,7 +292,7 @@ public class LocalAiGameRuntimeTest {
             return queuedResults.remove();
         }
 
-        @Override
+            @Override
         public void close() {
         }
 
@@ -305,21 +306,22 @@ public class LocalAiGameRuntimeTest {
     }
 
     private static final class StubDictionaryRepository extends DictionaryRepository {
-        @Override
+
+            @Override
         public void loadDictionary(DictionaryType dictionaryType) {
         }
 
-        @Override
+            @Override
         public Set<String> getDictionary() {
             return Collections.singleton("BOOK");
         }
 
-        @Override
+            @Override
         public DictionaryType getLoadedDictionaryType() {
             return DictionaryType.AM;
         }
 
-        @Override
+            @Override
         public boolean isAccepted(String word) {
             return "BOOK".equalsIgnoreCase(word);
         }

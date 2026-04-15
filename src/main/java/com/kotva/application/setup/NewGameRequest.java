@@ -15,21 +15,21 @@ public class NewGameRequest {
     private final AiDifficulty aiDifficulty;
 
     public NewGameRequest(
-            GameMode gameMode,
-            int playerCount,
-            List<String> playerNames,
-            DictionaryType dictionaryType,
-            TimeControlConfig timeControlConfig) {
+        GameMode gameMode,
+        int playerCount,
+        List<String> playerNames,
+        DictionaryType dictionaryType,
+        TimeControlConfig timeControlConfig) {
         this(gameMode, playerCount, playerNames, dictionaryType, timeControlConfig, null);
     }
 
     public NewGameRequest(
-            GameMode gameMode,
-            int playerCount,
-            List<String> playerNames,
-            DictionaryType dictionaryType,
-            TimeControlConfig timeControlConfig,
-            AiDifficulty aiDifficulty) {
+        GameMode gameMode,
+        int playerCount,
+        List<String> playerNames,
+        DictionaryType dictionaryType,
+        TimeControlConfig timeControlConfig,
+        AiDifficulty aiDifficulty) {
         this.gameMode = gameMode;
         this.playerCount = playerCount;
         this.playerNames = playerNames == null ? List.of() : List.copyOf(playerNames);

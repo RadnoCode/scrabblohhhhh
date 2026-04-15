@@ -6,9 +6,6 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 
-/**
- * LockedButton is a read-only setting component used for the ID row.
- */
 public class LockedButton extends CommonButton {
     private final Label leftLabel;
     private final Label valueLabel;

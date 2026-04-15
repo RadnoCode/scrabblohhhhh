@@ -15,15 +15,15 @@ public final class GameActionResult {
     private final boolean gameEnded;
 
     public GameActionResult(
-            String actionId,
-            String clientActionId,
-            String playerId,
-            ActionType actionType,
-            boolean success,
-            String message,
-            int awardedScore,
-            String nextPlayerId,
-            boolean gameEnded) {
+        String actionId,
+        String clientActionId,
+        String playerId,
+        ActionType actionType,
+        boolean success,
+        String message,
+        int awardedScore,
+        String nextPlayerId,
+        boolean gameEnded) {
         this.actionId = Objects.requireNonNull(actionId, "actionId cannot be null.");
         this.clientActionId = clientActionId;
         this.playerId = Objects.requireNonNull(playerId, "playerId cannot be null.");

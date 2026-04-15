@@ -1,10 +1,7 @@
 package com.kotva.presentation.component;
 
-/**
- * BackButton is a smaller reusable button used for page return actions.
- * It keeps the CommonButton interaction behavior, but uses a smaller size.
- */
 public class BackButton extends CommonButton {
+
     public BackButton() {
         super("Back");
         initializeBackButton();

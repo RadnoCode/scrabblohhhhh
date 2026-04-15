@@ -7,9 +7,6 @@ import javafx.scene.control.Slider;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 
-/**
- * SliderButton is a special common component used for music volume control.
- */
 public class SliderButton extends CommonButton {
     private final Label leftLabel;
     private final Slider slider;
@@ -36,12 +33,12 @@ public class SliderButton extends CommonButton {
 
         slider.setPrefWidth(150);
         slider.valueProperty().addListener((observable, oldValue, newValue) -> {
-            double value = newValue.doubleValue();
-            valueLabel.setText(String.valueOf((int) Math.round(value)));
-            if (valueChangeListener != null) {
-                valueChangeListener.onValueChanged(value);
-            }
-        });
+                double value = newValue.doubleValue();
+                valueLabel.setText(String.valueOf((int) Math.round(value)));
+                if (valueChangeListener != null) {
+                    valueChangeListener.onValueChanged(value);
+                }
+            });
 
         HBox sliderBox = new HBox(12, slider, valueLabel);
         sliderBox.setAlignment(Pos.CENTER_RIGHT);
@@ -65,8 +62,9 @@ public class SliderButton extends CommonButton {
         this.valueChangeListener = valueChangeListener;
     }
 
-    @FunctionalInterface
+        @FunctionalInterface
     public interface ValueChangeListener {
+
         void onValueChanged(double value);
     }
 }

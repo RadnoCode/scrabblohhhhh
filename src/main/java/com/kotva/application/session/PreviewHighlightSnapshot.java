@@ -12,7 +12,7 @@ public class PreviewHighlightSnapshot {
         this.row = row;
         this.col = col;
         this.highlightType =
-                Objects.requireNonNull(highlightType, "highlightType cannot be null.");
+        Objects.requireNonNull(highlightType, "highlightType cannot be null.");
     }
 
     public int getRow() {

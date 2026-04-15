@@ -25,16 +25,17 @@ import java.util.Set;
 import org.junit.Test;
 
 public class GameRuntimeFactoryTest {
-    @Test
+
+        @Test
     public void hotSeatRuntimeRunsGameThroughRuntimeBoundary() {
         GameRuntimeFactory runtimeFactory = createRuntimeFactory();
         NewGameRequest request =
-                new NewGameRequest(
-                        GameMode.HOT_SEAT,
-                        2,
-                        List.of("Alice", "Bob"),
-                        DictionaryType.AM,
-                        null);
+        new NewGameRequest(
+            GameMode.HOT_SEAT,
+            2,
+            List.of("Alice", "Bob"),
+            DictionaryType.AM,
+            null);
 
         GameRuntime runtime = runtimeFactory.create(request);
         assertTrue(runtime instanceof HotSeatGameRuntime);
@@ -50,20 +51,20 @@ public class GameRuntimeFactoryTest {
         runtime.passTurn();
         assertEquals(SessionStatus.COMPLETED, runtime.getSession().getSessionStatus());
         assertEquals(
-                GameEndReason.ALL_PLAYERS_PASSED,
-                runtime.getSession().getGameState().getGameEndReason());
+            GameEndReason.ALL_PLAYERS_PASSED,
+            runtime.getSession().getGameState().getGameEndReason());
     }
 
-    @Test
+        @Test
     public void hotSeatRuntimeAllowsCurrentPlayerToResignAndContinueWithRemainingPlayers() {
         GameRuntimeFactory runtimeFactory = createRuntimeFactory();
         NewGameRequest request =
-                new NewGameRequest(
-                        GameMode.HOT_SEAT,
-                        3,
-                        List.of("Alice", "Bob", "Cleo"),
-                        DictionaryType.AM,
-                        null);
+        new NewGameRequest(
+            GameMode.HOT_SEAT,
+            3,
+            List.of("Alice", "Bob", "Cleo"),
+            DictionaryType.AM,
+            null);
 
         GameRuntime runtime = runtimeFactory.create(request);
         runtime.start(request);
@@ -74,40 +75,40 @@ public class GameRuntimeFactoryTest {
         assertEquals(SessionStatus.IN_PROGRESS, runtime.getSession().getSessionStatus());
         assertFalse(runtime.getSession().getGameState().getPlayerById(resigningPlayerId).getActive());
         assertFalse(
-                resigningPlayerId.equals(
-                        runtime.getSession().getGameState().requireCurrentActivePlayer().getPlayerId()));
+            resigningPlayerId.equals(
+            runtime.getSession().getGameState().requireCurrentActivePlayer().getPlayerId()));
     }
 
-    @Test
+        @Test
     public void aiModeCreatesDedicatedAiRuntime() {
         GameRuntimeFactory runtimeFactory = createRuntimeFactory();
         NewGameRequest request =
-                new NewGameRequest(
-                        GameMode.HUMAN_VS_AI,
-                        2,
-                        List.of("Player", "Easy Bot"),
-                        DictionaryType.AM,
-                        null,
-                        com.kotva.policy.AiDifficulty.EASY);
+        new NewGameRequest(
+            GameMode.HUMAN_VS_AI,
+            2,
+            List.of("Player", "Easy Bot"),
+            DictionaryType.AM,
+            null,
+            com.kotva.policy.AiDifficulty.EASY);
 
         GameRuntime runtime = runtimeFactory.create(request);
 
         assertTrue(runtime instanceof LocalAiGameRuntime);
     }
 
-    @Test
+        @Test
     public void lanModeRemainsUnsupportedAtRuntimeFactoryBoundary() {
         GameRuntimeFactory runtimeFactory = createRuntimeFactory();
         NewGameRequest request =
-                new NewGameRequest(
-                        GameMode.LAN_MULTIPLAYER,
-                        2,
-                        List.of("Host", "Guest 1"),
-                        DictionaryType.AM,
-                        null);
+        new NewGameRequest(
+            GameMode.LAN_MULTIPLAYER,
+            2,
+            List.of("Host", "Guest 1"),
+            DictionaryType.AM,
+            null);
 
         IllegalArgumentException exception =
-                assertThrows(IllegalArgumentException.class, () -> runtimeFactory.create(request));
+        assertThrows(IllegalArgumentException.class, () -> runtimeFactory.create(request));
 
         assertEquals("LAN_MULTIPLAYER is not supported on this branch.", exception.getMessage());
     }
@@ -116,28 +117,29 @@ public class GameRuntimeFactoryTest {
         ClockService clockService = new ClockServiceImpl();
         DictionaryRepository dictionaryRepository = new StubDictionaryRepository();
         GameSetupService gameSetupService =
-                new GameSetupServiceImpl(dictionaryRepository, clockService, new Random(11L));
+        new GameSetupServiceImpl(dictionaryRepository, clockService, new Random(11L));
         GameApplicationService gameApplicationService =
-                new GameApplicationServiceImpl(clockService, dictionaryRepository);
+        new GameApplicationServiceImpl(clockService, dictionaryRepository);
         return new GameRuntimeFactory(gameSetupService, gameApplicationService);
     }
 
     private static class StubDictionaryRepository extends DictionaryRepository {
-        @Override
+
+            @Override
         public void loadDictionary(DictionaryType dictionaryType) {
         }
 
-        @Override
+            @Override
         public Set<String> getDictionary() {
             return Collections.singleton("BOOK");
         }
 
-        @Override
+            @Override
         public DictionaryType getLoadedDictionaryType() {
             return DictionaryType.AM;
         }
 
-        @Override
+            @Override
         public boolean isAccepted(String word) {
             return "BOOK".equalsIgnoreCase(word);
         }

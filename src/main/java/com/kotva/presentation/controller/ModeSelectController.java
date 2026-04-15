@@ -6,10 +6,6 @@ import com.kotva.presentation.viewmodel.SetupViewModel;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 
-/**
- * ModeSelectController handles the GameSetting page interaction.
- * The three buttons are prepared for later detailed game mode pages.
- */
 public class ModeSelectController {
     private final SceneNavigator navigator;
     private final SetupViewModel viewModel;

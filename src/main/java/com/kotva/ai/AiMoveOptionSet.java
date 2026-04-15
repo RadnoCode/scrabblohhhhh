@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 public record AiMoveOptionSet(List<AiMove> moves) {
+
     public AiMoveOptionSet {
         moves = List.copyOf(Objects.requireNonNull(moves, "moves cannot be null."));
     }

@@ -1,8 +1,5 @@
 package com.kotva.presentation.viewmodel;
 
-/**
- * SetupViewModel stores the text shown on the GameSetting page.
- */
 public class SetupViewModel {
     private final String titleText;
     private final String withFriendsText;
