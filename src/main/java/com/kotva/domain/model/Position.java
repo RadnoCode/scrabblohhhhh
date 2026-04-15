@@ -1,6 +1,8 @@
 package com.kotva.domain.model;
 
- public class Position {
+import java.io.Serializable;
+
+ public class Position implements Serializable {
         private int row;
         private int col;
 
@@ -18,4 +20,3 @@ package com.kotva.domain.model;
         }
 
     }
-

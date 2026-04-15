@@ -1,5 +1,7 @@
 package com.kotva.presentation.viewmodel;
 
+import com.kotva.application.runtime.LanLaunchConfig;
+import com.kotva.application.runtime.RuntimeLaunchSpec;
 import com.kotva.application.session.TimeControlConfig;
 import com.kotva.application.setup.NewGameRequest;
 import com.kotva.mode.GameMode;
@@ -17,7 +19,7 @@ import java.util.Objects;
 public class GameLaunchContext {
     private static final long DEFAULT_STEP_TIME_MILLIS = 30_000L;
 
-    private final NewGameRequest request;
+    private final RuntimeLaunchSpec launchSpec;
     private final String modeLabel;
     private final String gameTimeLabel;
     private final String languageLabel;
@@ -26,14 +28,14 @@ public class GameLaunchContext {
     private final AiDifficulty aiDifficulty;
 
     public GameLaunchContext(
-            NewGameRequest request,
+            RuntimeLaunchSpec launchSpec,
             String modeLabel,
             String gameTimeLabel,
             String languageLabel,
             String playerCountLabel,
             String difficultyLabel,
             AiDifficulty aiDifficulty) {
-        this.request = Objects.requireNonNull(request, "request cannot be null.");
+        this.launchSpec = Objects.requireNonNull(launchSpec, "launchSpec cannot be null.");
         this.modeLabel = Objects.requireNonNull(modeLabel, "modeLabel cannot be null.");
         this.gameTimeLabel = Objects.requireNonNull(gameTimeLabel, "gameTimeLabel cannot be null.");
         this.languageLabel = Objects.requireNonNull(languageLabel, "languageLabel cannot be null.");
@@ -50,12 +52,13 @@ public class GameLaunchContext {
         int playerCount = Integer.parseInt(playerCountLabel);
         List<String> playerNames = buildSequentialNames("Player ", playerCount);
         return new GameLaunchContext(
-                new NewGameRequest(
-                        GameMode.HOT_SEAT,
-                        playerCount,
-                        playerNames,
-                        mapDictionaryType(languageLabel),
-                        mapTimeControl(gameTimeLabel)),
+                RuntimeLaunchSpec.forLocal(
+                        new NewGameRequest(
+                                GameMode.HOT_SEAT,
+                                playerCount,
+                                playerNames,
+                                mapDictionaryType(languageLabel),
+                                mapTimeControl(gameTimeLabel))),
                 "Local Multiplayer",
                 gameTimeLabel,
                 languageLabel,
@@ -68,13 +71,14 @@ public class GameLaunchContext {
         AiDifficulty aiDifficulty = AiDifficulty.fromSetupLabel(difficultyLabel);
         List<String> playerNames = List.of("Player", difficultyLabel + " Bot");
         return new GameLaunchContext(
-                new NewGameRequest(
-                        GameMode.HUMAN_VS_AI,
-                        2,
-                        playerNames,
-                        mapDictionaryType(languageLabel),
-                        mapTimeControl(gameTimeLabel),
-                        aiDifficulty),
+                RuntimeLaunchSpec.forLocal(
+                        new NewGameRequest(
+                                GameMode.HUMAN_VS_AI,
+                                2,
+                                playerNames,
+                                mapDictionaryType(languageLabel),
+                                mapTimeControl(gameTimeLabel),
+                                aiDifficulty)),
                 "Local AI",
                 gameTimeLabel,
                 languageLabel,
@@ -92,12 +96,13 @@ public class GameLaunchContext {
         }
 
         return new GameLaunchContext(
-                new NewGameRequest(
-                        GameMode.LAN_MULTIPLAYER,
-                        playerCount,
-                        playerNames,
-                        mapDictionaryType(languageLabel),
-                        mapTimeControl(gameTimeLabel)),
+                RuntimeLaunchSpec.forLanHost(
+                        new NewGameRequest(
+                                GameMode.LAN_MULTIPLAYER,
+                                playerCount,
+                                playerNames,
+                                mapDictionaryType(languageLabel),
+                                mapTimeControl(gameTimeLabel))),
                 "Create Room",
                 gameTimeLabel,
                 languageLabel,
@@ -106,8 +111,29 @@ public class GameLaunchContext {
                 null);
     }
 
+    public static GameLaunchContext forLanClient(
+            LanLaunchConfig lanLaunchConfig,
+            String modeLabel,
+            String gameTimeLabel,
+            String languageLabel,
+            String playerCountLabel) {
+        Objects.requireNonNull(lanLaunchConfig, "lanLaunchConfig cannot be null.");
+        return new GameLaunchContext(
+                RuntimeLaunchSpec.forLanClient(lanLaunchConfig),
+                modeLabel,
+                gameTimeLabel,
+                languageLabel,
+                playerCountLabel,
+                "--",
+                null);
+    }
+
+    public RuntimeLaunchSpec getLaunchSpec() {
+        return launchSpec;
+    }
+
     public NewGameRequest getRequest() {
-        return request;
+        return launchSpec.hasRequest() ? launchSpec.requireRequest() : null;
     }
 
     public String getModeLabel() {

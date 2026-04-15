@@ -1,9 +1,10 @@
 package com.kotva.application.session;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-public class PreviewSnapshot {
+public class PreviewSnapshot implements Serializable {
     private final boolean valid;
     private final int estimatedScore;
     private final List<PreviewWordSnapshot> words;

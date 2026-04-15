@@ -10,6 +10,10 @@ import java.util.function.Consumer;
 public interface GameRuntime {
     void start(NewGameRequest request);
 
+    default boolean requiresBackgroundRefresh() {
+        return false;
+    }
+
     boolean hasSession();
 
     GameSession getSession();

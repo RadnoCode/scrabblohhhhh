@@ -1,9 +1,10 @@
 package com.kotva.application.result;
 
 import com.kotva.policy.BonusType;
+import java.io.Serializable;
 import java.util.Objects;
 
-public class BoardCellSnapshot {
+public class BoardCellSnapshot implements Serializable {
     private final int row;
     private final int col;
     private final BonusType bonusType;

@@ -32,15 +32,26 @@ public class ClientConnection {
     private volatile boolean closed = false;
 
     public ClientConnection(String playerId, Socket socket) throws IOException {
-        this(playerId, socket, new ObjectInputStream(socket.getInputStream()));
+        this(playerId, socket, createStreams(socket));
     }
 
     public ClientConnection(String playerId, Socket socket, ObjectInputStream in) throws IOException {
+        this(playerId, socket, in, createOutputStream(socket));
+    }
+
+    private ClientConnection(String playerId, Socket socket, StreamPair streamPair) {
+        this(playerId, socket, streamPair.in(), streamPair.out());
+    }
+
+    public ClientConnection(
+            String playerId,
+            Socket socket,
+            ObjectInputStream in,
+            ObjectOutputStream out) {
         this.playerId = playerId;
         this.socket = socket;
         this.in = Objects.requireNonNull(in, "in cannot be null.");
-        this.out = new ObjectOutputStream(socket.getOutputStream());
-        this.out.flush(); // ensure the header is sent immediately, so the other side's ObjectInputStream can be constructed without blocking
+        this.out = Objects.requireNonNull(out, "out cannot be null.");
     }
 
     public LocalGameMessage readMessageBlocking() throws IOException, ClassNotFoundException {
@@ -142,5 +153,20 @@ public class ClientConnection {
      */
     public boolean isClosed() {
         return closed || socket.isClosed();
+    }
+
+    private static ObjectOutputStream createOutputStream(Socket socket) throws IOException {
+        ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+        outputStream.flush();
+        return outputStream;
+    }
+
+    private static StreamPair createStreams(Socket socket) throws IOException {
+        ObjectOutputStream out = createOutputStream(socket);
+        ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+        return new StreamPair(in, out);
+    }
+
+    private record StreamPair(ObjectInputStream in, ObjectOutputStream out) {
     }
 }

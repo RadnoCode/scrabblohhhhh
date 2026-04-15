@@ -1,9 +1,10 @@
 package com.kotva.application.session;
 
 import com.kotva.policy.PlayerType;
+import java.io.Serializable;
 import java.util.Objects;
 
-public class GamePlayerSnapshot {
+public class GamePlayerSnapshot implements Serializable {
     private final String playerId;
     private final String playerName;
     private final PlayerType playerType;

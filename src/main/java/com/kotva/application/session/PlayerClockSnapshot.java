@@ -1,9 +1,10 @@
 package com.kotva.application.session;
 
 import com.kotva.policy.ClockPhase;
+import java.io.Serializable;
 import java.util.Objects;
 
-public class PlayerClockSnapshot {
+public class PlayerClockSnapshot implements Serializable {
     private final String playerId;
     private final String playerName;
     private final long mainTimeRemainingMillis;

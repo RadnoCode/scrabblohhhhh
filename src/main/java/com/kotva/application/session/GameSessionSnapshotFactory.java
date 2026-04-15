@@ -1,10 +1,13 @@
 package com.kotva.application.session;
 
 import com.kotva.application.draft.DraftPlacement;
+import com.kotva.application.draft.TurnDraft;
 import com.kotva.application.preview.BoardHighlight;
 import com.kotva.application.preview.HighlightType;
 import com.kotva.application.preview.PreviewResult;
 import com.kotva.application.preview.PreviewWord;
+import com.kotva.application.result.BoardCellSnapshot;
+import com.kotva.application.result.BoardSnapshot;
 import com.kotva.application.result.BoardSnapshotFactory;
 import com.kotva.domain.model.Cell;
 import com.kotva.domain.model.Player;
@@ -26,16 +29,102 @@ public final class GameSessionSnapshotFactory {
     }
 
     public static GameSessionSnapshot fromSession(GameSession session) {
-        return fromSession(session, null);
+        return fromSession(session, null, null);
     }
 
     public static GameSessionSnapshot fromSession(
             GameSession session, AiRuntimeSnapshot aiRuntimeSnapshot) {
-        Objects.requireNonNull(session, "session cannot be null.");
+        return fromSession(session, aiRuntimeSnapshot, null);
+    }
 
+    public static GameSessionSnapshot fromSession(
+            GameSession session,
+            AiRuntimeSnapshot aiRuntimeSnapshot,
+            ClientRuntimeSnapshot clientRuntimeSnapshot) {
+        Objects.requireNonNull(session, "session cannot be null.");
         Player currentPlayer = resolveSnapshotPlayer(session);
+        return buildSnapshot(
+                session,
+                currentPlayer,
+                true,
+                aiRuntimeSnapshot,
+                clientRuntimeSnapshot);
+    }
+
+    public static GameSessionSnapshot fromSessionForViewer(
+            GameSession session,
+            String viewerPlayerId) {
+        return fromSessionForViewer(session, viewerPlayerId, null, null);
+    }
+
+    public static GameSessionSnapshot fromSessionForViewer(
+            GameSession session,
+            String viewerPlayerId,
+            AiRuntimeSnapshot aiRuntimeSnapshot,
+            ClientRuntimeSnapshot clientRuntimeSnapshot) {
+        Objects.requireNonNull(session, "session cannot be null.");
+        Player currentPlayer = resolveSnapshotPlayer(session);
+        Player viewerPlayer = resolveViewerPlayer(session, viewerPlayerId, currentPlayer);
+        boolean viewerCanSeeDraft =
+                viewerPlayer != null
+                        && Objects.equals(viewerPlayer.getPlayerId(), currentPlayer.getPlayerId());
+        return buildSnapshot(
+                session,
+                viewerPlayer,
+                viewerCanSeeDraft,
+                aiRuntimeSnapshot,
+                clientRuntimeSnapshot);
+    }
+
+    public static GameSessionSnapshot withLocalDraft(
+            GameSessionSnapshot baseSnapshot,
+            TurnDraft turnDraft) {
+        Objects.requireNonNull(baseSnapshot, "baseSnapshot cannot be null.");
+        Objects.requireNonNull(turnDraft, "turnDraft cannot be null.");
+
+        PreviewSnapshot previewSnapshot = buildPreviewSnapshot(turnDraft.getPreviewResult());
+        List<DraftPlacementSnapshot> draftPlacements = buildDraftPlacements(turnDraft);
+        List<BoardCellRenderSnapshot> boardCells =
+                buildBoardCells(baseSnapshot, turnDraft, previewSnapshot);
+        return copyOf(
+                baseSnapshot,
+                boardCells,
+                baseSnapshot.getVisibleRackTiles(),
+                draftPlacements,
+                previewSnapshot,
+                baseSnapshot.getAiRuntimeSnapshot(),
+                baseSnapshot.getClientRuntimeSnapshot());
+    }
+
+    public static GameSessionSnapshot withClientRuntimeSnapshot(
+            GameSessionSnapshot baseSnapshot,
+            ClientRuntimeSnapshot clientRuntimeSnapshot) {
+        Objects.requireNonNull(baseSnapshot, "baseSnapshot cannot be null.");
+        return copyOf(
+                baseSnapshot,
+                baseSnapshot.getBoardCells(),
+                baseSnapshot.getVisibleRackTiles(),
+                baseSnapshot.getDraftPlacements(),
+                baseSnapshot.getPreview(),
+                baseSnapshot.getAiRuntimeSnapshot(),
+                clientRuntimeSnapshot);
+    }
+
+    private static GameSessionSnapshot buildSnapshot(
+            GameSession session,
+            Player viewerPlayer,
+            boolean viewerCanSeeDraft,
+            AiRuntimeSnapshot aiRuntimeSnapshot,
+            ClientRuntimeSnapshot clientRuntimeSnapshot) {
+        Player currentPlayer = resolveSnapshotPlayer(session);
+        Player effectiveViewerPlayer =
+                viewerPlayer == null ? currentPlayer : viewerPlayer;
         PlayerClock currentClock = currentPlayer.getClock();
-        PreviewSnapshot previewSnapshot = buildPreviewSnapshot(session);
+        PreviewSnapshot previewSnapshot =
+                viewerCanSeeDraft ? buildPreviewSnapshot(session.getTurnDraft().getPreviewResult()) : null;
+        List<RackTileSnapshot> visibleRackTiles = buildVisibleRackTiles(effectiveViewerPlayer);
+        List<DraftPlacementSnapshot> draftPlacements =
+                viewerCanSeeDraft ? buildDraftPlacements(session.getTurnDraft()) : List.of();
 
         List<PlayerClockSnapshot> playerClockSnapshots = new ArrayList<>();
         List<GamePlayerSnapshot> players = new ArrayList<>();
@@ -77,19 +166,56 @@ public final class GameSessionSnapshotFactory {
                 playerClockSnapshots,
                 players,
                 BoardSnapshotFactory.fromBoard(session.getGameState().getBoard()),
-                buildBoardCells(session, currentPlayer, previewSnapshot),
-                buildCurrentRackTiles(currentPlayer),
-                buildDraftPlacements(session),
+                buildBoardCells(
+                        session,
+                        effectiveViewerPlayer,
+                        viewerCanSeeDraft ? session.getTurnDraft() : null,
+                        previewSnapshot),
+                visibleRackTiles,
+                draftPlacements,
                 previewSnapshot,
                 session.getTurnCoordinator().getSettlementResult(),
-                aiRuntimeSnapshot);
+                aiRuntimeSnapshot,
+                clientRuntimeSnapshot);
     }
 
-    private static List<RackTileSnapshot> buildCurrentRackTiles(Player player) {
-        List<RackTileSnapshot> currentRackTiles = new ArrayList<>();
+    private static GameSessionSnapshot copyOf(
+            GameSessionSnapshot baseSnapshot,
+            List<BoardCellRenderSnapshot> boardCells,
+            List<RackTileSnapshot> visibleRackTiles,
+            List<DraftPlacementSnapshot> draftPlacements,
+            PreviewSnapshot previewSnapshot,
+            AiRuntimeSnapshot aiRuntimeSnapshot,
+            ClientRuntimeSnapshot clientRuntimeSnapshot) {
+        return new GameSessionSnapshot(
+                baseSnapshot.getSessionId(),
+                baseSnapshot.getGameMode(),
+                baseSnapshot.getSessionStatus(),
+                baseSnapshot.isGameEnded(),
+                baseSnapshot.getGameEndReason(),
+                baseSnapshot.getTurnNumber(),
+                baseSnapshot.getCurrentPlayerId(),
+                baseSnapshot.getCurrentPlayerName(),
+                baseSnapshot.getCurrentPlayerMainTimeRemainingMillis(),
+                baseSnapshot.getCurrentPlayerByoYomiRemainingMillis(),
+                baseSnapshot.getCurrentPlayerClockPhase(),
+                baseSnapshot.getPlayerClockSnapshots(),
+                baseSnapshot.getPlayers(),
+                baseSnapshot.getBoardSnapshot(),
+                boardCells,
+                visibleRackTiles,
+                draftPlacements,
+                previewSnapshot,
+                baseSnapshot.getSettlementResult(),
+                aiRuntimeSnapshot,
+                clientRuntimeSnapshot);
+    }
+
+    private static List<RackTileSnapshot> buildVisibleRackTiles(Player player) {
+        List<RackTileSnapshot> visibleRackTiles = new ArrayList<>();
         for (RackSlot slot : player.getRack().getSlots()) {
             Tile tile = slot.getTile();
-            currentRackTiles.add(
+            visibleRackTiles.add(
                     new RackTileSnapshot(
                             slot.getIndex(),
                             tile != null ? tile.getTileID() : null,
@@ -99,33 +225,44 @@ public final class GameSessionSnapshotFactory {
                             tile != null && tile.isBlank(),
                             tile != null ? tile.getAssignedLetter() : null));
         }
-        return currentRackTiles;
+        return visibleRackTiles;
     }
 
     private static List<BoardCellRenderSnapshot> buildBoardCells(
-            GameSession session, Player currentPlayer, PreviewSnapshot previewSnapshot) {
+            GameSession session,
+            Player viewerPlayer,
+            TurnDraft turnDraft,
+            PreviewSnapshot previewSnapshot) {
         Map<BoardPositionKey, DraftPlacement> draftPlacementsByPosition = new HashMap<>();
-        for (DraftPlacement placement : session.getTurnDraft().getPlacements()) {
-            if (placement == null || placement.getPosition() == null) {
-                continue;
+        if (turnDraft != null) {
+            for (DraftPlacement placement : turnDraft.getPlacements()) {
+                if (placement == null || placement.getPosition() == null) {
+                    continue;
+                }
+                draftPlacementsByPosition.put(
+                        new BoardPositionKey(
+                                placement.getPosition().getRow(),
+                                placement.getPosition().getCol()),
+                        placement);
             }
-            draftPlacementsByPosition.put(
-                    new BoardPositionKey(
-                            placement.getPosition().getRow(), placement.getPosition().getCol()),
-                    placement);
         }
 
-        Map<String, Tile> currentRackTilesById = new HashMap<>();
-        for (RackSlot slot : currentPlayer.getRack().getSlots()) {
-            Tile tile = slot.getTile();
-            if (tile != null) {
-                currentRackTilesById.put(tile.getTileID(), tile);
+        Map<String, Tile> viewerRackTilesById = new HashMap<>();
+        if (viewerPlayer != null) {
+            for (RackSlot slot : viewerPlayer.getRack().getSlots()) {
+                Tile tile = slot.getTile();
+                if (tile != null) {
+                    viewerRackTilesById.put(tile.getTileID(), tile);
+                }
             }
         }
 
         Set<BoardPositionKey> previewValidPositions = new HashSet<>();
         Set<BoardPositionKey> previewInvalidPositions = new HashSet<>();
-        collectPreviewHighlightPositions(previewSnapshot, previewValidPositions, previewInvalidPositions);
+        collectPreviewHighlightPositions(
+                previewSnapshot,
+                previewValidPositions,
+                previewInvalidPositions);
 
         Set<BoardPositionKey> mainWordPositions = new HashSet<>();
         Set<BoardPositionKey> crossWordPositions = new HashSet<>();
@@ -161,7 +298,7 @@ public final class GameSessionSnapshotFactory {
                     continue;
                 }
 
-                Tile tile = currentRackTilesById.get(draftPlacement.getTileId());
+                Tile tile = viewerRackTilesById.get(draftPlacement.getTileId());
                 if (tile == null) {
                     continue;
                 }
@@ -184,9 +321,111 @@ public final class GameSessionSnapshotFactory {
         return boardCells;
     }
 
-    private static List<DraftPlacementSnapshot> buildDraftPlacements(GameSession session) {
+    private static List<BoardCellRenderSnapshot> buildBoardCells(
+            GameSessionSnapshot baseSnapshot,
+            TurnDraft turnDraft,
+            PreviewSnapshot previewSnapshot) {
+        Map<BoardPositionKey, DraftPlacement> draftPlacementsByPosition = new HashMap<>();
+        for (DraftPlacement placement : turnDraft.getPlacements()) {
+            if (placement == null || placement.getPosition() == null) {
+                continue;
+            }
+            draftPlacementsByPosition.put(
+                    new BoardPositionKey(
+                            placement.getPosition().getRow(),
+                            placement.getPosition().getCol()),
+                    placement);
+        }
+
+        Map<String, RackTileSnapshot> visibleRackTilesById = new HashMap<>();
+        for (RackTileSnapshot visibleRackTile : baseSnapshot.getVisibleRackTiles()) {
+            if (visibleRackTile.getTileId() != null) {
+                visibleRackTilesById.put(visibleRackTile.getTileId(), visibleRackTile);
+            }
+        }
+
+        Map<BoardPositionKey, BoardCellSnapshot> boardCellsByPosition = new HashMap<>();
+        for (BoardCellSnapshot boardCellSnapshot : baseSnapshot.getBoardSnapshot().getCells()) {
+            boardCellsByPosition.put(
+                    new BoardPositionKey(boardCellSnapshot.getRow(), boardCellSnapshot.getCol()),
+                    boardCellSnapshot);
+        }
+
+        Map<BoardPositionKey, BoardCellRenderSnapshot> committedBoardCellsByPosition = new HashMap<>();
+        for (BoardCellRenderSnapshot boardCell : baseSnapshot.getBoardCells()) {
+            if (!boardCell.isDraft()) {
+                committedBoardCellsByPosition.put(
+                        new BoardPositionKey(boardCell.getRow(), boardCell.getCol()),
+                        boardCell);
+            }
+        }
+
+        Set<BoardPositionKey> previewValidPositions = new HashSet<>();
+        Set<BoardPositionKey> previewInvalidPositions = new HashSet<>();
+        collectPreviewHighlightPositions(
+                previewSnapshot,
+                previewValidPositions,
+                previewInvalidPositions);
+
+        Set<BoardPositionKey> mainWordPositions = new HashSet<>();
+        Set<BoardPositionKey> crossWordPositions = new HashSet<>();
+        collectPreviewWordPositions(previewSnapshot, mainWordPositions, crossWordPositions);
+
+        List<BoardCellRenderSnapshot> boardCells = new ArrayList<>();
+        for (BoardCellSnapshot boardCellSnapshot : baseSnapshot.getBoardSnapshot().getCells()) {
+            int row = boardCellSnapshot.getRow();
+            int col = boardCellSnapshot.getCol();
+            BoardPositionKey key = new BoardPositionKey(row, col);
+            BoardCellRenderSnapshot committedCell = committedBoardCellsByPosition.get(key);
+            if (committedCell != null) {
+                boardCells.add(
+                        new BoardCellRenderSnapshot(
+                                row,
+                                col,
+                                committedCell.getBonusType(),
+                                committedCell.getTileId(),
+                                committedCell.getDisplayLetter(),
+                                committedCell.getScore(),
+                                committedCell.isBlank(),
+                                false,
+                                previewValidPositions.contains(key),
+                                previewInvalidPositions.contains(key),
+                                mainWordPositions.contains(key),
+                                crossWordPositions.contains(key)));
+                continue;
+            }
+
+            DraftPlacement draftPlacement = draftPlacementsByPosition.get(key);
+            if (draftPlacement == null) {
+                continue;
+            }
+
+            RackTileSnapshot visibleRackTile = visibleRackTilesById.get(draftPlacement.getTileId());
+            if (visibleRackTile == null) {
+                continue;
+            }
+
+            boardCells.add(
+                    new BoardCellRenderSnapshot(
+                            row,
+                            col,
+                            boardCellSnapshot.getBonusType(),
+                            visibleRackTile.getTileId(),
+                            visibleRackTile.getDisplayLetter(),
+                            visibleRackTile.getScore(),
+                            visibleRackTile.isBlank(),
+                            true,
+                            previewValidPositions.contains(key),
+                            previewInvalidPositions.contains(key),
+                            mainWordPositions.contains(key),
+                            crossWordPositions.contains(key)));
+        }
+        return boardCells;
+    }
+
+    private static List<DraftPlacementSnapshot> buildDraftPlacements(TurnDraft turnDraft) {
         List<DraftPlacementSnapshot> draftPlacements = new ArrayList<>();
-        for (DraftPlacement placement : session.getTurnDraft().getPlacements()) {
+        for (DraftPlacement placement : turnDraft.getPlacements()) {
             draftPlacements.add(
                     new DraftPlacementSnapshot(
                             placement.getTileId(),
@@ -196,8 +435,7 @@ public final class GameSessionSnapshotFactory {
         return draftPlacements;
     }
 
-    private static PreviewSnapshot buildPreviewSnapshot(GameSession session) {
-        PreviewResult previewResult = session.getTurnDraft().getPreviewResult();
+    private static PreviewSnapshot buildPreviewSnapshot(PreviewResult previewResult) {
         if (previewResult == null) {
             return null;
         }
@@ -270,6 +508,19 @@ public final class GameSessionSnapshotFactory {
             return session.getGameState().requireCurrentActivePlayer();
         }
         return session.getGameState().getCurrentPlayer();
+    }
+
+    private static Player resolveViewerPlayer(
+            GameSession session,
+            String viewerPlayerId,
+            Player fallbackPlayer) {
+        if (viewerPlayerId != null) {
+            Player player = session.getGameState().getPlayerById(viewerPlayerId);
+            if (player != null) {
+                return player;
+            }
+        }
+        return fallbackPlayer;
     }
 
     private static int countRackTiles(Player player) {

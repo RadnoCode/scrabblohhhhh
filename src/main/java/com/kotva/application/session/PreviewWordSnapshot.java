@@ -1,10 +1,11 @@
 package com.kotva.application.session;
 
 import com.kotva.policy.WordType;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-public class PreviewWordSnapshot {
+public class PreviewWordSnapshot implements Serializable {
     private final String word;
     private final boolean valid;
     private final int scoreContribution;

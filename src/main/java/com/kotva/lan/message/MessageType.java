@@ -9,6 +9,9 @@ public enum MessageType {
     PLAYER_JOINED,  //server -> client, notify other clients that a new player has joined the session
 
     //gameplay messages
+    COMMAND_REQUEST,
+    COMMAND_RESULT,
+    SNAPSHOT_UPDATE,
     PLAYER_ACTION,  //client -> server, sent when a player performs an action
 
     //connection messages

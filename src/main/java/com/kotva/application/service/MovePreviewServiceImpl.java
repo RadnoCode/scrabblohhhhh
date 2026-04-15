@@ -24,6 +24,7 @@ import com.kotva.domain.utils.MoveValidator;
 import com.kotva.domain.utils.ScoreCalculator;
 import com.kotva.domain.utils.WordExtractor;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
+import com.kotva.policy.DictionaryType;
 import com.kotva.policy.WordType;
 
 /**
@@ -45,14 +46,28 @@ public class MovePreviewServiceImpl implements MovePreviewService
     @Override
     public PreviewResult preview(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
-        ensureDictionaryLoaded(session);
         GameState gameState = session.getGameState();
         Player currentPlayer = gameState.requireCurrentActivePlayer();
-        TurnDraft turnDraft = session.getTurnDraft();
+        return preview(
+                gameState,
+                session.getConfig().getDictionaryType(),
+                currentPlayer.getPlayerId(),
+                session.getTurnDraft());
+    }
 
+    @Override
+    public PreviewResult preview(
+            GameState gameState,
+            DictionaryType dictionaryType,
+            String playerId,
+            TurnDraft turnDraft) {
+        Objects.requireNonNull(gameState, "gameState cannot be null.");
+        Objects.requireNonNull(dictionaryType, "dictionaryType cannot be null.");
+        Objects.requireNonNull(playerId, "playerId cannot be null.");
+        Objects.requireNonNull(turnDraft, "turnDraft cannot be null.");
+        ensureDictionaryLoaded(dictionaryType);
         PlayerAction action =
-            TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), turnDraft);
-
+            TurnDraftActionMapper.toPlaceAction(playerId, turnDraft);
         String validationMessage = validateSafely(gameState, action);
 
         // according to the RuleEngine contract, validationMessage is null when the move is valid; if not valid, it contains a user-friendly message describing why
@@ -71,9 +86,9 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return new PreviewResult(valid, estimatedScore, words, highlights, messages);
     }
 
-    private void ensureDictionaryLoaded(GameSession session) {
-        if (dictionaryRepository.getLoadedDictionaryType() != session.getConfig().getDictionaryType()) {
-            dictionaryRepository.loadDictionary(session.getConfig().getDictionaryType());
+    private void ensureDictionaryLoaded(DictionaryType dictionaryType) {
+        if (dictionaryRepository.getLoadedDictionaryType() != dictionaryType) {
+            dictionaryRepository.loadDictionary(dictionaryType);
         }
     }
 

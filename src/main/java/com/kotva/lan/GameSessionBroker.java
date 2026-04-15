@@ -1,7 +1,21 @@
 package com.kotva.lan;
 
+import com.kotva.application.service.lan.LanHostService;
+import com.kotva.application.session.GameSession;
+import com.kotva.infrastructure.network.CommandEnvelope;
+import com.kotva.infrastructure.network.RemoteCommandResult;
+import com.kotva.lan.message.CommandRequestMessage;
+import com.kotva.lan.message.CommandResultMessage;
+import com.kotva.lan.message.GameInitializationMessage;
+import com.kotva.lan.message.JoinSessionMessage;
+import com.kotva.lan.message.LocalGameMessage;
+import com.kotva.lan.message.MessageType;
+import com.kotva.lan.message.PlayerJoinedMessage;
+import com.kotva.lan.message.SnapshotUpdateMessage;
+import com.kotva.policy.SessionStatus;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -9,24 +23,23 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
-import com.kotva.lan.message.GameInitializationMessage;
-import com.kotva.lan.message.JoinSessionMessage;
-import com.kotva.lan.message.LocalGameMessage;
-import com.kotva.lan.message.MessageType;
-
-/**owned by the server, this class manages the collection of active game sessions. It provides methods for creating new sessions, finding existing sessions by ID, and removing sessions when they are closed. 
- * The GameSessionBroker is responsible for maintaining the overall state of all game sessions on the server and ensuring that players are correctly routed to their respective sessions when they join or interact with the game. 
-*/
+/**
+ * Host-side LAN broker. It owns the room socket, assigns remote seats, routes
+ * command requests to the authoritative host service, and sends viewer-specific
+ * snapshots back to each connected client.
+ */
 public class GameSessionBroker {
-    
+    public static final int DEFAULT_PORT = 5050;
+
     private static final Logger logger = Logger.getLogger(GameSessionBroker.class.getName());
 
-    private final int port; // the port number on which the server listens for incoming connections
+    private final int port;
+    private final AtomicBoolean running = new AtomicBoolean(false);
 
-    private final AtomicBoolean running = new AtomicBoolean(false); // flag to indicate whether the server is currently running
-
-    private volatile ServerSocket serverSocket; // the ServerSocket used to accept incoming client connections
-    private volatile LocalGameSession localGameSession; // manages the collection of active game sessions
+    private volatile ServerSocket serverSocket;
+    private volatile LocalGameSession localGameSession;
+    private volatile GameSession authoritativeSession;
+    private volatile LanHostService lanHostService;
 
     public GameSessionBroker(int port) {
         this.port = port;
@@ -35,165 +48,61 @@ public class GameSessionBroker {
     public LocalGameSession getLocalGameSession() {
         return localGameSession;
     }
-    // Starts the server and begins listening for incoming client connections. This method initializes the ServerSocket and enters a loop to accept clients until the server is stopped.
-    public String createSession (String hostPlayerId, String hostPlayerName, int maxPlayers) throws IOException {
+
+    public synchronized String createSession(
+            GameSession session,
+            LanHostService lanHostService,
+            String hostPlayerId,
+            String hostPlayerName) throws IOException {
         if (running.get()) {
-            throw new IllegalStateException("Server is already running");
+            throw new IllegalStateException("Server is already running.");
         }
 
-        Objects.requireNonNull(hostPlayerId,"hostPlayerId can not be null");
-        Objects.requireNonNull(hostPlayerName,"hostPlayerName can not be null");
-        if (maxPlayers <= 0) {
-            throw new IllegalArgumentException("maxPlayers must be greater than 0.");
-        }
-        
-        this.localGameSession = new LocalGameSession(hostPlayerId, hostPlayerName, maxPlayers);
+        this.authoritativeSession = Objects.requireNonNull(session, "session cannot be null.");
+        this.lanHostService = Objects.requireNonNull(
+                lanHostService,
+                "lanHostService cannot be null.");
+        Objects.requireNonNull(hostPlayerId, "hostPlayerId cannot be null.");
+        Objects.requireNonNull(hostPlayerName, "hostPlayerName cannot be null.");
+
+        this.localGameSession =
+                new LocalGameSession(
+                        session.getSessionId(),
+                        hostPlayerId,
+                        hostPlayerName,
+                        session.getConfig().getPlayerCount());
         this.serverSocket = new ServerSocket(port);
         running.set(true);
-        logger.info("Server started on port " + port);
-    
-        Thread acceptThread = new Thread(this::acceptLoop,"LAN-AcceptLoop");
-        acceptThread.setDaemon(true);
-        acceptThread.start();  // start a thread to accept incoming client connections
 
-        logger.info("Game session created with ID: " + localGameSession.getSessionId());
+        Thread acceptThread = new Thread(this::acceptLoop, "LAN-AcceptLoop");
+        acceptThread.setDaemon(true);
+        acceptThread.start();
+
+        logger.info(
+                "LAN host broker started on port "
+                        + port
+                        + " for session "
+                        + localGameSession.getSessionId());
         return localGameSession.getSessionId();
     }
 
-    private void acceptLoop() {
-        while (running.get()) {
-            try {
-                Socket clientSocket = serverSocket.accept(); // wait for a client to connect
-                logger.info("Client connected: " + clientSocket.getRemoteSocketAddress());
-                handleNewClient(clientSocket); // handle the new client connection  
-            
-            } catch (SocketException e) {
-                if (running.get()) {
-                    logger.warning("Accept loop socket error: " + e.getMessage());
-                }
-            } catch (IOException e) {
-                if (running.get()) {
-                    logger.warning("Accept loop I/O error: " + e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void handleNewClient(Socket clientSocket) {
-        // This method should handle the initial handshake with the client, including receiving the JoinSessionMessage, validating the player's information, and adding them to the localGameSession if everything is valid. 
-        // It should also create a new ClientConnection for the client and add it to the localGameSession's connections map.
-        try{
-            ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
-            Object first = in.readObject();
-
-            if (!(first instanceof JoinSessionMessage))
-            {
-                logger.warning("Received invalid first message from client: " + clientSocket.getRemoteSocketAddress());
-                clientSocket.close();
-                return;
-            }
-
-            JoinSessionMessage joinMsg = (JoinSessionMessage) first;
-
-            String playerId = joinMsg.getPlayerId();
-            String playerName = joinMsg.getPlayerName();
-
-            // if the session is already full, reject the new connection to prevent exceeding the maximum player limit. This check ensures that the game session maintains its intended player capacity and prevents issues that could arise from having too many players in a session, such as performance degradation or an unmanageable game state.
-            if(localGameSession.isFull()){
-                logger.warning("session is full, player is rejected");
-                clientSocket.close();
-                return;
-            }
-            
-            // if a player with the same ID already exists in the session, reject the new connection to prevent duplicate player entries. This check ensures that each player in the session has a unique identifier, which is crucial for managing game state and player interactions correctly.
-            if(localGameSession.containsPlayer(playerId))
-            {
-                logger.warning("player with id " + playerId + " already exists in session, player is rejected");
-                clientSocket.close();
-                return;
-            }
-
-            // if the new player passes all validation checks, add them to the localGameSession and create a new ClientConnection for them. This step integrates the new player into the game session, allowing them to participate in the game and receive updates from the server.
-            
-            ClientConnection connection = new ClientConnection(playerId, clientSocket, in);
-            localGameSession.addPlayer(playerId, playerName, connection);
-
-            // send the new player an initialization message containing the current state of the game session, including the session ID, host player information, and a list of existing players. This message allows the new player to synchronize with the current game state and prepare for gameplay.
-            connection.sendMessage(
-                new GameInitializationMessage(
-                    localGameSession.getSessionId(), 
-                    localGameSession.getHostPlayerId(), 
-                    localGameSession.getPlayerBriefs())
-                    );
-            
-            // broadcast a message to all other players in the session (except the new player) to notify them that a new player has joined. This keeps all existing players informed about changes in the game session and allows them to update their local game state accordingly.
-            broadcastExcept(playerId, new JoinSessionMessage(playerId, playerName)); // notify all other players in the session that a new player has joined, except for the new player themselves who already knows they joined.
-            
-            // start listening for messages from the new player. This allows the server to receive and process any game actions or updates sent by the new player, enabling them to actively participate in the game session.
-            connection.startListening(
-                msg -> {onClientMessage(playerId, msg);},
-                () -> onClientDisconnect(playerId)
-                );
-
-            logger.info("Player joined. playerId=" + playerId + ", name=" + playerName);
-
-
-        } catch (IOException e) {
-           logger.warning("New client handling failed: " + e.getMessage());
-            safeClose(clientSocket);
-        }catch (ClassNotFoundException e) {
-            logger.warning("Unknown class during handshake: " + e.getMessage());
-            safeClose(clientSocket);
-        }
+    public void broadcastViewerSnapshotsToAllConnectedClients() {
+        broadcastViewerSnapshotsToAllConnectedClients(null);
     }
 
     public void broadcastExcept(String excludedPlayerId, LocalGameMessage message) {
-        // This method should iterate over all ClientConnections in the localGameSession's connections map and send the specified message to each client, except for the client with the given exceptPlayerId. This allows the server to efficiently broadcast messages to all players in the session while excluding a specific player when necessary (e.g., when notifying other players about a new player joining).
+        if (localGameSession == null || message == null) {
+            return;
+        }
         localGameSession.getConnectionsReadonly().forEach((playerId, connection) -> {
-            if (!playerId.equals(excludedPlayerId)) {
+            if (!Objects.equals(playerId, excludedPlayerId)) {
                 connection.sendMessage(message);
             }
         });
     }
 
     public void broadcastToAll(LocalGameMessage message) {
-        // This method should iterate over all ClientConnections in the localGameSession's connections map and send the specified message to each client. This allows the server to efficiently broadcast messages to all players in the session (e.g., when sending game state updates or global notifications).
-        localGameSession.getConnectionsReadonly().forEach((playerId, connection) -> {
-            connection.sendMessage(message);
-        });
-    }
-
-    private void onClientMessage(String playerId, LocalGameMessage message) {
-        // This method should handle incoming messages from clients. It should determine the type of the message and perform the appropriate actions based on the message content. For example, if the message is a game action, it should update the game state accordingly and broadcast any necessary updates to other players in the session.
-        if (message == null) return;
-
-        MessageType type = message.getType();
-
-        switch (type) {
-            case PLAYER_ACTION ->
-                // handle player action message
-                broadcastExcept(playerId, message);
-            default->
-               logger.info("Unhandled message type in Day2: " + type);
-        }
-
-    }
-
-    private void onClientDisconnect(String playerId) {
-        ClientConnection conn = localGameSession.getConnectionsReadonly().get(playerId);
-        if (conn != null && !conn.isClosed()) {
-            conn.disconnect();
-        }
-        localGameSession.removePlayer(playerId);
-        logger.info("Player disconnected: " + playerId);
-    }
-
-    private void safeClose(Socket socket) {
-        try {
-            socket.close();
-        } catch (IOException e) {
-            logger.warning("Failed to close socket: " + e.getMessage());
-        }
+        broadcastExcept(null, message);
     }
 
     public void stopServer() {
@@ -204,11 +113,213 @@ public class GameSessionBroker {
         if (serverSocket != null && !serverSocket.isClosed()) {
             try {
                 serverSocket.close();
-            } catch (IOException e) {
-                logger.warning("Error closing server socket: " + e.getMessage());
+            } catch (IOException exception) {
+                logger.warning("Error closing server socket: " + exception.getMessage());
             }
         }
-        logger.info("Server stopped.");
+        serverSocket = null;
+        localGameSession = null;
+        authoritativeSession = null;
+        lanHostService = null;
+        logger.info("LAN host broker stopped.");
     }
 
+    private void acceptLoop() {
+        while (running.get()) {
+            try {
+                Socket clientSocket = serverSocket.accept();
+                handleNewClient(clientSocket);
+            } catch (SocketException exception) {
+                if (running.get()) {
+                    logger.warning("Accept loop socket error: " + exception.getMessage());
+                }
+            } catch (IOException exception) {
+                if (running.get()) {
+                    logger.warning("Accept loop I/O error: " + exception.getMessage());
+                }
+            }
+        }
+    }
+
+    private void handleNewClient(Socket clientSocket) {
+        try {
+            ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+            out.flush();
+            ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+
+            Object firstMessage = in.readObject();
+            if (!(firstMessage instanceof JoinSessionMessage)) {
+                logger.warning("Rejected client without JoinSessionMessage handshake.");
+                safeClose(clientSocket);
+                return;
+            }
+
+            AssignedSeat assignedSeat = resolveNextRemoteSeat();
+            if (assignedSeat == null) {
+                logger.warning("Rejected client because no LAN seat is available.");
+                safeClose(clientSocket);
+                return;
+            }
+
+            ClientConnection connection =
+                    new ClientConnection(assignedSeat.playerId(), clientSocket, in, out);
+            localGameSession.addPlayer(
+                    assignedSeat.playerId(),
+                    assignedSeat.playerName(),
+                    connection);
+
+            connection.sendMessage(buildInitializationMessage(assignedSeat));
+            broadcastExcept(
+                    assignedSeat.playerId(),
+                    new PlayerJoinedMessage(assignedSeat.playerId(), assignedSeat.playerName()));
+            connection.startListening(
+                    message -> onClientMessage(assignedSeat.playerId(), message),
+                    () -> onClientDisconnect(assignedSeat.playerId()));
+
+            logger.info(
+                    "Remote LAN player joined as "
+                            + assignedSeat.playerId()
+                            + " ("
+                            + assignedSeat.playerName()
+                            + ").");
+        } catch (IOException exception) {
+            logger.warning("Failed to accept LAN client: " + exception.getMessage());
+            safeClose(clientSocket);
+        } catch (ClassNotFoundException exception) {
+            logger.warning("Unknown class during LAN handshake: " + exception.getMessage());
+            safeClose(clientSocket);
+        }
+    }
+
+    private GameInitializationMessage buildInitializationMessage(AssignedSeat assignedSeat) {
+        return new GameInitializationMessage(
+                localGameSession.getSessionId(),
+                localGameSession.getHostPlayerId(),
+                localGameSession.getPlayerBriefs(),
+                authoritativeSession.getConfig(),
+                assignedSeat.playerId(),
+                requireLanHostService().snapshotForViewer(assignedSeat.playerId()));
+    }
+
+    private AssignedSeat resolveNextRemoteSeat() {
+        if (localGameSession == null || authoritativeSession == null) {
+            return null;
+        }
+        if (localGameSession.isFull()) {
+            return null;
+        }
+
+        for (int index = 0; index < authoritativeSession.getConfig().getPlayers().size(); index++) {
+            String candidatePlayerId = "player-" + (index + 1);
+            if (Objects.equals(candidatePlayerId, localGameSession.getHostPlayerId())) {
+                continue;
+            }
+            if (localGameSession.containsPlayer(candidatePlayerId)) {
+                continue;
+            }
+            return new AssignedSeat(
+                    candidatePlayerId,
+                    authoritativeSession.getConfig().getPlayers().get(index).getPlayerName());
+        }
+        return null;
+    }
+
+    private void onClientMessage(String playerId, LocalGameMessage message) {
+        if (message == null) {
+            return;
+        }
+
+        MessageType type = message.getType();
+        switch (type) {
+            case COMMAND_REQUEST -> handleCommandRequest(playerId, (CommandRequestMessage) message);
+            case PLAYER_ACTION -> broadcastExcept(playerId, message);
+            default -> logger.info("Unhandled LAN message type: " + type);
+        }
+    }
+
+    private void handleCommandRequest(String playerId, CommandRequestMessage message) {
+        CommandEnvelope commandEnvelope =
+                Objects.requireNonNull(message, "message cannot be null.").getCommandEnvelope();
+        ClientConnection connection =
+                localGameSession == null
+                        ? null
+                        : localGameSession.getConnectionsReadonly().get(playerId);
+        if (connection == null) {
+            return;
+        }
+
+        if (!Objects.equals(playerId, commandEnvelope.getPlayerId())) {
+            connection.sendMessage(
+                    new CommandResultMessage(
+                            buildRejectedCommandResult(
+                                    playerId,
+                                    commandEnvelope,
+                                    "Connection playerId does not match command playerId.")));
+            return;
+        }
+
+        RemoteCommandResult result = requireLanHostService().handle(commandEnvelope);
+        connection.sendMessage(new CommandResultMessage(result));
+        if (result.success()) {
+            broadcastViewerSnapshotsToAllConnectedClients(playerId);
+        }
+    }
+
+    private RemoteCommandResult buildRejectedCommandResult(
+            String playerId,
+            CommandEnvelope commandEnvelope,
+            String message) {
+        return new RemoteCommandResult(
+                commandEnvelope == null ? null : commandEnvelope.getCommandId(),
+                false,
+                message,
+                0,
+                authoritativeSession.getGameState().getCurrentPlayer().getPlayerId(),
+                authoritativeSession.getSessionStatus() == SessionStatus.COMPLETED,
+                authoritativeSession.getTurnCoordinator().getSettlementResult(),
+                requireLanHostService().snapshotForViewer(playerId));
+    }
+
+    private void broadcastViewerSnapshotsToAllConnectedClients(String excludedPlayerId) {
+        if (localGameSession == null || lanHostService == null) {
+            return;
+        }
+        localGameSession.getConnectionsReadonly().forEach((playerId, connection) -> {
+            if (Objects.equals(playerId, excludedPlayerId)) {
+                return;
+            }
+            connection.sendMessage(
+                    new SnapshotUpdateMessage(requireLanHostService().snapshotForViewer(playerId)));
+        });
+    }
+
+    private void onClientDisconnect(String playerId) {
+        if (localGameSession == null) {
+            return;
+        }
+        ClientConnection connection = localGameSession.getConnectionsReadonly().get(playerId);
+        if (connection != null && !connection.isClosed()) {
+            connection.disconnect();
+        }
+        localGameSession.removePlayer(playerId);
+        logger.info("LAN player disconnected: " + playerId);
+    }
+
+    private LanHostService requireLanHostService() {
+        return Objects.requireNonNull(lanHostService, "lanHostService cannot be null.");
+    }
+
+    private void safeClose(Socket socket) {
+        if (socket == null) {
+            return;
+        }
+        try {
+            socket.close();
+        } catch (IOException exception) {
+            logger.warning("Failed to close socket: " + exception.getMessage());
+        }
+    }
+
+    private record AssignedSeat(String playerId, String playerName) {
+    }
 }

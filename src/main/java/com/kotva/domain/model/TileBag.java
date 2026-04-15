@@ -115,5 +115,16 @@ public class TileBag {
             return null;
         }
         return allTilesById.get(tileId);
-    } 
+    }
+
+    /**
+     * Registers an existing tile instance so preview-only client state can
+     * reconstruct authoritative tile ids without mutating the remaining bag.
+     */
+    public void indexTile(Tile tile) {
+        if (tile == null) {
+            return;
+        }
+        allTilesById.put(tile.getTileID(), tile);
+    }
 }

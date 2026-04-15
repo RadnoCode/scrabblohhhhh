@@ -5,6 +5,7 @@ import com.kotva.application.runtime.GameRuntimeFactory;
 import com.kotva.application.service.AiSessionRuntime;
 import com.kotva.application.session.AiRuntimeSnapshot;
 import com.kotva.application.session.BoardCellRenderSnapshot;
+import com.kotva.application.session.ClientRuntimeSnapshot;
 import com.kotva.application.session.GamePlayerSnapshot;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
@@ -85,13 +86,14 @@ public class GameController implements GameActionPort {
     private void startGameFromLaunchContext() {
         stopPolling();
         shutdownRuntime();
-        gameRuntime = gameRuntimeFactory.create(launchContext.getRequest());
+        gameRuntime = gameRuntimeFactory.create(launchContext.getLaunchSpec());
         gameRuntime.start(launchContext.getRequest());
 
         GameSessionSnapshot firstSnapshot = gameRuntime.getSessionSnapshot();
         renderSnapshot(firstSnapshot);
 
-        if (!gameRuntime.isSessionInProgress() || !gameRuntime.hasTimeControl()) {
+        if (!gameRuntime.requiresBackgroundRefresh()
+                && (!gameRuntime.isSessionInProgress() || !gameRuntime.hasTimeControl())) {
             return;
         }
 
@@ -105,17 +107,8 @@ public class GameController implements GameActionPort {
             return;
         }
 
-        if (!gameRuntime.isSessionInProgress()) {
-            renderSnapshot(gameRuntime.getSessionSnapshot());
-            stopPolling();
-            return;
-        }
-
-        long now = System.nanoTime();
-        long elapsedMillis = Math.max(0L, (now - lastTickNanos) / 1_000_000L);
-        lastTickNanos = now;
-
-        GameSessionSnapshot snapshot = gameRuntime.tickClock(elapsedMillis);
+        GameSessionSnapshot snapshot =
+                gameRuntime.tickClock(resolveElapsedMillisForRuntimePump());
         renderSnapshot(snapshot);
         if (snapshot.getSessionStatus() == SessionStatus.COMPLETED) {
             stopPolling();
@@ -124,6 +117,7 @@ public class GameController implements GameActionPort {
 
     private void renderSnapshot(GameSessionSnapshot snapshot) {
         AiRuntimeSnapshot aiRuntimeSnapshot = snapshot.getAiRuntimeSnapshot();
+        ClientRuntimeSnapshot clientRuntimeSnapshot = snapshot.getClientRuntimeSnapshot();
         viewModel.setStepTimerTitle("Step Time");
         viewModel.setTotalTimerTitle("Total Time");
         viewModel.setTotalTimerText(resolveTotalTimerText(snapshot));
@@ -131,10 +125,11 @@ public class GameController implements GameActionPort {
         viewModel.setPlayerCards(buildPlayerCards(snapshot));
         viewModel.setBoardTiles(buildBoardTiles(snapshot));
         viewModel.setRackTiles(buildRackTiles(snapshot));
-        interactionLocked = resolveInteractionLocked(snapshot, aiRuntimeSnapshot);
+        interactionLocked =
+                resolveInteractionLocked(snapshot, aiRuntimeSnapshot, clientRuntimeSnapshot);
         viewModel.setInteractionLocked(interactionLocked);
-        viewModel.setAiErrorSummary(aiRuntimeSnapshot == null ? "" : aiRuntimeSnapshot.summary());
-        viewModel.setAiErrorDetails(aiRuntimeSnapshot == null ? "" : aiRuntimeSnapshot.details());
+        viewModel.setAiErrorSummary(resolveStatusSummary(aiRuntimeSnapshot, clientRuntimeSnapshot));
+        viewModel.setAiErrorDetails(resolveStatusDetails(aiRuntimeSnapshot, clientRuntimeSnapshot));
         draftState.syncSnapshot(viewModel.getRackTiles(), viewModel.getBoardTiles());
         renderer.render(viewModel);
         syncAiTurn(snapshot);
@@ -159,7 +154,7 @@ public class GameController implements GameActionPort {
             rackTiles.add(GameViewModel.TileModel.empty());
         }
 
-        for (RackTileSnapshot rackTile : snapshot.getCurrentRackTiles()) {
+        for (RackTileSnapshot rackTile : snapshot.getVisibleRackTiles()) {
             int slotIndex = rackTile.getSlotIndex();
             if (slotIndex < 0 || slotIndex >= rackTiles.size()) {
                 continue;
@@ -252,17 +247,20 @@ public class GameController implements GameActionPort {
     }
 
     private void tickClockBeforeActionIfNeeded() {
-        if (gameRuntime == null
-                || !gameRuntime.hasTimeControl()
-                || !gameRuntime.isSessionInProgress()) {
+        if (gameRuntime == null || !gameRuntime.hasSession()) {
             return;
         }
 
-        long now = System.nanoTime();
-        long elapsedMillis = Math.max(0L, (now - lastTickNanos) / 1_000_000L);
-        lastTickNanos = now;
-        if (elapsedMillis > 0L) {
-            gameRuntime.tickClock(elapsedMillis);
+        if (!gameRuntime.requiresBackgroundRefresh()
+                && (!gameRuntime.hasTimeControl() || !gameRuntime.isSessionInProgress())) {
+            return;
+        }
+
+        GameSessionSnapshot snapshot =
+                gameRuntime.tickClock(resolveElapsedMillisForRuntimePump());
+        renderSnapshot(snapshot);
+        if (snapshot.getSessionStatus() == SessionStatus.COMPLETED) {
+            stopPolling();
         }
     }
 
@@ -392,12 +390,42 @@ public class GameController implements GameActionPort {
     }
 
     private boolean resolveInteractionLocked(
-            GameSessionSnapshot snapshot, AiRuntimeSnapshot aiRuntimeSnapshot) {
+            GameSessionSnapshot snapshot,
+            AiRuntimeSnapshot aiRuntimeSnapshot,
+            ClientRuntimeSnapshot clientRuntimeSnapshot) {
+        if (clientRuntimeSnapshot != null && clientRuntimeSnapshot.interactionLocked()) {
+            return true;
+        }
         if (aiRuntimeSnapshot != null && aiRuntimeSnapshot.interactionLocked()) {
             return true;
         }
         return gameRuntime != null
                 && snapshot.getSessionStatus() == SessionStatus.IN_PROGRESS
                 && gameRuntime.isCurrentTurnAutomated();
+    }
+
+    private String resolveStatusSummary(
+            AiRuntimeSnapshot aiRuntimeSnapshot,
+            ClientRuntimeSnapshot clientRuntimeSnapshot) {
+        if (clientRuntimeSnapshot != null && !clientRuntimeSnapshot.summary().isBlank()) {
+            return clientRuntimeSnapshot.summary();
+        }
+        return aiRuntimeSnapshot == null ? "" : aiRuntimeSnapshot.summary();
+    }
+
+    private String resolveStatusDetails(
+            AiRuntimeSnapshot aiRuntimeSnapshot,
+            ClientRuntimeSnapshot clientRuntimeSnapshot) {
+        if (clientRuntimeSnapshot != null && !clientRuntimeSnapshot.details().isBlank()) {
+            return clientRuntimeSnapshot.details();
+        }
+        return aiRuntimeSnapshot == null ? "" : aiRuntimeSnapshot.details();
+    }
+
+    private long resolveElapsedMillisForRuntimePump() {
+        long now = System.nanoTime();
+        long elapsedMillis = Math.max(0L, (now - lastTickNanos) / 1_000_000L);
+        lastTickNanos = now;
+        return elapsedMillis;
     }
 }

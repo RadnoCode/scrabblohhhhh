@@ -1,8 +1,9 @@
 package com.kotva.application.result;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class PlayerSettlement {
+public class PlayerSettlement implements Serializable {
     private final String playerName;
     private final int finalScore;
     private final int rank;

@@ -1,9 +1,11 @@
 package com.kotva.domain.action;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-public record PlayerAction(String playerId, ActionType type, List<ActionPlacement> placements) {
+public record PlayerAction(String playerId, ActionType type, List<ActionPlacement> placements)
+        implements Serializable {
     public PlayerAction {
         Objects.requireNonNull(playerId, "playerId cannot be null.");
         Objects.requireNonNull(type, "type cannot be null.");

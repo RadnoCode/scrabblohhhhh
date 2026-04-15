@@ -31,7 +31,15 @@ public class LocalGameSession {
 
     // Constructor: when a new session is created, the host player automatically joins the session.
     public LocalGameSession(String hostPlayerId, String hostPlayerName, int maxPlayers) {
-        this.sessionId = UUID.randomUUID().toString();
+        this(UUID.randomUUID().toString(), hostPlayerId, hostPlayerName, maxPlayers);
+    }
+
+    public LocalGameSession(
+            String sessionId,
+            String hostPlayerId,
+            String hostPlayerName,
+            int maxPlayers) {
+        this.sessionId = sessionId;
         this.hostPlayerId = hostPlayerId;
         this.hostPlayerName = hostPlayerName;
         this.maxPlayers = maxPlayers;

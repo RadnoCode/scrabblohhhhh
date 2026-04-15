@@ -8,4 +8,6 @@ public interface GameSetupService {
     GameConfig buildConfig(NewGameRequest request);
 
     GameSession startNewGame(NewGameRequest request);
+
+    GameSession startNewGame(GameConfig config);
 }

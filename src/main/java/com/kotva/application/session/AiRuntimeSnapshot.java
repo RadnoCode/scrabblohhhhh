@@ -1,5 +1,6 @@
 package com.kotva.application.session;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 public record AiRuntimeSnapshot(
@@ -10,7 +11,7 @@ public record AiRuntimeSnapshot(
         String details,
         int consecutiveIllegalMoveCount,
         int candidateCount,
-        int attemptedCandidateCount) {
+        int attemptedCandidateCount) implements Serializable {
     public AiRuntimeSnapshot {
         failureKind = Objects.requireNonNull(failureKind, "failureKind cannot be null.");
         summary = Objects.requireNonNull(summary, "summary cannot be null.");
