@@ -6,41 +6,44 @@ import com.kotva.presentation.component.BoardView;
 import com.kotva.presentation.component.PlayerInfoCardView;
 import com.kotva.presentation.component.RackView;
 import com.kotva.presentation.component.TimerView;
+import com.kotva.presentation.component.TransientMessageView;
 import com.kotva.presentation.interaction.GameDraftState;
 import com.kotva.presentation.viewmodel.GameViewModel;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * GameRenderer 负责把控制器产出的 ViewModel 真正落到界面组件上。
- */
 public class GameRenderer {
     private final BoardView boardView;
     private final RackView rackView;
     private final ActionPanelView actionPanelView;
     private final AiStatusBannerView aiStatusBannerView;
+    private final TransientMessageView transientMessageView;
     private final TimerView stepTimerView;
     private final TimerView totalTimerView;
     private final List<PlayerInfoCardView> playerCards;
     private final BoardRenderer boardRenderer;
     private final RackRenderer rackRenderer;
     private GameViewModel lastViewModel;
+    private long renderedTransientMessageVersion;
 
     public GameRenderer(
-            BoardView boardView,
-            RackView rackView,
-            ActionPanelView actionPanelView,
-            AiStatusBannerView aiStatusBannerView,
-            TimerView stepTimerView,
-            TimerView totalTimerView,
-            List<PlayerInfoCardView> playerCards,
-            GameDraftState draftState,
-            PreviewRenderer previewRenderer) {
+        BoardView boardView,
+        RackView rackView,
+        ActionPanelView actionPanelView,
+        AiStatusBannerView aiStatusBannerView,
+        TransientMessageView transientMessageView,
+        TimerView stepTimerView,
+        TimerView totalTimerView,
+        List<PlayerInfoCardView> playerCards,
+        GameDraftState draftState,
+        PreviewRenderer previewRenderer) {
         this.boardView = Objects.requireNonNull(boardView, "boardView cannot be null.");
         this.rackView = Objects.requireNonNull(rackView, "rackView cannot be null.");
         this.actionPanelView = Objects.requireNonNull(actionPanelView, "actionPanelView cannot be null.");
         this.aiStatusBannerView =
-                Objects.requireNonNull(aiStatusBannerView, "aiStatusBannerView cannot be null.");
+        Objects.requireNonNull(aiStatusBannerView, "aiStatusBannerView cannot be null.");
+        this.transientMessageView =
+        Objects.requireNonNull(transientMessageView, "transientMessageView cannot be null.");
         this.stepTimerView = Objects.requireNonNull(stepTimerView, "stepTimerView cannot be null.");
         this.totalTimerView = Objects.requireNonNull(totalTimerView, "totalTimerView cannot be null.");
         this.playerCards = List.copyOf(Objects.requireNonNull(playerCards, "playerCards cannot be null."));
@@ -64,7 +67,14 @@ public class GameRenderer {
         stepTimerView.setTimeText(viewModel.getStepTimerText());
         totalTimerView.setTitle(viewModel.getTotalTimerTitle());
         totalTimerView.setTimeText(viewModel.getTotalTimerText());
+        if (viewModel.getTransientMessageVersion() != renderedTransientMessageVersion) {
+            renderedTransientMessageVersion = viewModel.getTransientMessageVersion();
+            if (!viewModel.getTransientMessageText().isBlank()) {
+                transientMessageView.showMessage(viewModel.getTransientMessageText());
+            }
+        }
         boardRenderer.render();
+        boardView.setWordOutline(viewModel.getWordOutline());
         rackRenderer.render();
         boardView.setDisable(viewModel.isInteractionLocked());
         rackView.setDisable(viewModel.isInteractionLocked());
@@ -73,8 +83,8 @@ public class GameRenderer {
             aiStatusBannerView.clear();
         } else {
             aiStatusBannerView.showMessage(
-                    viewModel.getAiErrorSummary(),
-                    viewModel.getAiErrorDetails());
+                viewModel.getAiErrorSummary(),
+                viewModel.getAiErrorDetails());
         }
 
         List<GameViewModel.PlayerCardModel> cardModels = viewModel.getPlayerCards();
@@ -83,11 +93,12 @@ public class GameRenderer {
             if (index < cardModels.size()) {
                 GameViewModel.PlayerCardModel playerCardModel = cardModels.get(index);
                 playerCardView.setPlayer(
-                        playerCardModel.getPlayerName(),
-                        playerCardModel.getPlayerId(),
-                        playerCardModel.getScore(),
-                        playerCardModel.isCurrentTurn(),
-                        playerCardModel.isActive());
+                    playerCardModel.getPlayerName(),
+                    playerCardModel.getPlayerId(),
+                    playerCardModel.getScore(),
+                    playerCardModel.getStepMarkText(),
+                    playerCardModel.isCurrentTurn(),
+                    playerCardModel.isActive());
             } else {
                 playerCardView.clear();
             }

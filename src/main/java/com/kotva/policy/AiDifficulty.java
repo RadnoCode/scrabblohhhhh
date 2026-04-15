@@ -1,6 +1,7 @@
 package com.kotva.policy;
 
 public enum AiDifficulty {
+
     EASY("Easy", "EASY"),
     MEDIUM("Middle", "MEDIUM"),
     HARD("Hard", "HARD");

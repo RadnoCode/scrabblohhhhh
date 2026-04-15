@@ -17,7 +17,7 @@ public final class AiMoveService implements AutoCloseable {
     private final AtomicInteger activeRequests;
 
     public AiMoveService(
-            QuackleNativeBridge bridge, DictionaryType dictionaryType, AiDifficulty difficulty) {
+        QuackleNativeBridge bridge, DictionaryType dictionaryType, AiDifficulty difficulty) {
         Objects.requireNonNull(bridge, "bridge cannot be null.");
         this.engine = bridge.createEngine(dictionaryType, difficulty);
         this.closing = new AtomicBoolean(false);
@@ -29,18 +29,18 @@ public final class AiMoveService implements AutoCloseable {
         Objects.requireNonNull(snapshot, "snapshot cannot be null.");
         ensureOpen();
         return CompletableFuture.supplyAsync(() -> {
-            activeRequests.incrementAndGet();
-            try {
-                return engine.chooseMoveOptions(snapshot);
-            } finally {
-                if (activeRequests.decrementAndGet() == 0 && closing.get()) {
-                    engine.close();
+                activeRequests.incrementAndGet();
+                try {
+                    return engine.chooseMoveOptions(snapshot);
+                } finally {
+                    if (activeRequests.decrementAndGet() == 0 && closing.get()) {
+                        engine.close();
+                    }
                 }
-            }
-        }, executor);
+            }, executor);
     }
 
-    @Override
+        @Override
     public void close() {
         if (!closing.compareAndSet(false, true)) {
             return;
@@ -59,7 +59,8 @@ public final class AiMoveService implements AutoCloseable {
     }
 
     private static final class AiThreadFactory implements ThreadFactory {
-        @Override
+
+            @Override
         public Thread newThread(Runnable runnable) {
             Thread thread = new Thread(runnable, "quackle-ai-worker");
             thread.setDaemon(true);

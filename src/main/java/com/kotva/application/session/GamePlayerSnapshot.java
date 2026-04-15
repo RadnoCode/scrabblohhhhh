@@ -14,14 +14,14 @@ public class GamePlayerSnapshot {
     private final PlayerClockSnapshot clockSnapshot;
 
     public GamePlayerSnapshot(
-            String playerId,
-            String playerName,
-            PlayerType playerType,
-            int score,
-            boolean active,
-            boolean currentTurn,
-            int rackTileCount,
-            PlayerClockSnapshot clockSnapshot) {
+        String playerId,
+        String playerName,
+        PlayerType playerType,
+        int score,
+        boolean active,
+        boolean currentTurn,
+        int rackTileCount,
+        PlayerClockSnapshot clockSnapshot) {
         this.playerId = Objects.requireNonNull(playerId, "playerId cannot be null.");
         this.playerName = Objects.requireNonNull(playerName, "playerName cannot be null.");
         this.playerType = Objects.requireNonNull(playerType, "playerType cannot be null.");

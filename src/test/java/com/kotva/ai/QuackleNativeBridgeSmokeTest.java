@@ -14,9 +14,9 @@ import org.junit.Test;
 
 public class QuackleNativeBridgeSmokeTest {
     private static final String STANDARD_TILE_POOL =
-            "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ??";
+    "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ??";
 
-    @Test
+        @Test
     public void createChooseDestroyRoundTrip() {
         QuackleNativeBridge bridge = new QuackleNativeBridge();
         Assume.assumeTrue(Files.isRegularFile(bridge.getLibraryPath()));
@@ -24,14 +24,14 @@ public class QuackleNativeBridgeSmokeTest {
 
         String rack = "AEIRST?";
         AiPositionSnapshot snapshot = new AiPositionSnapshot(
-                emptyBoard(),
-                rack,
-                buildUnseenTiles(rack),
-                0,
-                0);
+            emptyBoard(),
+            rack,
+            buildUnseenTiles(rack),
+            0,
+            0);
 
         try (QuackleNativeBridge.Engine engine =
-                    bridge.createEngine(DictionaryType.AM, AiDifficulty.EASY)) {
+            bridge.createEngine(DictionaryType.AM, AiDifficulty.EASY)) {
             AiMoveOptionSet moveOptions = engine.chooseMoveOptions(snapshot);
             assertNotNull(moveOptions);
             assertTrue(!moveOptions.isEmpty());

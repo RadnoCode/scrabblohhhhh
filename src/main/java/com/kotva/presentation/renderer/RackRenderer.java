@@ -4,10 +4,6 @@ import com.kotva.presentation.component.RackView;
 import com.kotva.presentation.interaction.GameDraftState;
 import java.util.Objects;
 
-/**
- * RackRenderer applies the merged rack state to the reusable RackView while the
- * preview layer decides whether a source slot should be temporarily hidden.
- */
 public class RackRenderer {
     private final RackView rackView;
     private final GameDraftState draftState;

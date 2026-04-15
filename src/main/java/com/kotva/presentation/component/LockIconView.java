@@ -5,9 +5,6 @@ import javafx.scene.shape.Arc;
 import javafx.scene.shape.ArcType;
 import javafx.scene.shape.Rectangle;
 
-/**
- * LockIconView draws a small lock icon for the locked ID row.
- */
 public class LockIconView extends Pane {
     private final Rectangle body;
     private final Arc arc;
@@ -27,7 +24,7 @@ public class LockIconView extends Pane {
         arc.setType(ArcType.OPEN);
     }
 
-    @Override
+        @Override
     protected void layoutChildren() {
         double width = getWidth();
         double height = getHeight();

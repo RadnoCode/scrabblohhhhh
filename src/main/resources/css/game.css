@@ -22,27 +22,47 @@
     -fx-padding: 0;
 }
 
+.game-board-word-outline-layer {
+    -fx-pick-on-bounds: false;
+}
+
+.game-board-word-outline {
+    -fx-fill: transparent;
+    -fx-stroke-width: 1;
+    -fx-arc-width: 22;
+    -fx-arc-height: 22;
+}
+
+.game-board-word-outline-valid {
+    -fx-stroke: rgba(101, 145, 96, 0.98);
+}
+
+.game-board-word-outline-invalid {
+    -fx-stroke: rgba(176, 94, 94, 0.98);
+}
+
 .game-board-cell {
-    -fx-background-color: rgba(226, 219, 206, 0.90);
+    -fx-background-color: #bab9c8;
     -fx-background-radius: 11;
     -fx-border-color: transparent;
     -fx-border-width: 1;
     -fx-border-radius: 11;
 }
 
-.game-board-cell-main-word {
-    -fx-background-color: rgba(195, 213, 228, 0.96);
-    -fx-border-color: rgba(118, 145, 168, 0.82);
+.game-board-cell-double-letter {
+    -fx-background-color: #6fa6cb;
 }
 
-.game-board-cell-valid-preview {
-    -fx-background-color: rgba(188, 217, 184, 0.97);
-    -fx-border-color: rgba(101, 145, 96, 0.92);
+.game-board-cell-triple-letter {
+    -fx-background-color: #1c74ad;
 }
 
-.game-board-cell-invalid-preview {
-    -fx-background-color: rgba(231, 186, 186, 0.97);
-    -fx-border-color: rgba(176, 94, 94, 0.94);
+.game-board-cell-double-word {
+    -fx-background-color: #e3a4a5;
+}
+
+.game-board-cell-triple-word {
+    -fx-background-color: #c95650;
 }
 
 .game-board-cell-hover {
@@ -51,6 +71,12 @@
 
 .game-board-draft-tile {
     -fx-effect: dropshadow(gaussian, rgba(87, 106, 140, 0.16), 8, 0.10, 0, 2);
+}
+
+.game-board-bonus-label {
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: 800;
 }
 
 .game-drag-floating-tile {

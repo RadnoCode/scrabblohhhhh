@@ -14,19 +14,19 @@ public class GameConfig {
     private final AiDifficulty aiDifficulty;
 
     public GameConfig(
-            GameMode gameMode,
-            List<PlayerConfig> players,
-            DictionaryType dictionaryType,
-            TimeControlConfig timeControlConfig) {
+        GameMode gameMode,
+        List<PlayerConfig> players,
+        DictionaryType dictionaryType,
+        TimeControlConfig timeControlConfig) {
         this(gameMode, players, dictionaryType, timeControlConfig, null);
     }
 
     public GameConfig(
-            GameMode gameMode,
-            List<PlayerConfig> players,
-            DictionaryType dictionaryType,
-            TimeControlConfig timeControlConfig,
-            AiDifficulty aiDifficulty) {
+        GameMode gameMode,
+        List<PlayerConfig> players,
+        DictionaryType dictionaryType,
+        TimeControlConfig timeControlConfig,
+        AiDifficulty aiDifficulty) {
         this.gameMode = Objects.requireNonNull(gameMode, "gameMode cannot be null.");
         this.players = List.copyOf(Objects.requireNonNull(players, "players cannot be null."));
         this.dictionaryType = Objects.requireNonNull(dictionaryType, "dictionaryType cannot be null.");

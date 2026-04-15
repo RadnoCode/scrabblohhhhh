@@ -4,10 +4,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 
-/**
- * ViceTitleBanner is a smaller title banner used as the page subtitle above action buttons.
- * It follows the same general idea as TitleBanner, but uses a more compact size.
- */
 public class ViceTitleBanner extends StackPane {
     private final Label titleLabel;
 

@@ -10,7 +10,7 @@ public final class AiSessionRuntimeFactory implements AiRuntimeBootstrapper {
 
     public AiSessionRuntimeFactory(QuackleNativeBridge quackleNativeBridge) {
         this.quackleNativeBridge =
-                Objects.requireNonNull(quackleNativeBridge, "quackleNativeBridge cannot be null.");
+        Objects.requireNonNull(quackleNativeBridge, "quackleNativeBridge cannot be null.");
     }
 
     public AiSessionRuntime create(GameConfig gameConfig) {
@@ -24,17 +24,17 @@ public final class AiSessionRuntimeFactory implements AiRuntimeBootstrapper {
         quackleNativeBridge.load();
 
         return new AiSessionRuntime(new AiTurnCoordinator(
-                quackleNativeBridge,
-                gameConfig.getDictionaryType(),
-                gameConfig.getAiDifficulty()));
+            quackleNativeBridge,
+            gameConfig.getDictionaryType(),
+            gameConfig.getAiDifficulty()));
     }
 
-    @Override
+        @Override
     public String getLibraryPath() {
         return quackleNativeBridge.getLibraryPath().toString();
     }
 
-    @Override
+        @Override
     public String getDataDirectory() {
         return quackleNativeBridge.getDataDirectory().toString();
     }

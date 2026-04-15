@@ -7,7 +7,8 @@ import com.kotva.policy.ClockPhase;
 import java.util.Objects;
 
 public class ClockServiceImpl implements ClockService {
-    @Override
+
+        @Override
     public void startTurnClock(GameSession session) {
         PlayerClock clock = requireCurrentPlayer(session).getClock();
         if (!clock.isEnabled()) {
@@ -23,12 +24,12 @@ public class ClockServiceImpl implements ClockService {
         clock.resetByoYomiTurn();
     }
 
-    @Override
+        @Override
     public void stopTurnClock(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
     }
 
-    @Override
+        @Override
     public void tick(GameSession session, long elapsedMillis) {
         if (elapsedMillis < 0) {
             throw new IllegalArgumentException("elapsedMillis cannot be negative.");
@@ -66,7 +67,7 @@ public class ClockServiceImpl implements ClockService {
         }
     }
 
-    @Override
+        @Override
     public void handleTimeout(GameSession session) {
         Player currentPlayer = requireCurrentPlayer(session);
         PlayerClock clock = currentPlayer.getClock();

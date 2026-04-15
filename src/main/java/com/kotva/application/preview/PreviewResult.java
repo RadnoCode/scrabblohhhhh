@@ -20,15 +20,19 @@ public class PreviewResult {
     public boolean isValid() {
         return valid;
     }
+
     public int getEstimatedScore() {
         return estimatedScore;
     }
+
     public List<PreviewWord> getWordList() {
         return words;
     }
+
     public List<BoardHighlight> getHighlights() {
         return highlights;
     }
+
     public List<String> getMessages() {
         return messages;
     }

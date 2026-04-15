@@ -34,8 +34,8 @@ public class DictionaryLoader {
 
     private Path resolveDictionaryPath(DictionaryType dictionaryType) {
         return switch (dictionaryType) {
-            case AM -> Path.of("src/resources/Dicts/North-America/NWL2018.txt");
-            case BR -> Path.of("src/resources/Dicts/British/CSW19.txt");
+        case AM -> Path.of("src/resources/Dicts/North-America/NWL2018.txt");
+        case BR -> Path.of("src/resources/Dicts/British/CSW19.txt");
         };
     }
 }

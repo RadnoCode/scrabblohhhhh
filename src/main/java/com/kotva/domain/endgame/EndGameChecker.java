@@ -8,12 +8,13 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class EndGameChecker {
+
     public Optional<GameEndReason> evaluate(
-            GameState gameState,
-            Player actingPlayer,
-            PlayerAction action,
-            boolean roundComplete,
-            boolean allPassedInRound) {
+        GameState gameState,
+        Player actingPlayer,
+        PlayerAction action,
+        boolean roundComplete,
+        boolean allPassedInRound) {
         Objects.requireNonNull(gameState, "gameState cannot be null.");
         Objects.requireNonNull(actingPlayer, "actingPlayer cannot be null.");
         Objects.requireNonNull(action, "action cannot be null.");
@@ -23,8 +24,8 @@ public class EndGameChecker {
         }
 
         if (action.type() == ActionType.PLACE_TILE
-                && gameState.getTileBag().isEmpty()
-                && actingPlayer.getRack().isEmpty()) {
+            && gameState.getTileBag().isEmpty()
+            && actingPlayer.getRack().isEmpty()) {
             return Optional.of(GameEndReason.TILE_BAG_EMPTY_AND_PLAYER_FINISHED);
         }
 

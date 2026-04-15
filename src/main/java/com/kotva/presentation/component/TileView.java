@@ -1,15 +1,9 @@
 package com.kotva.presentation.component;
 
 import com.kotva.presentation.viewmodel.GameViewModel;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 
-/**
- * TileView 是字母块的基础 JavaFX 组件。
- * 它既可以显示真实字母，也可以显示空槽位。
- */
 public class TileView extends StackPane {
     private final double tileSize;
     private final Label letterLabel;
@@ -27,18 +21,15 @@ public class TileView extends StackPane {
     }
 
     private void initializeTile() {
-        // 给 Tile 自身挂基础样式。
         getStyleClass().add("game-tile");
-        // 棋盘上的小 Tile 需要单独挂一个小尺寸样式。
         if (tileSize <= 36) {
             getStyleClass().add("game-tile-small");
         }
-        // 固定 Tile 尺寸，避免布局阶段被压扁。
+
         setPrefSize(tileSize, tileSize);
         setMinSize(tileSize, tileSize);
         setMaxSize(tileSize, tileSize);
 
-        // 分别给字母和角标分数挂样式。
         letterLabel.getStyleClass().add("game-tile-letter");
         scoreLabel.getStyleClass().add("game-tile-score");
         if (tileSize <= 36) {
@@ -46,18 +37,16 @@ public class TileView extends StackPane {
             scoreLabel.getStyleClass().add("game-tile-score-small");
         }
 
-        // 字母居中，分数贴右下角。
-        StackPane.setAlignment(letterLabel, Pos.CENTER);
-        StackPane.setAlignment(scoreLabel, Pos.BOTTOM_RIGHT);
-        StackPane.setMargin(scoreLabel, new Insets(0, 7, 5, 0));
+        letterLabel.setManaged(false);
+        scoreLabel.setManaged(false);
+        letterLabel.setMouseTransparent(true);
+        scoreLabel.setMouseTransparent(true);
 
-        // 把两个文字节点加入 Tile 容器，并初始化为空状态。
         getChildren().addAll(letterLabel, scoreLabel);
         clearTile();
     }
 
     public void setTile(GameViewModel.TileModel tileModel) {
-        // 允许外部直接传 TileModel，便于 renderer 复用。
         if (tileModel == null || tileModel.isEmpty()) {
             clearTile();
             return;
@@ -66,28 +55,58 @@ public class TileView extends StackPane {
     }
 
     public void setTile(String letter, int score) {
-        // 写入字母和分数文本。
         letterLabel.setText(letter);
         scoreLabel.setText(Integer.toString(score));
-        // 从空槽样式切换到已填充样式。
         getStyleClass().remove("game-tile-empty");
         if (!getStyleClass().contains("game-tile-filled")) {
             getStyleClass().add("game-tile-filled");
         }
+        requestLayout();
     }
 
     public void clearTile() {
-        // 清空文本。
         letterLabel.setText("");
         scoreLabel.setText("");
-        // 从已填充样式切回空槽样式。
         getStyleClass().remove("game-tile-filled");
         if (!getStyleClass().contains("game-tile-empty")) {
             getStyleClass().add("game-tile-empty");
         }
+        requestLayout();
     }
 
     public double getTileSize() {
         return tileSize;
+    }
+
+        @Override
+    protected void layoutChildren() {
+        double width = getWidth();
+        double height = getHeight();
+
+        double letterWidth = snapSizeX(letterLabel.prefWidth(-1));
+        double letterHeight = snapSizeY(letterLabel.prefHeight(-1));
+        double scoreWidth = snapSizeX(scoreLabel.prefWidth(-1));
+        double scoreHeight = snapSizeY(scoreLabel.prefHeight(-1));
+
+        double letterX = snapPositionX((width - letterWidth) / 2.0);
+        double letterY;
+        double scoreX;
+        double scoreY;
+
+        if (tileSize <= 36) {
+            letterY = snapPositionY((height - letterHeight) / 2.0);
+            scoreX = snapPositionX(width - scoreWidth - 4.0);
+            double letterBottom = letterY + letterHeight;
+            scoreY = snapPositionY(letterBottom - scoreHeight - 1.0);
+        } else {
+            double scoreRightInset = 7.0;
+            double scoreBottomInset = 5.0;
+            letterY = snapPositionY((height - letterHeight) / 2.0);
+            scoreX = snapPositionX(width - scoreWidth - scoreRightInset);
+            scoreY = snapPositionY(height - scoreHeight - scoreBottomInset);
+        }
+
+        letterLabel.resizeRelocate(letterX, letterY, letterWidth, letterHeight);
+        scoreLabel.resizeRelocate(scoreX, scoreY, scoreWidth, scoreHeight);
     }
 }
