@@ -123,18 +123,18 @@ public class SceneNavigator {
         currentPage = pageType;
 
         switch (pageType) {
-            case HOME -> showHomeScene();
-            case GAME_SETTING -> showGameSettingScene();
-            case GAME -> showGameScene();
-            case SETTINGS -> showSettingsScene();
-            case HELP -> showHelpScene();
-            case LOCAL_MULTIPLAYER_SETUP -> showLocalMultiplayerSetupScene();
-            case LOCAL_AI_SETUP -> showLocalAiSetupScene();
-            case ONLINE_SETUP -> showOnlineSetupScene();
-            case ROOM_SEARCH -> showRoomSearchScene();
-            case ROOM_CREATE -> showRoomCreateScene();
-            case ROOM_WAITING -> showRoomWaitingScene();
-            case SETTLEMENT -> showSettlementScene();
+        case HOME -> showHomeScene();
+        case GAME_SETTING -> showGameSettingScene();
+        case GAME -> showGameScene();
+        case SETTINGS -> showSettingsScene();
+        case HELP -> showHelpScene();
+        case LOCAL_MULTIPLAYER_SETUP -> showLocalMultiplayerSetupScene();
+        case LOCAL_AI_SETUP -> showLocalAiSetupScene();
+        case ONLINE_SETUP -> showOnlineSetupScene();
+        case ROOM_SEARCH -> showRoomSearchScene();
+        case ROOM_CREATE -> showRoomCreateScene();
+        case ROOM_WAITING -> showRoomWaitingScene();
+        case SETTLEMENT -> showSettlementScene();
         }
     }
 
@@ -156,8 +156,8 @@ public class SceneNavigator {
 
     private void showGameScene() {
         GameController controller = new GameController(
-                this,
-                gameLaunchContext != null ? gameLaunchContext : GameLaunchContext.defaultContext());
+            this,
+            gameLaunchContext != null ? gameLaunchContext : GameLaunchContext.defaultContext());
         gameController = controller;
         GameScene scene = new GameScene(controller);
         stage.setTitle("Scrabble Game");
