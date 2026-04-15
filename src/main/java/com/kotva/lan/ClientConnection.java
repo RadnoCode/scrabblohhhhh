@@ -6,6 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -25,15 +26,25 @@ public class ClientConnection {
     
     private final Socket socket; //create a TCP socket for communication with the client
 
+    private final ObjectInputStream in;
     private final ObjectOutputStream out; 
 
     private volatile boolean closed = false;
 
     public ClientConnection(String playerId, Socket socket) throws IOException {
+        this(playerId, socket, new ObjectInputStream(socket.getInputStream()));
+    }
+
+    public ClientConnection(String playerId, Socket socket, ObjectInputStream in) throws IOException {
         this.playerId = playerId;
         this.socket = socket;
+        this.in = Objects.requireNonNull(in, "in cannot be null.");
         this.out = new ObjectOutputStream(socket.getOutputStream());
         this.out.flush(); // ensure the header is sent immediately, so the other side's ObjectInputStream can be constructed without blocking
+    }
+
+    public LocalGameMessage readMessageBlocking() throws IOException, ClassNotFoundException {
+        return (LocalGameMessage) in.readObject();
     }
 
 //--------------main methods: startListening, sendMessage, disconnect----------------
@@ -47,11 +58,8 @@ public class ClientConnection {
         Thread listenerThread = new Thread(() -> {
 
             try {
-                ObjectInputStream in = new ObjectInputStream(socket.getInputStream()); // create ObjectInputStream to read messages from the client
-
                 while (!closed && !socket.isClosed()) {
-
-                    LocalGameMessage message = (LocalGameMessage) in.readObject();
+                    LocalGameMessage message = readMessageBlocking();
                     onMessage.accept(message);
                 }
 
