@@ -1,5 +1,6 @@
 package com.kotva.launcher;
 
+import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.fx.SceneNavigator;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -11,6 +12,7 @@ public class AppLauncher extends Application {
         @Override
     public void start(Stage stage) {
         AppContext appContext = new AppContext();
+        CommonButton.setAudioManager(appContext.getAudioManager());
         SceneNavigator navigator = new SceneNavigator(stage, appContext);
         navigator.showHome();
         stage.setMinWidth(MIN_WIDTH);

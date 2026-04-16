@@ -1,5 +1,6 @@
 package com.kotva.presentation.controller;
 
+import com.kotva.infrastructure.AudioManager;
 import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.InputButton;
 import com.kotva.presentation.component.SwitchButton;
@@ -15,6 +16,7 @@ public class LocalMultiplayerSetupController {
 
     private final SceneNavigator navigator;
     private final GameBranchSetupViewModel viewModel;
+    private final AudioManager audioManager;
     private final String[] dictionaries = {"North American", "British"};
     private final String[] playerCounts = {"2", "3", "4"};
     private int dictionaryIndex;
@@ -22,6 +24,7 @@ public class LocalMultiplayerSetupController {
 
     public LocalMultiplayerSetupController(SceneNavigator navigator) {
         this.navigator = navigator;
+        this.audioManager = navigator.getAppContext().getAudioManager();
         this.viewModel = new GameBranchSetupViewModel(
             "SCRABBLE",
             "Play With Friends",
@@ -75,6 +78,7 @@ public class LocalMultiplayerSetupController {
             messageView.showMessage(INVALID_GAME_TIME_MESSAGE);
             return;
         }
+        audioManager.playActionConfirm();
         navigator.showGame(buildLaunchContext(gameTimeButton.getTextField().getText()));
     }
 

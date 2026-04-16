@@ -62,6 +62,11 @@ public class SliderButton extends CommonButton {
         this.valueChangeListener = valueChangeListener;
     }
 
+    @Override
+    protected void playClickSound() {
+        // Slider interactions should stay silent to avoid noisy feedback while adjusting values.
+    }
+
         @FunctionalInterface
     public interface ValueChangeListener {
 

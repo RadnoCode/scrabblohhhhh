@@ -1,5 +1,6 @@
 package com.kotva.presentation.controller;
 
+import com.kotva.infrastructure.AudioManager;
 import com.kotva.presentation.component.EnvelopeIconView;
 import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.fx.SceneNavigator;
@@ -10,9 +11,11 @@ import javafx.event.EventHandler;
 public class HomeController {
     private final HomeViewModel viewModel;
     private final SceneNavigator navigator;
+    private final AudioManager audioManager;
 
     public HomeController(SceneNavigator navigator) {
         this.navigator = navigator;
+        this.audioManager = navigator.getAppContext().getAudioManager();
         this.viewModel = new HomeViewModel("SCRABBLE", "Play", "Settings", "Help");
     }
 
@@ -57,6 +60,7 @@ public class HomeController {
     }
 
     private void handleEnvelopeClick() {
+        audioManager.playUIClick();
         System.out.println("Home page: Envelope icon clicked.");
     }
 }

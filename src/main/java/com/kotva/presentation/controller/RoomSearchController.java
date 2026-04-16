@@ -1,5 +1,6 @@
 package com.kotva.presentation.controller;
 
+import com.kotva.infrastructure.AudioManager;
 import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.RoomPanelView;
 import com.kotva.presentation.fx.SceneNavigator;
@@ -9,9 +10,11 @@ import javafx.scene.control.TextField;
 public class RoomSearchController {
     private final SceneNavigator navigator;
     private final RoomViewModel viewModel;
+    private final AudioManager audioManager;
 
     public RoomSearchController(SceneNavigator navigator) {
         this.navigator = navigator;
+        this.audioManager = navigator.getAppContext().getAudioManager();
         this.viewModel = new RoomViewModel(
             "SCRABBLE",
             "Search room...",
@@ -36,6 +39,7 @@ public class RoomSearchController {
 
     public void bindRoomPanelAction(RoomPanelView roomPanelView) {
         roomPanelView.setOnMouseClicked(event -> {
+                audioManager.playActionConfirm();
                 System.out.println("Room search: room selected.");
                 navigator.showRoomWaiting();
             });

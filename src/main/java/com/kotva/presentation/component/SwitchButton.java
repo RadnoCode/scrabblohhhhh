@@ -33,6 +33,7 @@ public class SwitchButton extends CommonButton {
         switchTrigger.setPrefHeight(42);
 
         switchTrigger.setOnMouseClicked(event -> {
+                playClickSound();
                 if (onSwitchAction != null) {
                     onSwitchAction.run();
                 }

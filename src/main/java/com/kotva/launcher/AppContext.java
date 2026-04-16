@@ -9,6 +9,7 @@ import com.kotva.application.service.GameSetupService;
 import com.kotva.application.service.GameSetupServiceImpl;
 import com.kotva.application.service.SettlementService;
 import com.kotva.application.service.SettlementServiceImpl;
+import com.kotva.infrastructure.AudioManager;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.infrastructure.settings.SettingsRepository;
 import java.util.Objects;
@@ -20,6 +21,7 @@ public class AppContext {
     private final DictionaryRepository dictionaryRepository;
     private final SettingsRepository settingsRepository;
     private final GameRuntimeFactory gameRuntimeFactory;
+    private AudioManager audioManager;
 
     public AppContext() {
         this(
@@ -71,5 +73,12 @@ public class AppContext {
 
     public GameRuntimeFactory getGameRuntimeFactory() {
         return gameRuntimeFactory;
+    }
+
+    public AudioManager getAudioManager() {
+        if (audioManager == null) {
+            audioManager = new AudioManager();
+        }
+        return audioManager;
     }
 }

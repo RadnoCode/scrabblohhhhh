@@ -15,6 +15,8 @@ import com.kotva.application.session.PreviewSnapshot;
 import com.kotva.application.session.PreviewWordSnapshot;
 import com.kotva.application.session.RackTileSnapshot;
 import com.kotva.domain.model.Position;
+import com.kotva.domain.action.ActionType;
+import com.kotva.infrastructure.AudioManager;
 import com.kotva.policy.ClockPhase;
 import com.kotva.policy.SessionStatus;
 import com.kotva.policy.WordType;
@@ -42,6 +44,7 @@ public class GameController implements GameActionPort {
 
     private final SceneNavigator navigator;
     private final GameRuntimeFactory gameRuntimeFactory;
+    private final AudioManager audioManager;
     private final GameLaunchContext launchContext;
     private final GameViewModel viewModel;
     private final GameDraftState draftState;
@@ -59,6 +62,7 @@ public class GameController implements GameActionPort {
     public GameController(SceneNavigator navigator, GameLaunchContext launchContext) {
         this.navigator = Objects.requireNonNull(navigator, "navigator cannot be null.");
         this.gameRuntimeFactory = navigator.getAppContext().getGameRuntimeFactory();
+        this.audioManager = navigator.getAppContext().getAudioManager();
         this.launchContext = Objects.requireNonNull(launchContext, "launchContext cannot be null.");
         this.viewModel = new GameViewModel("S C R A B B L E");
         this.draftState = new GameDraftState();
@@ -430,6 +434,7 @@ public class GameController implements GameActionPort {
         tickClockBeforeActionIfNeeded();
         gameRuntime.placeDraftTile(tileId, position);
         refreshSnapshotAfterAction();
+        audioManager.playTilePlace();
     }
 
     @Override
@@ -442,6 +447,7 @@ public class GameController implements GameActionPort {
         tickClockBeforeActionIfNeeded();
         gameRuntime.moveDraftTile(tileId, position);
         refreshSnapshotAfterAction();
+        audioManager.playTilePlace();
     }
 
     @Override
@@ -453,6 +459,7 @@ public class GameController implements GameActionPort {
         tickClockBeforeActionIfNeeded();
         gameRuntime.removeDraftTile(tileId);
         refreshSnapshotAfterAction();
+        audioManager.playTileRecall();
     }
 
     @Override
@@ -463,6 +470,7 @@ public class GameController implements GameActionPort {
         tickClockBeforeActionIfNeeded();
         gameRuntime.recallAllDraftTiles();
         refreshSnapshotAfterAction();
+        audioManager.playTileRecall();
     }
 
     @Override
@@ -553,9 +561,25 @@ public class GameController implements GameActionPort {
         }
 
         lastPresentedActionResultId = actionId;
+        if (shouldPlayActionConfirm(latestActionResult)) {
+            audioManager.playActionConfirm();
+        }
         if (!latestActionResult.isSuccess() && !latestActionResult.getMessage().isBlank()) {
             viewModel.pushTransientMessage(latestActionResult.getMessage());
         }
+    }
+
+    private boolean shouldPlayActionConfirm(GameActionResult latestActionResult) {
+        Objects.requireNonNull(latestActionResult, "latestActionResult cannot be null.");
+        if (!latestActionResult.isSuccess()) {
+            return false;
+        }
+        if (latestActionResult.getActionType() != ActionType.PLACE_TILE) {
+            return false;
+        }
+
+        String clientActionId = latestActionResult.getClientActionId();
+        return clientActionId != null && clientActionId.startsWith(presentationClientId + ":");
     }
 
     private void clearClientActionTracking() {
