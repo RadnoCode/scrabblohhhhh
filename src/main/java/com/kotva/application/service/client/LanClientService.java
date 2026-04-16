@@ -85,7 +85,7 @@ public class LanClientService {
         dispatchCommand(PlayerAction.pass(context.getLocalPlayerId()), "Waiting for host confirmation.");
     }
 
-    public GameSessionSnapshot drainInboundMessages() {
+    public GameSessionSnapshot tickClock(long elapsedMillis) {
         List<LanInboundMessage> inboundMessages = transport.drainInboundMessages();
         for (LanInboundMessage inboundMessage : inboundMessages) {
             if (inboundMessage instanceof LanSnapshotMessage snapshotMessage) {
@@ -94,6 +94,7 @@ public class LanClientService {
                 applyCommandResult(resultMessage.result());
             }
         }
+        context.advanceLocalClock(elapsedMillis);
         return getUiSnapshot();
     }
 
