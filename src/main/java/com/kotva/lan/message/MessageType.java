@@ -6,7 +6,9 @@ public enum MessageType {
     GAME_INITIALIZATION, //server -> client, sent a snapshot of the game state when a client joins a session
 
     //waiting room messages
+    LOBBY_STATE,
     PLAYER_JOINED,  //server -> client, notify other clients that a new player has joined the session
+    GAME_START,
 
     //gameplay messages
     COMMAND_REQUEST,

@@ -12,10 +12,12 @@ import java.io.IOException;
 import java.util.Objects;
 
 final class HostGameRuntime extends AbstractLocalGameRuntime {
+    private static final long CLOCK_SYNC_BROADCAST_INTERVAL_MILLIS = 1_000L;
     private static final String LOCAL_PLAYER_ID = "player-1";
 
     private LanHostService lanHostService;
     private GameSessionBroker gameSessionBroker;
+    private long pendingClockBroadcastMillis;
 
     HostGameRuntime(
             GameSetupService gameSetupService,
@@ -27,6 +29,7 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
     protected void afterSessionStarted() {
         lanHostService = new LanHostService(requireSession(), gameApplicationService);
         gameSessionBroker = new GameSessionBroker(GameSessionBroker.DEFAULT_PORT);
+        pendingClockBroadcastMillis = 0L;
         try {
             gameSessionBroker.createSession(
                     requireSession(),
@@ -63,12 +66,17 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
 
     @Override
     public GameSessionSnapshot tickClock(long elapsedMillis) {
+        GameSessionSnapshot previousSnapshot = hasTimeControl() ? getSessionSnapshot() : null;
         GameSessionSnapshot snapshot =
                 hasTimeControl()
                         ? super.tickClock(elapsedMillis)
                         : getSessionSnapshot();
         if (gameSessionBroker != null && elapsedMillis > 0L && hasTimeControl()) {
-            gameSessionBroker.broadcastViewerSnapshotsToAllConnectedClients();
+            pendingClockBroadcastMillis += elapsedMillis;
+            if (shouldBroadcastClockUpdate(previousSnapshot, snapshot)
+                    || pendingClockBroadcastMillis >= CLOCK_SYNC_BROADCAST_INTERVAL_MILLIS) {
+                broadcastViewerSnapshots();
+            }
         }
         return snapshot;
     }
@@ -92,13 +100,30 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
             gameSessionBroker = null;
         }
         lanHostService = null;
+        pendingClockBroadcastMillis = 0L;
         super.shutdown();
     }
 
     private void broadcastViewerSnapshots() {
         if (gameSessionBroker != null) {
             gameSessionBroker.broadcastViewerSnapshotsToAllConnectedClients();
+            pendingClockBroadcastMillis = 0L;
         }
+    }
+
+    private boolean shouldBroadcastClockUpdate(
+            GameSessionSnapshot previousSnapshot,
+            GameSessionSnapshot currentSnapshot) {
+        if (previousSnapshot == null || currentSnapshot == null) {
+            return false;
+        }
+        return previousSnapshot.getSessionStatus() != currentSnapshot.getSessionStatus()
+                || previousSnapshot.getTurnNumber() != currentSnapshot.getTurnNumber()
+                || !Objects.equals(
+                        previousSnapshot.getCurrentPlayerId(),
+                        currentSnapshot.getCurrentPlayerId())
+                || previousSnapshot.getCurrentPlayerClockPhase()
+                        != currentSnapshot.getCurrentPlayerClockPhase();
     }
 
     private String requireLocalPlayerName() {

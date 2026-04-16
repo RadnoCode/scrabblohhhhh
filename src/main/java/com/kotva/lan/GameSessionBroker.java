@@ -1,17 +1,25 @@
 package com.kotva.lan;
 
+import com.kotva.application.service.GameApplicationService;
+import com.kotva.application.service.GameSetupService;
 import com.kotva.application.service.lan.LanHostService;
+import com.kotva.application.session.GameConfig;
 import com.kotva.application.session.GameSession;
+import com.kotva.application.session.GameSessionSnapshot;
+import com.kotva.application.session.PlayerConfig;
 import com.kotva.infrastructure.network.CommandEnvelope;
 import com.kotva.infrastructure.network.RemoteCommandResult;
 import com.kotva.lan.message.CommandRequestMessage;
 import com.kotva.lan.message.CommandResultMessage;
 import com.kotva.lan.message.GameInitializationMessage;
+import com.kotva.lan.message.GameStartMessage;
 import com.kotva.lan.message.JoinSessionMessage;
+import com.kotva.lan.message.LobbyStateMessage;
 import com.kotva.lan.message.LocalGameMessage;
 import com.kotva.lan.message.MessageType;
 import com.kotva.lan.message.PlayerJoinedMessage;
 import com.kotva.lan.message.SnapshotUpdateMessage;
+import com.kotva.policy.PlayerType;
 import com.kotva.policy.SessionStatus;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -19,14 +27,18 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
- * Host-side LAN broker. It owns the room socket, assigns remote seats, routes
- * command requests to the authoritative host service, and sends viewer-specific
- * snapshots back to each connected client.
+ * Host-side LAN broker. It supports both the current direct-to-game flow and a
+ * lobby-first waiting room flow so UI can choose when to enter the real
+ * runtime.
  */
 public class GameSessionBroker {
     public static final int DEFAULT_PORT = 5050;
@@ -40,13 +52,29 @@ public class GameSessionBroker {
     private volatile LocalGameSession localGameSession;
     private volatile GameSession authoritativeSession;
     private volatile LanHostService lanHostService;
+    private volatile LanLobbySettings lobbySettings;
+    private volatile LanLobbyPhase lobbyPhase;
+    private volatile BrokerMode brokerMode;
 
     public GameSessionBroker(int port) {
         this.port = port;
+        this.lobbyPhase = LanLobbyPhase.CLOSED;
+        this.brokerMode = null;
     }
 
     public LocalGameSession getLocalGameSession() {
         return localGameSession;
+    }
+
+    public int getBoundPort() {
+        return serverSocket == null ? port : serverSocket.getLocalPort();
+    }
+
+    public LanLobbySnapshot getLobbySnapshot() {
+        if (localGameSession == null || lobbySettings == null) {
+            return null;
+        }
+        return buildLobbySnapshot();
     }
 
     public synchronized String createSession(
@@ -54,36 +82,80 @@ public class GameSessionBroker {
             LanHostService lanHostService,
             String hostPlayerId,
             String hostPlayerName) throws IOException {
-        if (running.get()) {
-            throw new IllegalStateException("Server is already running.");
-        }
+        Objects.requireNonNull(session, "session cannot be null.");
+        Objects.requireNonNull(lanHostService, "lanHostService cannot be null.");
+        this.authoritativeSession = session;
+        this.lanHostService = lanHostService;
+        this.lobbySettings =
+                new LanLobbySettings(
+                        session.getConfig().getDictionaryType(),
+                        session.getConfig().getTimeControlConfig(),
+                        session.getConfig().getPlayerCount());
+        this.brokerMode = BrokerMode.DIRECT_SESSION;
+        this.lobbyPhase = LanLobbyPhase.STARTED;
 
-        this.authoritativeSession = Objects.requireNonNull(session, "session cannot be null.");
-        this.lanHostService = Objects.requireNonNull(
-                lanHostService,
-                "lanHostService cannot be null.");
-        Objects.requireNonNull(hostPlayerId, "hostPlayerId cannot be null.");
-        Objects.requireNonNull(hostPlayerName, "hostPlayerName cannot be null.");
-
-        this.localGameSession =
+        return initializeServer(
                 new LocalGameSession(
                         session.getSessionId(),
                         hostPlayerId,
                         hostPlayerName,
-                        session.getConfig().getPlayerCount());
-        this.serverSocket = new ServerSocket(port);
-        running.set(true);
+                        session.getConfig().getPlayerCount()));
+    }
 
-        Thread acceptThread = new Thread(this::acceptLoop, "LAN-AcceptLoop");
-        acceptThread.setDaemon(true);
-        acceptThread.start();
+    public synchronized String createLobby(
+            LanLobbySettings settings,
+            String hostPlayerId,
+            String hostPlayerName) throws IOException {
+        Objects.requireNonNull(settings, "settings cannot be null.");
+        Objects.requireNonNull(hostPlayerId, "hostPlayerId cannot be null.");
+        Objects.requireNonNull(hostPlayerName, "hostPlayerName cannot be null.");
 
-        logger.info(
-                "LAN host broker started on port "
-                        + port
-                        + " for session "
-                        + localGameSession.getSessionId());
-        return localGameSession.getSessionId();
+        this.authoritativeSession = null;
+        this.lanHostService = null;
+        this.lobbySettings = settings;
+        this.brokerMode = BrokerMode.LOBBY;
+        this.lobbyPhase = LanLobbyPhase.WAITING_FOR_PLAYERS;
+
+        return initializeServer(
+                new LocalGameSession(
+                        hostPlayerId,
+                        normalizePlayerName(hostPlayerName),
+                        settings.getMaxPlayers()));
+    }
+
+    public synchronized LanHostGameLaunch startGame(
+            GameSetupService gameSetupService,
+            GameApplicationService gameApplicationService) {
+        if (brokerMode != BrokerMode.LOBBY) {
+            throw new IllegalStateException("startGame is only available for lobby-mode brokers.");
+        }
+        if (lobbyPhase != LanLobbyPhase.WAITING_FOR_PLAYERS) {
+            throw new IllegalStateException("Lobby is no longer waiting for players.");
+        }
+        if (localGameSession == null || localGameSession.getCurrentPlayerCount() < 2) {
+            throw new IllegalStateException("At least two players are required to start.");
+        }
+
+        GameConfig gameConfig = buildLobbyGameConfig();
+        GameSession session =
+                Objects.requireNonNull(gameSetupService, "gameSetupService cannot be null.")
+                        .startNewGame(gameConfig);
+        LanHostService hostService =
+                new LanHostService(
+                        session,
+                        Objects.requireNonNull(
+                                gameApplicationService,
+                                "gameApplicationService cannot be null."));
+        this.authoritativeSession = session;
+        this.lanHostService = hostService;
+        this.lobbyPhase = LanLobbyPhase.STARTED;
+
+        broadcastGameStart();
+
+        return new LanHostGameLaunch(
+                session,
+                hostService,
+                hostService.snapshotForViewer(localGameSession.getHostPlayerId()));
     }
 
     public void broadcastViewerSnapshotsToAllConnectedClients() {
@@ -107,6 +179,7 @@ public class GameSessionBroker {
 
     public void stopServer() {
         running.set(false);
+        lobbyPhase = LanLobbyPhase.CLOSED;
         if (localGameSession != null) {
             localGameSession.getConnectionsReadonly().values().forEach(ClientConnection::disconnect);
         }
@@ -121,7 +194,29 @@ public class GameSessionBroker {
         localGameSession = null;
         authoritativeSession = null;
         lanHostService = null;
+        lobbySettings = null;
+        brokerMode = null;
         logger.info("LAN host broker stopped.");
+    }
+
+    private String initializeServer(LocalGameSession session) throws IOException {
+        if (running.get()) {
+            throw new IllegalStateException("Server is already running.");
+        }
+        this.localGameSession = Objects.requireNonNull(session, "session cannot be null.");
+        this.serverSocket = new ServerSocket(port);
+        running.set(true);
+
+        Thread acceptThread = new Thread(this::acceptLoop, "LAN-AcceptLoop");
+        acceptThread.setDaemon(true);
+        acceptThread.start();
+
+        logger.info(
+                "LAN broker started on port "
+                        + getBoundPort()
+                        + " for session "
+                        + localGameSession.getSessionId());
+        return localGameSession.getSessionId();
     }
 
     private void acceptLoop() {
@@ -148,13 +243,19 @@ public class GameSessionBroker {
             ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
 
             Object firstMessage = in.readObject();
-            if (!(firstMessage instanceof JoinSessionMessage)) {
+            if (!(firstMessage instanceof JoinSessionMessage joinSessionMessage)) {
                 logger.warning("Rejected client without JoinSessionMessage handshake.");
                 safeClose(clientSocket);
                 return;
             }
 
-            AssignedSeat assignedSeat = resolveNextRemoteSeat();
+            if (brokerMode == BrokerMode.LOBBY && lobbyPhase != LanLobbyPhase.WAITING_FOR_PLAYERS) {
+                logger.warning("Rejected client because lobby has already started.");
+                safeClose(clientSocket);
+                return;
+            }
+
+            AssignedSeat assignedSeat = resolveNextSeat(joinSessionMessage.getPlayerName());
             if (assignedSeat == null) {
                 logger.warning("Rejected client because no LAN seat is available.");
                 safeClose(clientSocket);
@@ -168,10 +269,16 @@ public class GameSessionBroker {
                     assignedSeat.playerName(),
                     connection);
 
-            connection.sendMessage(buildInitializationMessage(assignedSeat));
-            broadcastExcept(
-                    assignedSeat.playerId(),
-                    new PlayerJoinedMessage(assignedSeat.playerId(), assignedSeat.playerName()));
+            if (brokerMode == BrokerMode.LOBBY && authoritativeSession == null) {
+                connection.sendMessage(buildLobbyStateMessage(assignedSeat.playerId()));
+                broadcastLobbyState(assignedSeat.playerId());
+            } else {
+                connection.sendMessage(buildInitializationMessage(assignedSeat));
+                broadcastExcept(
+                        assignedSeat.playerId(),
+                        new PlayerJoinedMessage(assignedSeat.playerId(), assignedSeat.playerName()));
+            }
+
             connection.startListening(
                     message -> onClientMessage(assignedSeat.playerId(), message),
                     () -> onClientDisconnect(assignedSeat.playerId()));
@@ -201,27 +308,111 @@ public class GameSessionBroker {
                 requireLanHostService().snapshotForViewer(assignedSeat.playerId()));
     }
 
-    private AssignedSeat resolveNextRemoteSeat() {
-        if (localGameSession == null || authoritativeSession == null) {
-            return null;
+    private LobbyStateMessage buildLobbyStateMessage(String localPlayerId) {
+        return new LobbyStateMessage(localPlayerId, buildLobbySnapshot());
+    }
+
+    private LanLobbySnapshot buildLobbySnapshot() {
+        List<LanLobbyPlayerSnapshot> players = new ArrayList<>();
+        for (String playerId : buildOrderedPlayerIds()) {
+            String playerName = localGameSession.getPlayersReadonly().get(playerId);
+            if (playerName == null) {
+                continue;
+            }
+            players.add(
+                    new LanLobbyPlayerSnapshot(
+                            playerId,
+                            playerName,
+                            Objects.equals(playerId, localGameSession.getHostPlayerId())));
         }
-        if (localGameSession.isFull()) {
+        return new LanLobbySnapshot(
+                localGameSession.getSessionId(),
+                lobbyPhase,
+                localGameSession.getHostPlayerId(),
+                lobbySettings,
+                players,
+                lobbyPhase == LanLobbyPhase.WAITING_FOR_PLAYERS && players.size() >= 2);
+    }
+
+    private GameConfig buildLobbyGameConfig() {
+        List<PlayerConfig> playerConfigs = new ArrayList<>();
+        List<String> orderedPlayerIds = buildOrderedPlayerIds();
+        for (int index = 0; index < orderedPlayerIds.size(); index++) {
+            String playerId = orderedPlayerIds.get(index);
+            String playerName = localGameSession.getPlayersReadonly().get(playerId);
+            if (playerName == null) {
+                continue;
+            }
+            playerConfigs.add(
+                    new PlayerConfig(
+                            playerName,
+                            index == 0 ? PlayerType.LOCAL : PlayerType.LAN));
+        }
+        return new GameConfig(
+                com.kotva.mode.GameMode.LAN_MULTIPLAYER,
+                playerConfigs,
+                lobbySettings.getDictionaryType(),
+                lobbySettings.getTimeControlConfig(),
+                null);
+    }
+
+    private void broadcastLobbyState(String excludedPlayerId) {
+        if (localGameSession == null || lobbySettings == null) {
+            return;
+        }
+        LanLobbySnapshot snapshot = buildLobbySnapshot();
+        localGameSession.getConnectionsReadonly().forEach((playerId, connection) -> {
+            if (Objects.equals(playerId, excludedPlayerId)) {
+                return;
+            }
+            connection.sendMessage(new LobbyStateMessage(playerId, snapshot));
+        });
+    }
+
+    private void broadcastGameStart() {
+        if (localGameSession == null || authoritativeSession == null || lanHostService == null) {
+            return;
+        }
+        GameConfig gameConfig = authoritativeSession.getConfig();
+        for (Map.Entry<String, ClientConnection> entry : localGameSession.getConnectionsReadonly().entrySet()) {
+            String playerId = entry.getKey();
+            ClientConnection connection = entry.getValue();
+            GameSessionSnapshot initialSnapshot = requireLanHostService().snapshotForViewer(playerId);
+            connection.sendMessage(new GameStartMessage(playerId, gameConfig, initialSnapshot));
+        }
+    }
+
+    private AssignedSeat resolveNextSeat(String requestedPlayerName) {
+        if (localGameSession == null || localGameSession.isFull()) {
             return null;
         }
 
-        for (int index = 0; index < authoritativeSession.getConfig().getPlayers().size(); index++) {
-            String candidatePlayerId = "player-" + (index + 1);
-            if (Objects.equals(candidatePlayerId, localGameSession.getHostPlayerId())) {
-                continue;
-            }
+        for (int index = 1; index <= localGameSession.getMaxPlayers(); index++) {
+            String candidatePlayerId = "player-" + index;
             if (localGameSession.containsPlayer(candidatePlayerId)) {
                 continue;
             }
             return new AssignedSeat(
                     candidatePlayerId,
-                    authoritativeSession.getConfig().getPlayers().get(index).getPlayerName());
+                    resolveAssignedPlayerName(candidatePlayerId, requestedPlayerName));
         }
         return null;
+    }
+
+    private String resolveAssignedPlayerName(String playerId, String requestedPlayerName) {
+        if (brokerMode == BrokerMode.DIRECT_SESSION && authoritativeSession != null) {
+            int playerIndex = extractSeatIndex(playerId) - 1;
+            if (playerIndex >= 0 && playerIndex < authoritativeSession.getConfig().getPlayers().size()) {
+                return authoritativeSession.getConfig().getPlayers().get(playerIndex).getPlayerName();
+            }
+        }
+        return normalizePlayerName(requestedPlayerName);
+    }
+
+    private List<String> buildOrderedPlayerIds() {
+        return localGameSession.getPlayersReadonly().keySet().stream()
+                .sorted(Comparator.comparingInt(GameSessionBroker::extractSeatIndex))
+                .toList();
     }
 
     private void onClientMessage(String playerId, LocalGameMessage message) {
@@ -231,8 +422,16 @@ public class GameSessionBroker {
 
         MessageType type = message.getType();
         switch (type) {
-            case COMMAND_REQUEST -> handleCommandRequest(playerId, (CommandRequestMessage) message);
-            case PLAYER_ACTION -> broadcastExcept(playerId, message);
+            case COMMAND_REQUEST -> {
+                if (lanHostService != null) {
+                    handleCommandRequest(playerId, (CommandRequestMessage) message);
+                }
+            }
+            case PLAYER_ACTION -> {
+                if (brokerMode == BrokerMode.DIRECT_SESSION && authoritativeSession != null) {
+                    broadcastExcept(playerId, message);
+                }
+            }
             default -> logger.info("Unhandled LAN message type: " + type);
         }
     }
@@ -302,6 +501,9 @@ public class GameSessionBroker {
             connection.disconnect();
         }
         localGameSession.removePlayer(playerId);
+        if (brokerMode == BrokerMode.LOBBY && lobbyPhase == LanLobbyPhase.WAITING_FOR_PLAYERS) {
+            broadcastLobbyState(null);
+        }
         logger.info("LAN player disconnected: " + playerId);
     }
 
@@ -320,6 +522,33 @@ public class GameSessionBroker {
         }
     }
 
+    private static int extractSeatIndex(String playerId) {
+        if (playerId == null) {
+            return Integer.MAX_VALUE;
+        }
+        int separator = playerId.lastIndexOf('-');
+        if (separator < 0 || separator == playerId.length() - 1) {
+            return Integer.MAX_VALUE;
+        }
+        try {
+            return Integer.parseInt(playerId.substring(separator + 1));
+        } catch (NumberFormatException exception) {
+            return Integer.MAX_VALUE;
+        }
+    }
+
+    private static String normalizePlayerName(String playerName) {
+        if (playerName == null || playerName.isBlank()) {
+            return "Guest";
+        }
+        return playerName.trim();
+    }
+
     private record AssignedSeat(String playerId, String playerName) {
+    }
+
+    private enum BrokerMode {
+        DIRECT_SESSION,
+        LOBBY
     }
 }
