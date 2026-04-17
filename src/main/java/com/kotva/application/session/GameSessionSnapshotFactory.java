@@ -15,6 +15,8 @@ import com.kotva.domain.model.PlayerClock;
 import com.kotva.domain.model.Position;
 import com.kotva.domain.model.RackSlot;
 import com.kotva.domain.model.Tile;
+import com.kotva.policy.ClockPhase;
+import com.kotva.policy.SessionStatus;
 import com.kotva.policy.WordType;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -110,6 +112,129 @@ public final class GameSessionSnapshotFactory {
                 clientRuntimeSnapshot);
     }
 
+    public static GameSessionSnapshot withReceivedTimestamp(
+            GameSessionSnapshot baseSnapshot,
+            long receivedAtEpochMillis) {
+        Objects.requireNonNull(baseSnapshot, "baseSnapshot cannot be null.");
+        return new GameSessionSnapshot(
+                baseSnapshot.getSessionId(),
+                baseSnapshot.getGameMode(),
+                baseSnapshot.getSessionStatus(),
+                baseSnapshot.isGameEnded(),
+                baseSnapshot.getGameEndReason(),
+                baseSnapshot.getTurnNumber(),
+                baseSnapshot.getCurrentPlayerId(),
+                baseSnapshot.getCurrentPlayerName(),
+                baseSnapshot.getCurrentPlayerMainTimeRemainingMillis(),
+                baseSnapshot.getCurrentPlayerByoYomiRemainingMillis(),
+                baseSnapshot.getCurrentPlayerClockPhase(),
+                baseSnapshot.getPlayerClockSnapshots(),
+                baseSnapshot.getPlayers(),
+                baseSnapshot.getBoardSnapshot(),
+                baseSnapshot.getBoardCells(),
+                baseSnapshot.getVisibleRackTiles(),
+                baseSnapshot.getDraftPlacements(),
+                baseSnapshot.getPreview(),
+                baseSnapshot.getSettlementResult(),
+                baseSnapshot.getAiRuntimeSnapshot(),
+                baseSnapshot.getClientRuntimeSnapshot(),
+                baseSnapshot.getSnapshotSentAtEpochMillis(),
+                receivedAtEpochMillis);
+    }
+
+    public static GameSessionSnapshot withLocalClockPrediction(
+            GameSessionSnapshot baseSnapshot,
+            long localElapsedMillis) {
+        Objects.requireNonNull(baseSnapshot, "baseSnapshot cannot be null.");
+        if (localElapsedMillis < 0L) {
+            throw new IllegalArgumentException("localElapsedMillis cannot be negative.");
+        }
+        if (baseSnapshot.getSessionStatus() != SessionStatus.IN_PROGRESS) {
+            return baseSnapshot;
+        }
+        if (baseSnapshot.getCurrentPlayerClockPhase() == ClockPhase.DISABLED
+                || baseSnapshot.getCurrentPlayerClockPhase() == ClockPhase.TIMEOUT) {
+            return baseSnapshot;
+        }
+
+        long totalElapsedMillis =
+                safeAdd(resolveTransportDelayMillis(baseSnapshot), localElapsedMillis);
+        if (totalElapsedMillis == 0L) {
+            return baseSnapshot;
+        }
+
+        PredictedClock predictedClock =
+                applyElapsedToClock(
+                        baseSnapshot.getCurrentPlayerMainTimeRemainingMillis(),
+                        baseSnapshot.getCurrentPlayerByoYomiRemainingMillis(),
+                        baseSnapshot.getCurrentPlayerClockPhase(),
+                        totalElapsedMillis);
+
+        List<PlayerClockSnapshot> predictedPlayerClockSnapshots = new ArrayList<>();
+        for (PlayerClockSnapshot playerClockSnapshot : baseSnapshot.getPlayerClockSnapshots()) {
+            if (Objects.equals(playerClockSnapshot.getPlayerId(), baseSnapshot.getCurrentPlayerId())) {
+                predictedPlayerClockSnapshots.add(
+                        new PlayerClockSnapshot(
+                                playerClockSnapshot.getPlayerId(),
+                                playerClockSnapshot.getPlayerName(),
+                                predictedClock.mainTimeRemainingMillis(),
+                                predictedClock.byoYomiRemainingMillis(),
+                                predictedClock.phase(),
+                                playerClockSnapshot.isActive()));
+                continue;
+            }
+            predictedPlayerClockSnapshots.add(playerClockSnapshot);
+        }
+
+        Map<String, PlayerClockSnapshot> playerClockSnapshotsById = new HashMap<>();
+        for (PlayerClockSnapshot playerClockSnapshot : predictedPlayerClockSnapshots) {
+            playerClockSnapshotsById.put(playerClockSnapshot.getPlayerId(), playerClockSnapshot);
+        }
+
+        List<GamePlayerSnapshot> predictedPlayers = new ArrayList<>();
+        for (GamePlayerSnapshot playerSnapshot : baseSnapshot.getPlayers()) {
+            PlayerClockSnapshot clockSnapshot =
+                    playerClockSnapshotsById.getOrDefault(
+                            playerSnapshot.getPlayerId(),
+                            playerSnapshot.getClockSnapshot());
+            predictedPlayers.add(
+                    new GamePlayerSnapshot(
+                            playerSnapshot.getPlayerId(),
+                            playerSnapshot.getPlayerName(),
+                            playerSnapshot.getPlayerType(),
+                            playerSnapshot.getScore(),
+                            playerSnapshot.isActive(),
+                            playerSnapshot.isCurrentTurn(),
+                            playerSnapshot.getRackTileCount(),
+                            clockSnapshot));
+        }
+
+        return new GameSessionSnapshot(
+                baseSnapshot.getSessionId(),
+                baseSnapshot.getGameMode(),
+                baseSnapshot.getSessionStatus(),
+                baseSnapshot.isGameEnded(),
+                baseSnapshot.getGameEndReason(),
+                baseSnapshot.getTurnNumber(),
+                baseSnapshot.getCurrentPlayerId(),
+                baseSnapshot.getCurrentPlayerName(),
+                predictedClock.mainTimeRemainingMillis(),
+                predictedClock.byoYomiRemainingMillis(),
+                predictedClock.phase(),
+                predictedPlayerClockSnapshots,
+                predictedPlayers,
+                baseSnapshot.getBoardSnapshot(),
+                baseSnapshot.getBoardCells(),
+                baseSnapshot.getVisibleRackTiles(),
+                baseSnapshot.getDraftPlacements(),
+                baseSnapshot.getPreview(),
+                baseSnapshot.getSettlementResult(),
+                baseSnapshot.getAiRuntimeSnapshot(),
+                baseSnapshot.getClientRuntimeSnapshot(),
+                baseSnapshot.getSnapshotSentAtEpochMillis(),
+                baseSnapshot.getSnapshotReceivedAtEpochMillis());
+    }
+
     private static GameSessionSnapshot buildSnapshot(
             GameSession session,
             Player viewerPlayer,
@@ -151,6 +276,8 @@ public final class GameSessionSnapshotFactory {
                             clockSnapshot));
         }
 
+        long snapshotTimestamp = System.currentTimeMillis();
+
         return new GameSessionSnapshot(
                 session.getSessionId(),
                 session.getConfig().getGameMode(),
@@ -176,7 +303,9 @@ public final class GameSessionSnapshotFactory {
                 previewSnapshot,
                 session.getTurnCoordinator().getSettlementResult(),
                 aiRuntimeSnapshot,
-                clientRuntimeSnapshot);
+                clientRuntimeSnapshot,
+                snapshotTimestamp,
+                snapshotTimestamp);
     }
 
     private static GameSessionSnapshot copyOf(
@@ -208,7 +337,9 @@ public final class GameSessionSnapshotFactory {
                 previewSnapshot,
                 baseSnapshot.getSettlementResult(),
                 aiRuntimeSnapshot,
-                clientRuntimeSnapshot);
+                clientRuntimeSnapshot,
+                baseSnapshot.getSnapshotSentAtEpochMillis(),
+                baseSnapshot.getSnapshotReceivedAtEpochMillis());
     }
 
     private static List<RackTileSnapshot> buildVisibleRackTiles(Player player) {
@@ -226,6 +357,63 @@ public final class GameSessionSnapshotFactory {
                             tile != null ? tile.getAssignedLetter() : null));
         }
         return visibleRackTiles;
+    }
+
+    private static long resolveTransportDelayMillis(GameSessionSnapshot snapshot) {
+        long delayMillis =
+                snapshot.getSnapshotReceivedAtEpochMillis()
+                        - snapshot.getSnapshotSentAtEpochMillis();
+        return Math.max(0L, delayMillis);
+    }
+
+    private static long safeAdd(long left, long right) {
+        if (left >= Long.MAX_VALUE - right) {
+            return Long.MAX_VALUE;
+        }
+        return left + right;
+    }
+
+    private static PredictedClock applyElapsedToClock(
+            long mainTimeRemainingMillis,
+            long byoYomiRemainingMillis,
+            ClockPhase phase,
+            long elapsedMillis) {
+        long predictedMainTimeRemainingMillis = Math.max(0L, mainTimeRemainingMillis);
+        long predictedByoYomiRemainingMillis = Math.max(0L, byoYomiRemainingMillis);
+        ClockPhase predictedPhase = Objects.requireNonNull(phase, "phase cannot be null.");
+        long remainingElapsedMillis = elapsedMillis;
+
+        if (predictedPhase == ClockPhase.MAIN_TIME) {
+            long consumedMainTimeMillis =
+                    Math.min(predictedMainTimeRemainingMillis, remainingElapsedMillis);
+            predictedMainTimeRemainingMillis -= consumedMainTimeMillis;
+            remainingElapsedMillis -= consumedMainTimeMillis;
+            if (predictedMainTimeRemainingMillis == 0L) {
+                predictedPhase = ClockPhase.BYO_YOMI;
+            } else {
+                return new PredictedClock(
+                        predictedMainTimeRemainingMillis,
+                        predictedByoYomiRemainingMillis,
+                        predictedPhase);
+            }
+        }
+
+        if (predictedPhase == ClockPhase.BYO_YOMI) {
+            long predictedRemainingByoYomiMillis =
+                    predictedByoYomiRemainingMillis - remainingElapsedMillis;
+            if (predictedRemainingByoYomiMillis <= 0L) {
+                return new PredictedClock(0L, 0L, ClockPhase.TIMEOUT);
+            }
+            return new PredictedClock(
+                    predictedMainTimeRemainingMillis,
+                    predictedRemainingByoYomiMillis,
+                    ClockPhase.BYO_YOMI);
+        }
+
+        return new PredictedClock(
+                predictedMainTimeRemainingMillis,
+                predictedByoYomiRemainingMillis,
+                predictedPhase);
     }
 
     private static List<BoardCellRenderSnapshot> buildBoardCells(
@@ -581,5 +769,11 @@ public final class GameSessionSnapshotFactory {
     }
 
     private record BoardPositionKey(int row, int col) {
+    }
+
+    private record PredictedClock(
+            long mainTimeRemainingMillis,
+            long byoYomiRemainingMillis,
+            ClockPhase phase) {
     }
 }

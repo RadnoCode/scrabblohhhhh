@@ -65,7 +65,7 @@ final class ClientGameRuntime implements GameRuntime {
 
     @Override
     public GameSessionSnapshot tickClock(long elapsedMillis) {
-        return requireLanClientService().drainInboundMessages();
+        return requireLanClientService().tickClock(elapsedMillis);
     }
 
     @Override

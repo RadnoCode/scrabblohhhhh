@@ -32,6 +32,8 @@ public class GameSessionSnapshot implements Serializable {
     private final SettlementResult settlementResult;
     private final AiRuntimeSnapshot aiRuntimeSnapshot;
     private final ClientRuntimeSnapshot clientRuntimeSnapshot;
+    private final long snapshotSentAtEpochMillis;
+    private final long snapshotReceivedAtEpochMillis;
 
     public GameSessionSnapshot(
             String sessionId,
@@ -54,7 +56,9 @@ public class GameSessionSnapshot implements Serializable {
             PreviewSnapshot preview,
             SettlementResult settlementResult,
             AiRuntimeSnapshot aiRuntimeSnapshot,
-            ClientRuntimeSnapshot clientRuntimeSnapshot) {
+            ClientRuntimeSnapshot clientRuntimeSnapshot,
+            long snapshotSentAtEpochMillis,
+            long snapshotReceivedAtEpochMillis) {
         this.sessionId = Objects.requireNonNull(sessionId, "sessionId cannot be null.");
         this.gameMode = Objects.requireNonNull(gameMode, "gameMode cannot be null.");
         this.sessionStatus = Objects.requireNonNull(sessionStatus, "sessionStatus cannot be null.");
@@ -85,6 +89,8 @@ public class GameSessionSnapshot implements Serializable {
         this.settlementResult = settlementResult;
         this.aiRuntimeSnapshot = aiRuntimeSnapshot;
         this.clientRuntimeSnapshot = clientRuntimeSnapshot;
+        this.snapshotSentAtEpochMillis = snapshotSentAtEpochMillis;
+        this.snapshotReceivedAtEpochMillis = snapshotReceivedAtEpochMillis;
     }
 
     public String getSessionId() {
@@ -173,5 +179,13 @@ public class GameSessionSnapshot implements Serializable {
 
     public ClientRuntimeSnapshot getClientRuntimeSnapshot() {
         return clientRuntimeSnapshot;
+    }
+
+    public long getSnapshotSentAtEpochMillis() {
+        return snapshotSentAtEpochMillis;
+    }
+
+    public long getSnapshotReceivedAtEpochMillis() {
+        return snapshotReceivedAtEpochMillis;
     }
 }

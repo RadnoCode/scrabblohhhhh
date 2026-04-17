@@ -3,6 +3,7 @@ package com.kotva.lan;
 import com.kotva.application.runtime.LanLaunchConfig;
 import com.kotva.application.runtime.LanRole;
 import com.kotva.lan.message.GameInitializationMessage;
+import com.kotva.lan.message.LobbyStateMessage;
 import com.kotva.lan.message.JoinSessionMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -12,6 +13,55 @@ import java.util.UUID;
 
 public final class LanClientConnector {
     private LanClientConnector() {
+    }
+
+    public static LanLobbyClientSession joinLobby(String endpoint, String playerName)
+            throws IOException, ClassNotFoundException {
+        Endpoint resolvedEndpoint = Endpoint.parse(endpoint);
+        Socket socket = new Socket(resolvedEndpoint.host(), resolvedEndpoint.port());
+
+        try {
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            out.flush();
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+
+            out.writeObject(
+                    new JoinSessionMessage(
+                            UUID.randomUUID().toString(),
+                            normalizePlayerName(playerName)));
+            out.flush();
+            out.reset();
+
+            Object firstMessage = in.readObject();
+            if (!(firstMessage instanceof LobbyStateMessage lobbyStateMessage)) {
+                throw new IOException("Expected LobbyStateMessage from host.");
+            }
+            if (lobbyStateMessage.getLocalPlayerId() == null
+                    || lobbyStateMessage.getSnapshot() == null) {
+                throw new IOException("LobbyStateMessage is missing required join data.");
+            }
+
+            ClientConnection connection =
+                    new ClientConnection(
+                            lobbyStateMessage.getLocalPlayerId(),
+                            socket,
+                            in,
+                            out);
+            SocketLanClientTransport transport = new SocketLanClientTransport(connection);
+            LanLobbyClientSession lobbyClientSession =
+                    new LanLobbyClientSession(
+                            lobbyStateMessage.getLocalPlayerId(),
+                            lobbyStateMessage.getSnapshot(),
+                            connection,
+                            transport);
+            connection.startListening(
+                    lobbyClientSession::onNetworkMessage,
+                    lobbyClientSession::onDisconnect);
+            return lobbyClientSession;
+        } catch (IOException | ClassNotFoundException exception) {
+            socket.close();
+            throw exception;
+        }
     }
 
     public static LanLaunchConfig connect(String endpoint) throws IOException, ClassNotFoundException {
@@ -51,6 +101,13 @@ public final class LanClientConnector {
             socket.close();
             throw exception;
         }
+    }
+
+    private static String normalizePlayerName(String playerName) {
+        if (playerName == null || playerName.isBlank()) {
+            return "Guest";
+        }
+        return playerName.trim();
     }
 
     private record Endpoint(String host, int port) {
