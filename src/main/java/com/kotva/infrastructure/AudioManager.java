@@ -15,12 +15,13 @@ public final class AudioManager {
     private double bgmVolume = 0.5;
     private double sfxVolume = 0.5;
     private double masterVolume = 0.5;
+    private boolean warmedUp;
 
     public AudioManager() {
         this.uiClick = loadClip("ui_click.wav");
-        this.actionConfirm = loadClip("action_confirm.mp3");
-        this.tilePlace = loadClip("tile_place.mp3");
-        this.tileRecall = loadClip("tile_recall.mp3");
+        this.actionConfirm = loadClip("action_confirm.wav");
+        this.tilePlace = loadClip("tile_place.wav");
+        this.tileRecall = loadClip("tile_recall.wav");
     }
 
     public void playUIClick() {
@@ -74,6 +75,17 @@ public final class AudioManager {
         return masterVolume;
     }
 
+    public void warmUpSoundEffects() {
+        if (warmedUp) {
+            return;
+        }
+        warmedUp = true;
+        warmUpClip(uiClick);
+        warmUpClip(actionConfirm);
+        warmUpClip(tilePlace);
+        warmUpClip(tileRecall);
+    }
+
     private AudioClip loadClip(String fileName) {
         Objects.requireNonNull(fileName, "fileName cannot be null.");
         URL resource = getClass().getResource(AUDIO_BASE_PATH + fileName);
@@ -81,6 +93,13 @@ public final class AudioManager {
             throw new IllegalStateException("Audio resource not found: " + AUDIO_BASE_PATH + fileName);
         }
         return new AudioClip(resource.toExternalForm());
+    }
+
+    private void warmUpClip(AudioClip clip) {
+        if (clip == null) {
+            return;
+        }
+        clip.play(0.0);
     }
 
     private double normalizeVolume(double volume) {

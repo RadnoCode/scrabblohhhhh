@@ -13,6 +13,7 @@ public class AppLauncher extends Application {
     public void start(Stage stage) {
         AppContext appContext = new AppContext();
         CommonButton.setAudioManager(appContext.getAudioManager());
+        appContext.getAudioManager().warmUpSoundEffects();
         SceneNavigator navigator = new SceneNavigator(stage, appContext);
         navigator.showHome();
         stage.setMinWidth(MIN_WIDTH);

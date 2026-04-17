@@ -433,8 +433,8 @@ public class GameController implements GameActionPort {
         Objects.requireNonNull(position, "position cannot be null.");
         tickClockBeforeActionIfNeeded();
         gameRuntime.placeDraftTile(tileId, position);
-        refreshSnapshotAfterAction();
         audioManager.playTilePlace();
+        refreshSnapshotAfterAction();
     }
 
     @Override
@@ -446,8 +446,8 @@ public class GameController implements GameActionPort {
         Objects.requireNonNull(position, "position cannot be null.");
         tickClockBeforeActionIfNeeded();
         gameRuntime.moveDraftTile(tileId, position);
-        refreshSnapshotAfterAction();
         audioManager.playTilePlace();
+        refreshSnapshotAfterAction();
     }
 
     @Override
@@ -458,8 +458,8 @@ public class GameController implements GameActionPort {
         Objects.requireNonNull(tileId, "tileId cannot be null.");
         tickClockBeforeActionIfNeeded();
         gameRuntime.removeDraftTile(tileId);
-        refreshSnapshotAfterAction();
         audioManager.playTileRecall();
+        refreshSnapshotAfterAction();
     }
 
     @Override
@@ -469,8 +469,8 @@ public class GameController implements GameActionPort {
         }
         tickClockBeforeActionIfNeeded();
         gameRuntime.recallAllDraftTiles();
-        refreshSnapshotAfterAction();
         audioManager.playTileRecall();
+        refreshSnapshotAfterAction();
     }
 
     @Override
