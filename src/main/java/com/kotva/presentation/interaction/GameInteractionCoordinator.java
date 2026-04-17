@@ -10,6 +10,8 @@ import com.kotva.presentation.viewmodel.GameViewModel;
 import java.util.Objects;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 
 public class GameInteractionCoordinator {
@@ -22,6 +24,7 @@ public class GameInteractionCoordinator {
     private final GameActionPort actionPort;
     private final EventHandler<MouseEvent> sceneDragHandler;
     private final EventHandler<MouseEvent> sceneReleaseHandler;
+    private final EventHandler<KeyEvent> sceneKeyPressedHandler;
     private Scene attachedScene;
 
     public GameInteractionCoordinator(
@@ -41,6 +44,7 @@ public class GameInteractionCoordinator {
         this.actionPort = Objects.requireNonNull(actionPort, "actionPort cannot be null.");
         this.sceneDragHandler = this::handleSceneMouseDragged;
         this.sceneReleaseHandler = this::handleSceneMouseReleased;
+        this.sceneKeyPressedHandler = this::handleSceneKeyPressed;
     }
 
     public void attach() {
@@ -80,6 +84,7 @@ public class GameInteractionCoordinator {
         attachedScene = scene;
         attachedScene.addEventFilter(MouseEvent.MOUSE_DRAGGED, sceneDragHandler);
         attachedScene.addEventFilter(MouseEvent.MOUSE_RELEASED, sceneReleaseHandler);
+        attachedScene.addEventFilter(KeyEvent.KEY_PRESSED, sceneKeyPressedHandler);
     }
 
     private void detachSceneHandlers(Scene scene) {
@@ -88,6 +93,7 @@ public class GameInteractionCoordinator {
         }
         scene.removeEventFilter(MouseEvent.MOUSE_DRAGGED, sceneDragHandler);
         scene.removeEventFilter(MouseEvent.MOUSE_RELEASED, sceneReleaseHandler);
+        scene.removeEventFilter(KeyEvent.KEY_PRESSED, sceneKeyPressedHandler);
         if (scene == attachedScene) {
             attachedScene = null;
         }
@@ -182,6 +188,14 @@ public class GameInteractionCoordinator {
 
         previewRenderer.clear();
         gameRenderer.refresh();
+        event.consume();
+    }
+
+    private void handleSceneKeyPressed(KeyEvent event) {
+        if (event.getCode() != KeyCode.ENTER || !event.isShortcutDown()) {
+            return;
+        }
+        submitDraft();
         event.consume();
     }
 

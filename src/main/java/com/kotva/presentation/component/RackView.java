@@ -14,6 +14,8 @@ public class RackView extends StackPane {
     private static final int RACK_SIZE = 7;
     private static final String RACK_HOVER_STYLE = "game-rack-hover";
     private static final String SLOT_HOVER_STYLE = "game-rack-slot-hover";
+    private static final String SLOT_TUTORIAL_HIGHLIGHT_STYLE = "game-rack-slot-tutorial-highlight";
+    private static final String SLOT_TUTORIAL_DIM_STYLE = "game-rack-slot-tutorial-dim";
 
     private final List<TileView> tileSlots;
     private final List<GameViewModel.TileModel> currentTiles;
@@ -49,13 +51,20 @@ public class RackView extends StackPane {
 
         for (int index = 0; index < tileSlots.size(); index++) {
             TileView tileView = tileSlots.get(index);
+            tileView.getStyleClass().removeAll(
+                SLOT_TUTORIAL_HIGHLIGHT_STYLE,
+                SLOT_TUTORIAL_DIM_STYLE);
             if (index < tileModels.size() && !tileModels.get(index).isEmpty()) {
                 GameViewModel.TileModel tileModel = tileModels.get(index);
                 currentTiles.set(index, tileModel);
                 tileView.setTile(tileModel);
+                applyTutorialState(tileView, tileModel);
             } else {
-                currentTiles.set(index, GameViewModel.TileModel.empty());
+                GameViewModel.TileModel emptyTile =
+                    index < tileModels.size() ? tileModels.get(index) : GameViewModel.TileModel.empty();
+                currentTiles.set(index, emptyTile);
                 tileView.clearTile();
+                applyTutorialState(tileView, emptyTile);
             }
         }
     }
@@ -101,6 +110,17 @@ public class RackView extends StackPane {
                 && !tileView.getStyleClass().contains(SLOT_HOVER_STYLE)) {
                 tileView.getStyleClass().add(SLOT_HOVER_STYLE);
             }
+        }
+    }
+
+    private void applyTutorialState(TileView tileView, GameViewModel.TileModel tileModel) {
+        if (tileModel.isTutorialHighlighted()
+            && !tileView.getStyleClass().contains(SLOT_TUTORIAL_HIGHLIGHT_STYLE)) {
+            tileView.getStyleClass().add(SLOT_TUTORIAL_HIGHLIGHT_STYLE);
+        }
+        if (tileModel.isTutorialDimmed()
+            && !tileView.getStyleClass().contains(SLOT_TUTORIAL_DIM_STYLE)) {
+            tileView.getStyleClass().add(SLOT_TUTORIAL_DIM_STYLE);
         }
     }
 }

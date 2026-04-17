@@ -69,8 +69,39 @@
     -fx-border-color: rgba(255, 255, 255, 0.96);
 }
 
+.game-board-cell-preview-valid {
+    -fx-border-color: rgba(131, 191, 132, 0.94);
+    -fx-border-width: 2;
+}
+
+.game-board-cell-preview-invalid {
+    -fx-border-color: rgba(204, 102, 102, 0.96);
+    -fx-border-width: 2;
+}
+
+.game-board-cell-main-word {
+    -fx-effect: dropshadow(gaussian, rgba(56, 87, 136, 0.18), 8, 0.12, 0, 0);
+}
+
+.game-board-cell-cross-word {
+    -fx-border-style: segments(2, 2);
+}
+
+.game-board-cell-tutorial-highlight {
+    -fx-border-color: rgba(255, 244, 181, 0.98);
+    -fx-border-width: 2;
+}
+
+.game-board-cell-tutorial-dim {
+    -fx-opacity: 0.42;
+}
+
 .game-board-draft-tile {
     -fx-effect: dropshadow(gaussian, rgba(87, 106, 140, 0.16), 8, 0.10, 0, 2);
+}
+
+.game-board-ghost-tile {
+    -fx-opacity: 0.48;
 }
 
 .game-board-bonus-label {
@@ -87,6 +118,85 @@
 .game-placeholder-panel {
     -fx-background-color: rgba(226, 219, 206, 0.82);
     -fx-background-radius: 30;
+}
+
+.action-panel-button-highlight {
+    -fx-border-color: rgba(255, 236, 148, 0.98);
+    -fx-border-width: 3;
+}
+
+.game-preview-panel {
+    -fx-background-color: rgba(226, 219, 206, 0.86);
+    -fx-background-radius: 24;
+    -fx-border-color: rgba(82, 96, 128, 0.24);
+    -fx-border-radius: 24;
+    -fx-border-width: 1;
+}
+
+.game-preview-panel-valid {
+    -fx-border-color: rgba(112, 171, 111, 0.92);
+}
+
+.game-preview-panel-invalid {
+    -fx-border-color: rgba(192, 106, 106, 0.94);
+}
+
+.game-preview-title {
+    -fx-text-fill: #3f4b63;
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
+}
+
+.game-preview-status {
+    -fx-text-fill: #3f4b63;
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+}
+
+.game-preview-word,
+.game-preview-score,
+.game-preview-messages {
+    -fx-text-fill: #4b556a;
+    -fx-font-size: 14px;
+}
+
+.tutorial-overlay-blocker {
+    -fx-background-color: rgba(25, 28, 38, 0.16);
+}
+
+.tutorial-overlay-card {
+    -fx-background-color: rgba(245, 242, 233, 0.96);
+    -fx-background-radius: 22;
+    -fx-border-color: rgba(76, 87, 110, 0.22);
+    -fx-border-radius: 22;
+    -fx-border-width: 1;
+}
+
+.tutorial-overlay-progress {
+    -fx-text-fill: rgba(79, 93, 118, 0.84);
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+}
+
+.tutorial-overlay-title {
+    -fx-text-fill: #3e4a62;
+    -fx-font-size: 22px;
+    -fx-font-weight: 700;
+}
+
+.tutorial-overlay-body,
+.tutorial-overlay-hint {
+    -fx-text-fill: #4d576d;
+    -fx-font-size: 15px;
+}
+
+.game-rack-slot-tutorial-highlight {
+    -fx-border-color: rgba(255, 239, 164, 0.96);
+    -fx-border-width: 2.5;
+}
+
+.game-rack-slot-tutorial-dim {
+    -fx-opacity: 0.48;
 }
 
 .game-ai-status-banner {

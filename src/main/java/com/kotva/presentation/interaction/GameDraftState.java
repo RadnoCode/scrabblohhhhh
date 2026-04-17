@@ -226,7 +226,7 @@ public class GameDraftState {
         GameViewModel.BoardTileModel boardTile) {
         return new GameViewModel.BoardTileModel(
             boardTile.getCoordinate(),
-            GameViewModel.TileModel.empty(),
+            GameViewModel.TileModel.empty(false, false),
             boardTile.getBonusType(),
             false,
             boardTile.isPreviewValid(),
@@ -234,7 +234,10 @@ public class GameDraftState {
             boardTile.isMainWordHighlighted(),
             boardTile.isCrossWordHighlighted(),
             boardTile.isMainWordPreviewValid(),
-            boardTile.isMainWordPreviewInvalid());
+            boardTile.isMainWordPreviewInvalid(),
+            boardTile.getGhostTile(),
+            boardTile.isTutorialHighlighted(),
+            boardTile.isTutorialDimmed());
     }
 
     public static final class DraftPlacementModel {

@@ -29,6 +29,7 @@ public class GameSessionSnapshot {
     private final List<RackTileSnapshot> currentRackTiles;
     private final List<DraftPlacementSnapshot> draftPlacements;
     private final PreviewSnapshot preview;
+    private final TutorialSnapshot tutorial;
     private final GameActionResult latestActionResult;
     private final SettlementResult settlementResult;
     private final AiRuntimeSnapshot aiRuntimeSnapshot;
@@ -52,6 +53,7 @@ public class GameSessionSnapshot {
         List<RackTileSnapshot> currentRackTiles,
         List<DraftPlacementSnapshot> draftPlacements,
         PreviewSnapshot preview,
+        TutorialSnapshot tutorial,
         GameActionResult latestActionResult,
         SettlementResult settlementResult,
         AiRuntimeSnapshot aiRuntimeSnapshot) {
@@ -82,9 +84,57 @@ public class GameSessionSnapshot {
         List.copyOf(
             Objects.requireNonNull(draftPlacements, "draftPlacements cannot be null."));
         this.preview = preview;
+        this.tutorial = tutorial;
         this.latestActionResult = latestActionResult;
         this.settlementResult = settlementResult;
         this.aiRuntimeSnapshot = aiRuntimeSnapshot;
+    }
+
+    public GameSessionSnapshot(
+        String sessionId,
+        GameMode gameMode,
+        SessionStatus sessionStatus,
+        boolean gameEnded,
+        GameEndReason gameEndReason,
+        int turnNumber,
+        String currentPlayerId,
+        String currentPlayerName,
+        long currentPlayerMainTimeRemainingMillis,
+        long currentPlayerByoYomiRemainingMillis,
+        ClockPhase currentPlayerClockPhase,
+        List<PlayerClockSnapshot> playerClockSnapshots,
+        List<GamePlayerSnapshot> players,
+        BoardSnapshot boardSnapshot,
+        List<BoardCellRenderSnapshot> boardCells,
+        List<RackTileSnapshot> currentRackTiles,
+        List<DraftPlacementSnapshot> draftPlacements,
+        PreviewSnapshot preview,
+        GameActionResult latestActionResult,
+        SettlementResult settlementResult,
+        AiRuntimeSnapshot aiRuntimeSnapshot) {
+        this(
+            sessionId,
+            gameMode,
+            sessionStatus,
+            gameEnded,
+            gameEndReason,
+            turnNumber,
+            currentPlayerId,
+            currentPlayerName,
+            currentPlayerMainTimeRemainingMillis,
+            currentPlayerByoYomiRemainingMillis,
+            currentPlayerClockPhase,
+            playerClockSnapshots,
+            players,
+            boardSnapshot,
+            boardCells,
+            currentRackTiles,
+            draftPlacements,
+            preview,
+            null,
+            latestActionResult,
+            settlementResult,
+            aiRuntimeSnapshot);
     }
 
     public String getSessionId() {
@@ -159,6 +209,10 @@ public class GameSessionSnapshot {
         return preview;
     }
 
+    public TutorialSnapshot getTutorial() {
+        return tutorial;
+    }
+
     public GameActionResult getLatestActionResult() {
         return latestActionResult;
     }
@@ -169,5 +223,31 @@ public class GameSessionSnapshot {
 
     public AiRuntimeSnapshot getAiRuntimeSnapshot() {
         return aiRuntimeSnapshot;
+    }
+
+    public GameSessionSnapshot withTutorial(TutorialSnapshot tutorialSnapshot) {
+        return new GameSessionSnapshot(
+            sessionId,
+            gameMode,
+            sessionStatus,
+            gameEnded,
+            gameEndReason,
+            turnNumber,
+            currentPlayerId,
+            currentPlayerName,
+            currentPlayerMainTimeRemainingMillis,
+            currentPlayerByoYomiRemainingMillis,
+            currentPlayerClockPhase,
+            playerClockSnapshots,
+            players,
+            boardSnapshot,
+            boardCells,
+            currentRackTiles,
+            draftPlacements,
+            preview,
+            tutorialSnapshot,
+            latestActionResult,
+            settlementResult,
+            aiRuntimeSnapshot);
     }
 }

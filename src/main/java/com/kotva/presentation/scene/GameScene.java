@@ -4,10 +4,12 @@ import com.kotva.presentation.component.ActionPanelView;
 import com.kotva.presentation.component.AiStatusBannerView;
 import com.kotva.presentation.component.BoardView;
 import com.kotva.presentation.component.PlayerInfoCardView;
+import com.kotva.presentation.component.PreviewPanelView;
 import com.kotva.presentation.component.RackView;
 import com.kotva.presentation.component.TimerView;
 import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.component.TransientMessageView;
+import com.kotva.presentation.component.TutorialOverlayView;
 import com.kotva.presentation.controller.GameController;
 import com.kotva.presentation.interaction.GameInteractionCoordinator;
 import com.kotva.presentation.renderer.GameRenderer;
@@ -18,9 +20,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -72,9 +74,10 @@ public class GameScene extends Scene {
 
         PlayerInfoCardView rightTopCard = new PlayerInfoCardView();
         PlayerInfoCardView rightBottomCard = new PlayerInfoCardView();
+        PreviewPanelView previewPanelView = new PreviewPanelView();
         ActionPanelView actionPanel = new ActionPanelView();
 
-        VBox rightColumn = new VBox(34, rightTopCard, rightBottomCard, actionPanel);
+        VBox rightColumn = new VBox(24, rightTopCard, rightBottomCard, previewPanelView, actionPanel);
         rightColumn.setAlignment(Pos.TOP_CENTER);
         rightColumn.getStyleClass().add("game-side-column");
 
@@ -84,15 +87,22 @@ public class GameScene extends Scene {
         BorderPane.setMargin(contentBox, new Insets(6, 44, 48, 44));
         contentRoot.setCenter(contentBox);
 
+        TutorialOverlayView tutorialOverlayView = new TutorialOverlayView();
+        tutorialOverlayView.setOnAdvanceRequested(controller::onTutorialAdvanceRequested);
+        tutorialOverlayView.setOnExitRequested(controller::onTutorialExitRequested);
+        tutorialOverlayView.setOnReturnHomeRequested(controller::onTutorialReturnHomeRequested);
+
         PreviewRenderer previewRenderer = new PreviewRenderer(boardView, rackView, dragOverlay);
         GameRenderer renderer = new GameRenderer(
             boardView,
             rackView,
             actionPanel,
+            previewPanelView,
             aiStatusBannerView,
             messageView,
             stepTimerView,
             totalTimerView,
+            tutorialOverlayView,
             List.of(leftTopCard, rightTopCard, leftBottomCard, rightBottomCard),
             controller.getDraftState(),
             previewRenderer);
@@ -106,7 +116,7 @@ public class GameScene extends Scene {
             controller);
         controller.bind(renderer, interactionCoordinator);
 
-        root.getChildren().addAll(contentRoot, dragOverlay);
+        root.getChildren().addAll(contentRoot, dragOverlay, tutorialOverlayView);
 
         return root;
     }

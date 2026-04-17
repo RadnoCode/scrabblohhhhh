@@ -5,6 +5,7 @@ import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.setup.NewGameRequest;
 import com.kotva.domain.model.Position;
+import com.kotva.tutorial.TutorialUiEvent;
 import java.util.function.Consumer;
 
 public interface GameRuntime {
@@ -44,8 +45,22 @@ default void passTurn(String clientActionId) {
 
     void resign();
 
-default void resign(String clientActionId) {
+    default void resign(String clientActionId) {
         resign();
+    }
+
+    default boolean isTutorialRuntime() {
+        return false;
+    }
+
+    default void advanceTutorialInstruction() {
+    }
+
+    default boolean shouldReturnHomeAfterTutorial() {
+        return false;
+    }
+
+    default void recordTutorialEvent(TutorialUiEvent event) {
     }
 
     boolean hasAutomatedTurnSupport();

@@ -21,4 +21,10 @@ public interface GameActionPort {
     void onRearrangeRequested();
 
     void onResignRequested();
+
+    void onTutorialAdvanceRequested();
+
+    void onTutorialExitRequested();
+
+    void onTutorialReturnHomeRequested();
 }

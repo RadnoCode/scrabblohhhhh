@@ -22,6 +22,9 @@ public class GameViewModel {
     private String aiErrorDetails;
     private String transientMessageText;
     private long transientMessageVersion;
+    private PreviewPanelModel previewPanel;
+    private TutorialOverlayModel tutorialOverlay;
+    private ActionPanelModel actionPanel;
 
     public GameViewModel(String titleText) {
         this.titleText = Objects.requireNonNull(titleText, "titleText cannot be null.");
@@ -38,6 +41,9 @@ public class GameViewModel {
         this.aiErrorDetails = "";
         this.transientMessageText = "";
         this.transientMessageVersion = 0L;
+        this.previewPanel = PreviewPanelModel.hidden();
+        this.tutorialOverlay = TutorialOverlayModel.hidden();
+        this.actionPanel = ActionPanelModel.defaultState();
         resetPlaceholders();
     }
 
@@ -150,6 +156,31 @@ public class GameViewModel {
         this.transientMessageVersion++;
     }
 
+    public PreviewPanelModel getPreviewPanel() {
+        return previewPanel;
+    }
+
+    public void setPreviewPanel(PreviewPanelModel previewPanel) {
+        this.previewPanel = Objects.requireNonNull(previewPanel, "previewPanel cannot be null.");
+    }
+
+    public TutorialOverlayModel getTutorialOverlay() {
+        return tutorialOverlay;
+    }
+
+    public void setTutorialOverlay(TutorialOverlayModel tutorialOverlay) {
+        this.tutorialOverlay =
+            Objects.requireNonNull(tutorialOverlay, "tutorialOverlay cannot be null.");
+    }
+
+    public ActionPanelModel getActionPanel() {
+        return actionPanel;
+    }
+
+    public void setActionPanel(ActionPanelModel actionPanel) {
+        this.actionPanel = Objects.requireNonNull(actionPanel, "actionPanel cannot be null.");
+    }
+
     public void resetPlaceholders() {
         playerCards.clear();
         rackTiles.clear();
@@ -159,6 +190,9 @@ public class GameViewModel {
         aiErrorSummary = "";
         aiErrorDetails = "";
         transientMessageText = "";
+        previewPanel = PreviewPanelModel.hidden();
+        tutorialOverlay = TutorialOverlayModel.hidden();
+        actionPanel = ActionPanelModel.defaultState();
         for (int index = 0; index < DEFAULT_RACK_SLOT_COUNT; index++) {
             rackTiles.add(TileModel.empty());
         }
@@ -217,20 +251,49 @@ public class GameViewModel {
         private final String letter;
         private final int score;
         private final boolean empty;
+        private final boolean tutorialHighlighted;
+        private final boolean tutorialDimmed;
 
-        public TileModel(String tileId, String letter, int score, boolean empty) {
+        public TileModel(
+            String tileId,
+            String letter,
+            int score,
+            boolean empty,
+            boolean tutorialHighlighted,
+            boolean tutorialDimmed) {
             this.tileId = Objects.requireNonNull(tileId, "tileId cannot be null.");
             this.letter = Objects.requireNonNull(letter, "letter cannot be null.");
             this.score = score;
             this.empty = empty;
+            this.tutorialHighlighted = tutorialHighlighted;
+            this.tutorialDimmed = tutorialDimmed;
         }
 
         public static TileModel empty() {
-            return new TileModel("", "", 0, true);
+            return new TileModel("", "", 0, true, false, false);
+        }
+
+        public static TileModel empty(boolean tutorialHighlighted, boolean tutorialDimmed) {
+            return new TileModel("", "", 0, true, tutorialHighlighted, tutorialDimmed);
         }
 
         public static TileModel filled(String tileId, String letter, int score) {
-            return new TileModel(tileId, letter, score, false);
+            return new TileModel(tileId, letter, score, false, false, false);
+        }
+
+        public static TileModel filled(
+            String tileId,
+            String letter,
+            int score,
+            boolean tutorialHighlighted,
+            boolean tutorialDimmed) {
+            return new TileModel(
+                tileId,
+                letter,
+                score,
+                false,
+                tutorialHighlighted,
+                tutorialDimmed);
         }
 
         public String getTileId() {
@@ -248,6 +311,14 @@ public class GameViewModel {
         public boolean isEmpty() {
             return empty;
         }
+
+        public boolean isTutorialHighlighted() {
+            return tutorialHighlighted;
+        }
+
+        public boolean isTutorialDimmed() {
+            return tutorialDimmed;
+        }
     }
 
     public static final class BoardTileModel {
@@ -261,6 +332,9 @@ public class GameViewModel {
         private final boolean crossWordHighlighted;
         private final boolean mainWordPreviewValid;
         private final boolean mainWordPreviewInvalid;
+        private final TileModel ghostTile;
+        private final boolean tutorialHighlighted;
+        private final boolean tutorialDimmed;
 
         public BoardTileModel(
             BoardCoordinate coordinate,
@@ -272,7 +346,10 @@ public class GameViewModel {
             boolean mainWordHighlighted,
             boolean crossWordHighlighted,
             boolean mainWordPreviewValid,
-            boolean mainWordPreviewInvalid) {
+            boolean mainWordPreviewInvalid,
+            TileModel ghostTile,
+            boolean tutorialHighlighted,
+            boolean tutorialDimmed) {
             this.coordinate = Objects.requireNonNull(coordinate, "coordinate cannot be null.");
             this.tile = Objects.requireNonNull(tile, "tile cannot be null.");
             this.bonusType = Objects.requireNonNull(bonusType, "bonusType cannot be null.");
@@ -283,6 +360,9 @@ public class GameViewModel {
             this.crossWordHighlighted = crossWordHighlighted;
             this.mainWordPreviewValid = mainWordPreviewValid;
             this.mainWordPreviewInvalid = mainWordPreviewInvalid;
+            this.ghostTile = ghostTile;
+            this.tutorialHighlighted = tutorialHighlighted;
+            this.tutorialDimmed = tutorialDimmed;
         }
 
         public BoardCoordinate getCoordinate() {
@@ -324,6 +404,18 @@ public class GameViewModel {
         public boolean isMainWordPreviewInvalid() {
             return mainWordPreviewInvalid;
         }
+
+        public TileModel getGhostTile() {
+            return ghostTile;
+        }
+
+        public boolean isTutorialHighlighted() {
+            return tutorialHighlighted;
+        }
+
+        public boolean isTutorialDimmed() {
+            return tutorialDimmed;
+        }
     }
 
     public static final class WordOutlineModel {
@@ -364,6 +456,191 @@ public class GameViewModel {
 
         public boolean isValid() {
             return valid;
+        }
+    }
+
+    public static final class PreviewPanelModel {
+        private final boolean visible;
+        private final boolean valid;
+        private final String statusText;
+        private final String scoreText;
+        private final String mainWordText;
+        private final List<String> messages;
+
+        public PreviewPanelModel(
+            boolean visible,
+            boolean valid,
+            String statusText,
+            String scoreText,
+            String mainWordText,
+            List<String> messages) {
+            this.visible = visible;
+            this.valid = valid;
+            this.statusText = Objects.requireNonNull(statusText, "statusText cannot be null.");
+            this.scoreText = Objects.requireNonNull(scoreText, "scoreText cannot be null.");
+            this.mainWordText = Objects.requireNonNull(mainWordText, "mainWordText cannot be null.");
+            this.messages = List.copyOf(Objects.requireNonNull(messages, "messages cannot be null."));
+        }
+
+        public static PreviewPanelModel hidden() {
+            return new PreviewPanelModel(false, false, "", "", "", List.of());
+        }
+
+        public boolean isVisible() {
+            return visible;
+        }
+
+        public boolean isValid() {
+            return valid;
+        }
+
+        public String getStatusText() {
+            return statusText;
+        }
+
+        public String getScoreText() {
+            return scoreText;
+        }
+
+        public String getMainWordText() {
+            return mainWordText;
+        }
+
+        public List<String> getMessages() {
+            return messages;
+        }
+    }
+
+    public static final class TutorialOverlayModel {
+        private final boolean visible;
+        private final String progressText;
+        private final String title;
+        private final String body;
+        private final boolean tapToContinue;
+        private final boolean showExitButton;
+        private final boolean showReturnHomeButton;
+
+        public TutorialOverlayModel(
+            boolean visible,
+            String progressText,
+            String title,
+            String body,
+            boolean tapToContinue,
+            boolean showExitButton,
+            boolean showReturnHomeButton) {
+            this.visible = visible;
+            this.progressText = Objects.requireNonNull(progressText, "progressText cannot be null.");
+            this.title = Objects.requireNonNull(title, "title cannot be null.");
+            this.body = Objects.requireNonNull(body, "body cannot be null.");
+            this.tapToContinue = tapToContinue;
+            this.showExitButton = showExitButton;
+            this.showReturnHomeButton = showReturnHomeButton;
+        }
+
+        public static TutorialOverlayModel hidden() {
+            return new TutorialOverlayModel(false, "", "", "", false, false, false);
+        }
+
+        public boolean isVisible() {
+            return visible;
+        }
+
+        public String getProgressText() {
+            return progressText;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getBody() {
+            return body;
+        }
+
+        public boolean isTapToContinue() {
+            return tapToContinue;
+        }
+
+        public boolean isShowExitButton() {
+            return showExitButton;
+        }
+
+        public boolean isShowReturnHomeButton() {
+            return showReturnHomeButton;
+        }
+    }
+
+    public static final class ActionPanelModel {
+        private final ActionButtonModel skipButton;
+        private final ActionButtonModel rearrangeButton;
+        private final ActionButtonModel recallButton;
+        private final ActionButtonModel resignButton;
+        private final ActionButtonModel submitButton;
+
+        public ActionPanelModel(
+            ActionButtonModel skipButton,
+            ActionButtonModel rearrangeButton,
+            ActionButtonModel recallButton,
+            ActionButtonModel resignButton,
+            ActionButtonModel submitButton) {
+            this.skipButton = Objects.requireNonNull(skipButton, "skipButton cannot be null.");
+            this.rearrangeButton = Objects.requireNonNull(
+                rearrangeButton,
+                "rearrangeButton cannot be null.");
+            this.recallButton = Objects.requireNonNull(recallButton, "recallButton cannot be null.");
+            this.resignButton = Objects.requireNonNull(resignButton, "resignButton cannot be null.");
+            this.submitButton = Objects.requireNonNull(submitButton, "submitButton cannot be null.");
+        }
+
+        public static ActionPanelModel defaultState() {
+            ActionButtonModel button = ActionButtonModel.enabled();
+            return new ActionPanelModel(button, button, button, button, button);
+        }
+
+        public ActionButtonModel getSkipButton() {
+            return skipButton;
+        }
+
+        public ActionButtonModel getRearrangeButton() {
+            return rearrangeButton;
+        }
+
+        public ActionButtonModel getRecallButton() {
+            return recallButton;
+        }
+
+        public ActionButtonModel getResignButton() {
+            return resignButton;
+        }
+
+        public ActionButtonModel getSubmitButton() {
+            return submitButton;
+        }
+    }
+
+    public static final class ActionButtonModel {
+        private final boolean enabled;
+        private final boolean highlighted;
+
+        public ActionButtonModel(boolean enabled, boolean highlighted) {
+            this.enabled = enabled;
+            this.highlighted = highlighted;
+        }
+
+        public static ActionButtonModel enabled() {
+            return new ActionButtonModel(true, false);
+        }
+
+        public static ActionButtonModel of(boolean enabled, boolean highlighted) {
+            return new ActionButtonModel(enabled, highlighted);
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public boolean isHighlighted() {
+            return highlighted;
         }
     }
 }

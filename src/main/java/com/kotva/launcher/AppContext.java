@@ -1,6 +1,7 @@
 package com.kotva.launcher;
 
 import com.kotva.application.runtime.GameRuntimeFactory;
+import com.kotva.application.runtime.TutorialRuntimeFactory;
 import com.kotva.application.service.ClockService;
 import com.kotva.application.service.ClockServiceImpl;
 import com.kotva.application.service.GameApplicationService;
@@ -21,6 +22,7 @@ public class AppContext {
     private final DictionaryRepository dictionaryRepository;
     private final SettingsRepository settingsRepository;
     private final GameRuntimeFactory gameRuntimeFactory;
+    private final TutorialRuntimeFactory tutorialRuntimeFactory;
     private AudioManager audioManager;
 
     public AppContext() {
@@ -53,6 +55,7 @@ public class AppContext {
         this.gameRuntimeFactory = new GameRuntimeFactory(
             gameSetupService,
             gameApplicationService);
+        this.tutorialRuntimeFactory = new TutorialRuntimeFactory(gameApplicationService);
     }
 
     public ClockService getClockService() {
@@ -73,6 +76,10 @@ public class AppContext {
 
     public GameRuntimeFactory getGameRuntimeFactory() {
         return gameRuntimeFactory;
+    }
+
+    public TutorialRuntimeFactory getTutorialRuntimeFactory() {
+        return tutorialRuntimeFactory;
     }
 
     public AudioManager getAudioManager() {

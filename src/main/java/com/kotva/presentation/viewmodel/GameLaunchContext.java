@@ -5,6 +5,7 @@ import com.kotva.application.setup.NewGameRequest;
 import com.kotva.mode.GameMode;
 import com.kotva.policy.AiDifficulty;
 import com.kotva.policy.DictionaryType;
+import com.kotva.tutorial.TutorialScriptId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -12,7 +13,9 @@ import java.util.Objects;
 public class GameLaunchContext {
     private static final long DEFAULT_STEP_TIME_MILLIS = 30_000L;
 
+    private final LaunchKind launchKind;
     private final NewGameRequest request;
+    private final TutorialScriptId tutorialScriptId;
     private final String modeLabel;
     private final String gameTimeLabel;
     private final String languageLabel;
@@ -21,14 +24,25 @@ public class GameLaunchContext {
     private final AiDifficulty aiDifficulty;
 
     public GameLaunchContext(
+        LaunchKind launchKind,
         NewGameRequest request,
+        TutorialScriptId tutorialScriptId,
         String modeLabel,
         String gameTimeLabel,
         String languageLabel,
         String playerCountLabel,
         String difficultyLabel,
         AiDifficulty aiDifficulty) {
-        this.request = Objects.requireNonNull(request, "request cannot be null.");
+        this.launchKind = Objects.requireNonNull(launchKind, "launchKind cannot be null.");
+        if (launchKind == LaunchKind.STANDARD_GAME && request == null) {
+            throw new IllegalArgumentException("request cannot be null for standard game launches.");
+        }
+        if (launchKind == LaunchKind.TUTORIAL && tutorialScriptId == null) {
+            throw new IllegalArgumentException(
+                "tutorialScriptId cannot be null for tutorial launches.");
+        }
+        this.request = request;
+        this.tutorialScriptId = tutorialScriptId;
         this.modeLabel = Objects.requireNonNull(modeLabel, "modeLabel cannot be null.");
         this.gameTimeLabel = Objects.requireNonNull(gameTimeLabel, "gameTimeLabel cannot be null.");
         this.languageLabel = Objects.requireNonNull(languageLabel, "languageLabel cannot be null.");
@@ -46,12 +60,14 @@ public class GameLaunchContext {
         int playerCount = Integer.parseInt(playerCountLabel);
         List<String> playerNames = buildSequentialNames("Player ", playerCount);
         return new GameLaunchContext(
+            LaunchKind.STANDARD_GAME,
             new NewGameRequest(
             GameMode.HOT_SEAT,
             playerCount,
             playerNames,
             mapDictionaryType(languageLabel),
             mapTimeControl(gameTimeLabel)),
+            null,
             "Local Multiplayer",
             gameTimeLabel,
             languageLabel,
@@ -65,6 +81,7 @@ public class GameLaunchContext {
         AiDifficulty aiDifficulty = AiDifficulty.fromSetupLabel(difficultyLabel);
         List<String> playerNames = List.of("Player", difficultyLabel + " Bot");
         return new GameLaunchContext(
+            LaunchKind.STANDARD_GAME,
             new NewGameRequest(
             GameMode.HUMAN_VS_AI,
             2,
@@ -72,6 +89,7 @@ public class GameLaunchContext {
             mapDictionaryType(languageLabel),
             mapTimeControl(gameTimeLabel),
             aiDifficulty),
+            null,
             "Local AI",
             gameTimeLabel,
             languageLabel,
@@ -90,12 +108,14 @@ public class GameLaunchContext {
         }
 
         return new GameLaunchContext(
+            LaunchKind.STANDARD_GAME,
             new NewGameRequest(
             GameMode.LAN_MULTIPLAYER,
             playerCount,
             playerNames,
             mapDictionaryType(languageLabel),
             mapTimeControl(gameTimeLabel)),
+            null,
             "Create Room",
             gameTimeLabel,
             languageLabel,
@@ -104,8 +124,29 @@ public class GameLaunchContext {
             null);
     }
 
+    public static GameLaunchContext forTutorial(TutorialScriptId tutorialScriptId) {
+        return new GameLaunchContext(
+            LaunchKind.TUTORIAL,
+            null,
+            Objects.requireNonNull(tutorialScriptId, "tutorialScriptId cannot be null."),
+            "Tutorial",
+            "--",
+            "North American",
+            "1",
+            "--",
+            null);
+    }
+
+    public LaunchKind getLaunchKind() {
+        return launchKind;
+    }
+
     public NewGameRequest getRequest() {
         return request;
+    }
+
+    public TutorialScriptId getTutorialScriptId() {
+        return tutorialScriptId;
     }
 
     public String getModeLabel() {

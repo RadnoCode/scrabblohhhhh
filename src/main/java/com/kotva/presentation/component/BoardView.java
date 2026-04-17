@@ -22,6 +22,13 @@ public class BoardView extends StackPane {
     private static final String TRIPLE_LETTER_CLASS = "game-board-cell-triple-letter";
     private static final String DOUBLE_WORD_CLASS = "game-board-cell-double-word";
     private static final String TRIPLE_WORD_CLASS = "game-board-cell-triple-word";
+    private static final String PREVIEW_VALID_CLASS = "game-board-cell-preview-valid";
+    private static final String PREVIEW_INVALID_CLASS = "game-board-cell-preview-invalid";
+    private static final String MAIN_WORD_CLASS = "game-board-cell-main-word";
+    private static final String CROSS_WORD_CLASS = "game-board-cell-cross-word";
+    private static final String TUTORIAL_HIGHLIGHT_CLASS = "game-board-cell-tutorial-highlight";
+    private static final String TUTORIAL_DIM_CLASS = "game-board-cell-tutorial-dim";
+    private static final String GHOST_TILE_CLASS = "game-board-ghost-tile";
 
     private final GridPane gridPane;
     private final PreviewWordOutlineView previewWordOutlineView;
@@ -78,7 +85,13 @@ public class BoardView extends StackPane {
                     DOUBLE_LETTER_CLASS,
                     TRIPLE_LETTER_CLASS,
                     DOUBLE_WORD_CLASS,
-                    TRIPLE_WORD_CLASS);
+                    TRIPLE_WORD_CLASS,
+                    PREVIEW_VALID_CLASS,
+                    PREVIEW_INVALID_CLASS,
+                    MAIN_WORD_CLASS,
+                    CROSS_WORD_CLASS,
+                    TUTORIAL_HIGHLIGHT_CLASS,
+                    TUTORIAL_DIM_CLASS);
             }
         }
 
@@ -86,8 +99,17 @@ public class BoardView extends StackPane {
             BoardCoordinate coordinate = boardTile.getCoordinate();
             StackPane cell = cellViews[coordinate.row()][coordinate.col()];
             applyBonusClass(cell, boardTile);
+            applyCellHighlightClasses(cell, boardTile);
 
             if (boardTile.getTile().isEmpty()) {
+                if (boardTile.getGhostTile() != null && !boardTile.getGhostTile().isEmpty()) {
+                    TileView ghostTile = new TileView(CELL_SIZE);
+                    ghostTile.setTile(boardTile.getGhostTile());
+                    ghostTile.setMouseTransparent(true);
+                    ghostTile.getStyleClass().add(GHOST_TILE_CLASS);
+                    cell.getChildren().add(ghostTile);
+                    continue;
+                }
                 Label bonusLabel = createBonusLabel(boardTile);
                 if (bonusLabel != null) {
                     cell.getChildren().add(bonusLabel);
@@ -148,7 +170,24 @@ public class BoardView extends StackPane {
     }
 
     private void applyCellHighlightClasses(StackPane cell, GameViewModel.BoardTileModel boardTile) {
-
+        if (boardTile.isPreviewValid()) {
+            cell.getStyleClass().add(PREVIEW_VALID_CLASS);
+        }
+        if (boardTile.isPreviewInvalid()) {
+            cell.getStyleClass().add(PREVIEW_INVALID_CLASS);
+        }
+        if (boardTile.isMainWordHighlighted()) {
+            cell.getStyleClass().add(MAIN_WORD_CLASS);
+        }
+        if (boardTile.isCrossWordHighlighted()) {
+            cell.getStyleClass().add(CROSS_WORD_CLASS);
+        }
+        if (boardTile.isTutorialHighlighted()) {
+            cell.getStyleClass().add(TUTORIAL_HIGHLIGHT_CLASS);
+        }
+        if (boardTile.isTutorialDimmed()) {
+            cell.getStyleClass().add(TUTORIAL_DIM_CLASS);
+        }
     }
 
     private void applyBonusClass(StackPane cell, GameViewModel.BoardTileModel boardTile) {

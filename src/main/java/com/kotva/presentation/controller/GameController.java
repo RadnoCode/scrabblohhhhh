@@ -3,6 +3,7 @@ package com.kotva.presentation.controller;
 import com.kotva.application.result.BoardCellSnapshot;
 import com.kotva.application.runtime.GameRuntime;
 import com.kotva.application.runtime.GameRuntimeFactory;
+import com.kotva.application.runtime.TutorialRuntimeFactory;
 import com.kotva.application.service.AiSessionRuntime;
 import com.kotva.application.service.GameActionResult;
 import com.kotva.application.session.AiRuntimeSnapshot;
@@ -14,9 +15,13 @@ import com.kotva.application.session.PreviewPositionSnapshot;
 import com.kotva.application.session.PreviewSnapshot;
 import com.kotva.application.session.PreviewWordSnapshot;
 import com.kotva.application.session.RackTileSnapshot;
-import com.kotva.domain.model.Position;
+import com.kotva.application.session.TutorialGhostTileSnapshot;
+import com.kotva.application.session.TutorialSnapshot;
 import com.kotva.domain.action.ActionType;
+import com.kotva.domain.model.Position;
 import com.kotva.infrastructure.AudioManager;
+import com.kotva.infrastructure.settings.AppSettings;
+import com.kotva.infrastructure.settings.SettingsRepository;
 import com.kotva.policy.ClockPhase;
 import com.kotva.policy.SessionStatus;
 import com.kotva.policy.WordType;
@@ -29,11 +34,16 @@ import com.kotva.presentation.renderer.GameRenderer;
 import com.kotva.presentation.viewmodel.BoardCoordinate;
 import com.kotva.presentation.viewmodel.GameLaunchContext;
 import com.kotva.presentation.viewmodel.GameViewModel;
+import com.kotva.presentation.viewmodel.LaunchKind;
+import com.kotva.tutorial.TutorialActionKey;
+import com.kotva.tutorial.TutorialUiEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import javafx.application.Platform;
 import javafx.util.Duration;
@@ -44,6 +54,8 @@ public class GameController implements GameActionPort {
 
     private final SceneNavigator navigator;
     private final GameRuntimeFactory gameRuntimeFactory;
+    private final TutorialRuntimeFactory tutorialRuntimeFactory;
+    private final SettingsRepository settingsRepository;
     private final AudioManager audioManager;
     private final GameLaunchContext launchContext;
     private final GameViewModel viewModel;
@@ -57,11 +69,14 @@ public class GameController implements GameActionPort {
     private String pendingClientActionId;
     private boolean interactionLocked;
     private boolean settlementNavigated;
+    private boolean tutorialCompletionPersisted;
     private String lastPresentedActionResultId;
 
     public GameController(SceneNavigator navigator, GameLaunchContext launchContext) {
         this.navigator = Objects.requireNonNull(navigator, "navigator cannot be null.");
         this.gameRuntimeFactory = navigator.getAppContext().getGameRuntimeFactory();
+        this.tutorialRuntimeFactory = navigator.getAppContext().getTutorialRuntimeFactory();
+        this.settingsRepository = navigator.getAppContext().getSettingsRepository();
         this.audioManager = navigator.getAppContext().getAudioManager();
         this.launchContext = Objects.requireNonNull(launchContext, "launchContext cannot be null.");
         this.viewModel = new GameViewModel("S C R A B B L E");
@@ -69,6 +84,7 @@ public class GameController implements GameActionPort {
         this.presentationClientId = UUID.randomUUID().toString();
         this.nextClientActionSequence = 1L;
         this.settlementNavigated = false;
+        this.tutorialCompletionPersisted = false;
         this.lastPresentedActionResultId = null;
     }
 
@@ -102,7 +118,7 @@ public class GameController implements GameActionPort {
     public void bind(GameRenderer renderer, GameInteractionCoordinator interactionCoordinator) {
         this.renderer = Objects.requireNonNull(renderer, "renderer cannot be null.");
         Objects.requireNonNull(interactionCoordinator, "interactionCoordinator cannot be null.")
-                .attach();
+            .attach();
         startGameFromLaunchContext();
     }
 
@@ -110,8 +126,15 @@ public class GameController implements GameActionPort {
         stopPolling();
         shutdownRuntime();
         settlementNavigated = false;
-        gameRuntime = gameRuntimeFactory.create(launchContext.getRequest());
-        gameRuntime.start(launchContext.getRequest());
+        tutorialCompletionPersisted = false;
+
+        if (launchContext.getLaunchKind() == LaunchKind.TUTORIAL) {
+            gameRuntime = tutorialRuntimeFactory.create(launchContext.getTutorialScriptId());
+            gameRuntime.start(null);
+        } else {
+            gameRuntime = gameRuntimeFactory.create(launchContext.getRequest());
+            gameRuntime.start(launchContext.getRequest());
+        }
         clearClientActionTracking();
 
         GameSessionSnapshot firstSnapshot = gameRuntime.getSessionSnapshot();
@@ -150,6 +173,7 @@ public class GameController implements GameActionPort {
 
     private void renderSnapshot(GameSessionSnapshot snapshot) {
         AiRuntimeSnapshot aiRuntimeSnapshot = snapshot.getAiRuntimeSnapshot();
+        TutorialSnapshot tutorialSnapshot = snapshot.getTutorial();
         syncClientActionTracking(snapshot);
         syncActionFeedback(snapshot);
         viewModel.setStepTimerTitle("Step Time");
@@ -157,16 +181,20 @@ public class GameController implements GameActionPort {
         viewModel.setTotalTimerText(resolveTotalTimerText(snapshot));
         viewModel.setStepTimerText(resolveStepTimerText(snapshot));
         viewModel.setWordOutline(resolveWordOutline(snapshot.getPreview()));
+        viewModel.setPreviewPanel(resolvePreviewPanel(snapshot.getPreview()));
+        viewModel.setTutorialOverlay(resolveTutorialOverlay(tutorialSnapshot));
         viewModel.setPlayerCards(buildPlayerCards(snapshot));
-        viewModel.setBoardTiles(buildBoardTiles(snapshot));
-        viewModel.setRackTiles(buildRackTiles(snapshot));
-        interactionLocked = resolveInteractionLocked(snapshot, aiRuntimeSnapshot);
+        viewModel.setBoardTiles(buildBoardTiles(snapshot, tutorialSnapshot));
+        viewModel.setRackTiles(buildRackTiles(snapshot, tutorialSnapshot));
+        viewModel.setActionPanel(resolveActionPanel(tutorialSnapshot));
+        interactionLocked = resolveInteractionLocked(snapshot, aiRuntimeSnapshot, tutorialSnapshot);
         viewModel.setInteractionLocked(interactionLocked);
         viewModel.setAiErrorSummary(aiRuntimeSnapshot == null ? "" : aiRuntimeSnapshot.summary());
         viewModel.setAiErrorDetails(aiRuntimeSnapshot == null ? "" : aiRuntimeSnapshot.details());
         draftState.syncSnapshot(viewModel.getRackTiles(), viewModel.getBoardTiles());
         renderer.render(viewModel);
-        if (snapshot.getSessionStatus() == SessionStatus.COMPLETED) {
+        persistTutorialCompletionIfNeeded(tutorialSnapshot);
+        if (snapshot.getSessionStatus() == SessionStatus.COMPLETED && !gameRuntime.isTutorialRuntime()) {
             stopPolling();
             navigateToSettlementIfNeeded();
             return;
@@ -179,21 +207,30 @@ public class GameController implements GameActionPort {
         PreviewSnapshot previewSnapshot = snapshot.getPreview();
         for (GamePlayerSnapshot player : snapshot.getPlayers()) {
             playerCards.add(
-                    new GameViewModel.PlayerCardModel(
-                            player.getPlayerName(),
-                            player.getPlayerId(),
-                            player.getScore(),
-                            resolveStepMarkText(player, previewSnapshot),
-                            player.isCurrentTurn(),
-                            player.isActive()));
+                new GameViewModel.PlayerCardModel(
+                    player.getPlayerName(),
+                    player.getPlayerId(),
+                    player.getScore(),
+                    resolveStepMarkText(player, previewSnapshot),
+                    player.isCurrentTurn(),
+                    player.isActive()));
         }
         return playerCards;
     }
 
-    private List<GameViewModel.TileModel> buildRackTiles(GameSessionSnapshot snapshot) {
+    private List<GameViewModel.TileModel> buildRackTiles(
+        GameSessionSnapshot snapshot,
+        TutorialSnapshot tutorialSnapshot) {
+        Set<Integer> highlightedSlots = tutorialSnapshot == null
+            ? Set.of()
+            : new HashSet<>(tutorialSnapshot.getHighlightedRackSlots());
+        boolean dimNonTargets = tutorialSnapshot != null && tutorialSnapshot.isDimNonTargetRackSlots();
+
         List<GameViewModel.TileModel> rackTiles = new ArrayList<>();
         for (int index = 0; index < RACK_SLOT_COUNT; index++) {
-            rackTiles.add(GameViewModel.TileModel.empty());
+            boolean highlighted = highlightedSlots.contains(index);
+            boolean dimmed = dimNonTargets && !highlighted;
+            rackTiles.add(GameViewModel.TileModel.empty(highlighted, dimmed));
         }
 
         for (RackTileSnapshot rackTile : snapshot.getCurrentRackTiles()) {
@@ -201,58 +238,103 @@ public class GameController implements GameActionPort {
             if (slotIndex < 0 || slotIndex >= rackTiles.size()) {
                 continue;
             }
+            boolean highlighted = highlightedSlots.contains(slotIndex);
+            boolean dimmed = dimNonTargets && !highlighted;
             if (rackTile.getTileId() == null) {
-                rackTiles.set(slotIndex, GameViewModel.TileModel.empty());
+                rackTiles.set(slotIndex, GameViewModel.TileModel.empty(highlighted, dimmed));
                 continue;
             }
             rackTiles.set(
-                    slotIndex,
-                    GameViewModel.TileModel.filled(
-                            rackTile.getTileId(),
-                            resolveDisplayLetter(rackTile.getDisplayLetter()),
-                            rackTile.getScore()));
+                slotIndex,
+                GameViewModel.TileModel.filled(
+                    rackTile.getTileId(),
+                    resolveDisplayLetter(rackTile.getDisplayLetter()),
+                    rackTile.getScore(),
+                    highlighted,
+                    dimmed));
         }
         return rackTiles;
     }
 
-    private List<GameViewModel.BoardTileModel> buildBoardTiles(GameSessionSnapshot snapshot) {
+    private List<GameViewModel.BoardTileModel> buildBoardTiles(
+        GameSessionSnapshot snapshot,
+        TutorialSnapshot tutorialSnapshot) {
+        Set<BoardCoordinate> highlightedCoordinates = collectHighlightedCoordinates(tutorialSnapshot);
+        Map<BoardCoordinate, GameViewModel.TileModel> ghostTiles = collectGhostTiles(tutorialSnapshot);
+        boolean dimNonTargets = tutorialSnapshot != null && tutorialSnapshot.isDimNonTargetBoardCells();
+
         Map<BoardCoordinate, BoardCellRenderSnapshot> renderCellsByCoordinate = new HashMap<>();
         for (BoardCellRenderSnapshot boardCell : snapshot.getBoardCells()) {
             renderCellsByCoordinate.put(
-                    new BoardCoordinate(boardCell.getRow(), boardCell.getCol()), boardCell);
+                new BoardCoordinate(boardCell.getRow(), boardCell.getCol()),
+                boardCell);
         }
 
         List<GameViewModel.BoardTileModel> boardTiles = new ArrayList<>();
         for (BoardCellSnapshot boardCell : snapshot.getBoardSnapshot().getCells()) {
             BoardCoordinate coordinate = new BoardCoordinate(boardCell.getRow(), boardCell.getCol());
             BoardCellRenderSnapshot renderCell = renderCellsByCoordinate.get(coordinate);
+            boolean tutorialHighlighted = highlightedCoordinates.contains(coordinate);
+            boolean tutorialDimmed = dimNonTargets && !tutorialHighlighted;
             GameViewModel.TileModel tileModel =
-                    renderCell == null
-                            ? GameViewModel.TileModel.empty()
-                            : GameViewModel.TileModel.filled(
-                                    renderCell.getTileId(),
-                                    resolveDisplayLetter(renderCell.getDisplayLetter()),
-                                    renderCell.getScore());
+                renderCell == null
+                    ? GameViewModel.TileModel.empty(false, false)
+                    : GameViewModel.TileModel.filled(
+                        renderCell.getTileId(),
+                        resolveDisplayLetter(renderCell.getDisplayLetter()),
+                        renderCell.getScore(),
+                        false,
+                        false);
+            GameViewModel.TileModel ghostTile =
+                renderCell == null ? ghostTiles.get(coordinate) : null;
+
             boardTiles.add(
-                    new GameViewModel.BoardTileModel(
-                            coordinate,
-                            tileModel,
-                            boardCell.getBonusType(),
-                            renderCell != null && renderCell.isDraft(),
-                            renderCell != null && renderCell.isPreviewValid(),
-                            renderCell != null && renderCell.isPreviewInvalid(),
-                            renderCell != null && renderCell.isMainWordHighlighted(),
-                            renderCell != null && renderCell.isCrossWordHighlighted(),
-                            renderCell != null
-                                    && renderCell.isMainWordHighlighted()
-                                    && snapshot.getPreview() != null
-                                    && snapshot.getPreview().isValid(),
-                            renderCell != null
-                                    && renderCell.isMainWordHighlighted()
-                                    && snapshot.getPreview() != null
-                                    && !snapshot.getPreview().isValid()));
+                new GameViewModel.BoardTileModel(
+                    coordinate,
+                    tileModel,
+                    boardCell.getBonusType(),
+                    renderCell != null && renderCell.isDraft(),
+                    renderCell != null && renderCell.isPreviewValid(),
+                    renderCell != null && renderCell.isPreviewInvalid(),
+                    renderCell != null && renderCell.isMainWordHighlighted(),
+                    renderCell != null && renderCell.isCrossWordHighlighted(),
+                    renderCell != null
+                        && renderCell.isMainWordHighlighted()
+                        && snapshot.getPreview() != null
+                        && snapshot.getPreview().isValid(),
+                    renderCell != null
+                        && renderCell.isMainWordHighlighted()
+                        && snapshot.getPreview() != null
+                        && !snapshot.getPreview().isValid(),
+                    ghostTile,
+                    tutorialHighlighted,
+                    tutorialDimmed));
         }
         return boardTiles;
+    }
+
+    private Set<BoardCoordinate> collectHighlightedCoordinates(TutorialSnapshot tutorialSnapshot) {
+        Set<BoardCoordinate> highlightedCoordinates = new HashSet<>();
+        if (tutorialSnapshot == null) {
+            return highlightedCoordinates;
+        }
+        for (PreviewPositionSnapshot position : tutorialSnapshot.getHighlightedBoardPositions()) {
+            highlightedCoordinates.add(new BoardCoordinate(position.getRow(), position.getCol()));
+        }
+        return highlightedCoordinates;
+    }
+
+    private Map<BoardCoordinate, GameViewModel.TileModel> collectGhostTiles(TutorialSnapshot tutorialSnapshot) {
+        Map<BoardCoordinate, GameViewModel.TileModel> ghostTiles = new HashMap<>();
+        if (tutorialSnapshot == null) {
+            return ghostTiles;
+        }
+        for (TutorialGhostTileSnapshot ghostTile : tutorialSnapshot.getGhostTiles()) {
+            ghostTiles.put(
+                new BoardCoordinate(ghostTile.getRow(), ghostTile.getCol()),
+                GameViewModel.TileModel.filled("", ghostTile.getLetter(), ghostTile.getScore()));
+        }
+        return ghostTiles;
     }
 
     private String resolveStepMarkText(GamePlayerSnapshot player, PreviewSnapshot previewSnapshot) {
@@ -285,7 +367,7 @@ public class GameController implements GameActionPort {
         }
 
         return new GameViewModel.WordOutlineModel(
-                minRow, minCol, maxRow, maxCol, previewSnapshot.isValid());
+            minRow, minCol, maxRow, maxCol, previewSnapshot.isValid());
     }
 
     private PreviewWordSnapshot findMainWord(PreviewSnapshot previewSnapshot) {
@@ -295,6 +377,63 @@ public class GameController implements GameActionPort {
             }
         }
         return null;
+    }
+
+    private GameViewModel.PreviewPanelModel resolvePreviewPanel(PreviewSnapshot previewSnapshot) {
+        if (previewSnapshot == null) {
+            return GameViewModel.PreviewPanelModel.hidden();
+        }
+
+        PreviewWordSnapshot mainWord = findMainWord(previewSnapshot);
+        String mainWordText = mainWord == null ? "主词：--" : "主词：" + mainWord.getWord();
+        List<String> messages = previewSnapshot.getMessages().isEmpty()
+            ? List.of(previewSnapshot.isValid() ? "当前落子合法。" : "当前落子不合法。")
+            : previewSnapshot.getMessages();
+        return new GameViewModel.PreviewPanelModel(
+            true,
+            previewSnapshot.isValid(),
+            previewSnapshot.isValid() ? "合法" : "不合法",
+            "预估分数：" + previewSnapshot.getEstimatedScore(),
+            mainWordText,
+            messages);
+    }
+
+    private GameViewModel.TutorialOverlayModel resolveTutorialOverlay(TutorialSnapshot tutorialSnapshot) {
+        if (tutorialSnapshot == null) {
+            return GameViewModel.TutorialOverlayModel.hidden();
+        }
+        return new GameViewModel.TutorialOverlayModel(
+            true,
+            "步骤 " + tutorialSnapshot.getStepNumber() + " / " + tutorialSnapshot.getStepCount(),
+            tutorialSnapshot.getTitle(),
+            tutorialSnapshot.getBody(),
+            tutorialSnapshot.isTapToContinue(),
+            tutorialSnapshot.isShowExitButton(),
+            tutorialSnapshot.isShowReturnHomeButton());
+    }
+
+    private GameViewModel.ActionPanelModel resolveActionPanel(TutorialSnapshot tutorialSnapshot) {
+        if (tutorialSnapshot == null) {
+            return GameViewModel.ActionPanelModel.defaultState();
+        }
+        Set<TutorialActionKey> enabled = new HashSet<>(tutorialSnapshot.getEnabledActions());
+        Set<TutorialActionKey> highlighted = new HashSet<>(tutorialSnapshot.getHighlightedActions());
+        return new GameViewModel.ActionPanelModel(
+            GameViewModel.ActionButtonModel.of(
+                enabled.contains(TutorialActionKey.SKIP),
+                highlighted.contains(TutorialActionKey.SKIP)),
+            GameViewModel.ActionButtonModel.of(
+                enabled.contains(TutorialActionKey.REARRANGE),
+                highlighted.contains(TutorialActionKey.REARRANGE)),
+            GameViewModel.ActionButtonModel.of(
+                enabled.contains(TutorialActionKey.RECALL),
+                highlighted.contains(TutorialActionKey.RECALL)),
+            GameViewModel.ActionButtonModel.of(
+                enabled.contains(TutorialActionKey.RESIGN),
+                highlighted.contains(TutorialActionKey.RESIGN)),
+            GameViewModel.ActionButtonModel.of(
+                enabled.contains(TutorialActionKey.SUBMIT),
+                highlighted.contains(TutorialActionKey.SUBMIT)));
     }
 
     private String resolveTotalTimerText(GameSessionSnapshot snapshot) {
@@ -402,7 +541,7 @@ public class GameController implements GameActionPort {
         }
 
         gameRuntime.requestAutomatedTurnIfIdle(
-                completion -> Platform.runLater(() -> handleAiMoveCompleted(completion)));
+            completion -> Platform.runLater(() -> handleAiMoveCompleted(completion)));
     }
 
     private void handleAiMoveCompleted(AiSessionRuntime.TurnCompletion completion) {
@@ -431,9 +570,12 @@ public class GameController implements GameActionPort {
         }
         Objects.requireNonNull(tileId, "tileId cannot be null.");
         Objects.requireNonNull(position, "position cannot be null.");
+        GameActionResult latestBeforeAction = latestActionResult();
         tickClockBeforeActionIfNeeded();
         gameRuntime.placeDraftTile(tileId, position);
-        audioManager.playTilePlace();
+        if (!wasRejected(latestBeforeAction)) {
+            audioManager.playTilePlace();
+        }
         refreshSnapshotAfterAction();
     }
 
@@ -444,9 +586,12 @@ public class GameController implements GameActionPort {
         }
         Objects.requireNonNull(tileId, "tileId cannot be null.");
         Objects.requireNonNull(position, "position cannot be null.");
+        GameActionResult latestBeforeAction = latestActionResult();
         tickClockBeforeActionIfNeeded();
         gameRuntime.moveDraftTile(tileId, position);
-        audioManager.playTilePlace();
+        if (!wasRejected(latestBeforeAction)) {
+            audioManager.playTilePlace();
+        }
         refreshSnapshotAfterAction();
     }
 
@@ -456,9 +601,12 @@ public class GameController implements GameActionPort {
             return;
         }
         Objects.requireNonNull(tileId, "tileId cannot be null.");
+        GameActionResult latestBeforeAction = latestActionResult();
         tickClockBeforeActionIfNeeded();
         gameRuntime.removeDraftTile(tileId);
-        audioManager.playTileRecall();
+        if (!wasRejected(latestBeforeAction)) {
+            audioManager.playTileRecall();
+        }
         refreshSnapshotAfterAction();
     }
 
@@ -467,9 +615,12 @@ public class GameController implements GameActionPort {
         if (isInteractionLocked()) {
             return;
         }
+        GameActionResult latestBeforeAction = latestActionResult();
         tickClockBeforeActionIfNeeded();
         gameRuntime.recallAllDraftTiles();
-        audioManager.playTileRecall();
+        if (!wasRejected(latestBeforeAction)) {
+            audioManager.playTileRecall();
+        }
         refreshSnapshotAfterAction();
     }
 
@@ -498,7 +649,16 @@ public class GameController implements GameActionPort {
         if (isInteractionLocked()) {
             return;
         }
-        if (draftState.rearrangeRackTiles() && renderer != null) {
+        boolean rearranged = draftState.rearrangeRackTiles();
+        if (rearranged && renderer != null) {
+            audioManager.playActionConfirm();
+        }
+        if (rearranged && gameRuntime != null && gameRuntime.isTutorialRuntime()) {
+            gameRuntime.recordTutorialEvent(TutorialUiEvent.REARRANGE_USED);
+            refreshSnapshotAfterAction();
+            return;
+        }
+        if (rearranged && renderer != null) {
             renderer.refresh();
         }
     }
@@ -513,14 +673,60 @@ public class GameController implements GameActionPort {
         refreshSnapshotAfterAction();
     }
 
+    @Override
+    public void onTutorialAdvanceRequested() {
+        if (gameRuntime == null || !gameRuntime.isTutorialRuntime()) {
+            return;
+        }
+        gameRuntime.advanceTutorialInstruction();
+        refreshSnapshotAfterAction();
+    }
+
+    @Override
+    public void onTutorialExitRequested() {
+        navigator.showHome();
+    }
+
+    @Override
+    public void onTutorialReturnHomeRequested() {
+        persistTutorialCompleted();
+        navigator.showHome();
+    }
+
     private boolean resolveInteractionLocked(
-            GameSessionSnapshot snapshot, AiRuntimeSnapshot aiRuntimeSnapshot) {
+        GameSessionSnapshot snapshot,
+        AiRuntimeSnapshot aiRuntimeSnapshot,
+        TutorialSnapshot tutorialSnapshot) {
         if (aiRuntimeSnapshot != null && aiRuntimeSnapshot.interactionLocked()) {
             return true;
         }
+        if (tutorialSnapshot != null
+            && (tutorialSnapshot.isTapToContinue() || tutorialSnapshot.isShowReturnHomeButton())) {
+            return true;
+        }
         return gameRuntime != null
-                && snapshot.getSessionStatus() == SessionStatus.IN_PROGRESS
-                && gameRuntime.isCurrentTurnAutomated();
+            && snapshot.getSessionStatus() == SessionStatus.IN_PROGRESS
+            && gameRuntime.isCurrentTurnAutomated();
+    }
+
+    private void persistTutorialCompletionIfNeeded(TutorialSnapshot tutorialSnapshot) {
+        if (tutorialSnapshot == null
+            || !tutorialSnapshot.isShowReturnHomeButton()
+            || tutorialCompletionPersisted) {
+            return;
+        }
+        persistTutorialCompleted();
+    }
+
+    private void persistTutorialCompleted() {
+        AppSettings settings = settingsRepository.load();
+        settingsRepository.save(
+            new AppSettings(
+                settings.getMusicVolume(),
+                settings.getSfxVolume(),
+                true,
+                true));
+        tutorialCompletionPersisted = true;
     }
 
     private String nextClientActionId(String actionName) {
@@ -530,7 +736,7 @@ public class GameController implements GameActionPort {
 
     private String trackPendingClientAction(String clientActionId) {
         pendingClientActionId =
-                Objects.requireNonNull(clientActionId, "clientActionId cannot be null.");
+            Objects.requireNonNull(clientActionId, "clientActionId cannot be null.");
         return clientActionId;
     }
 
@@ -585,5 +791,18 @@ public class GameController implements GameActionPort {
     private void clearClientActionTracking() {
         pendingClientActionId = null;
         lastPresentedActionResultId = null;
+    }
+
+    private GameActionResult latestActionResult() {
+        return gameRuntime != null && gameRuntime.hasSession()
+            ? gameRuntime.getSession().getLatestActionResult()
+            : null;
+    }
+
+    private boolean wasRejected(GameActionResult latestBeforeAction) {
+        GameActionResult latestAfterAction = latestActionResult();
+        return latestAfterAction != null
+            && latestAfterAction != latestBeforeAction
+            && !latestAfterAction.isSuccess();
     }
 }

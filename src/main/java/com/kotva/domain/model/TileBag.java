@@ -84,6 +84,29 @@ public class TileBag {
         return drawRandomTile();
     }
 
+    public Tile takeTileByLetter(char letter) {
+        char normalizedLetter = Character.toUpperCase(letter);
+        for (int index = 0; index < tiles.size(); index++) {
+            Tile tile = tiles.get(index);
+            if (!tile.isBlank() && Character.toUpperCase(tile.getLetter()) == normalizedLetter) {
+                tiles.remove(index);
+                return tile;
+            }
+        }
+        throw new IllegalStateException("No tile available for letter " + normalizedLetter + ".");
+    }
+
+    public Tile takeBlankTile() {
+        for (int index = 0; index < tiles.size(); index++) {
+            Tile tile = tiles.get(index);
+            if (tile.isBlank()) {
+                tiles.remove(index);
+                return tile;
+            }
+        }
+        throw new IllegalStateException("No blank tile available.");
+    }
+
     public boolean isEmpty() {
         return tiles.isEmpty();
     }

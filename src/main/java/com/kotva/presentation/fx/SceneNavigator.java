@@ -26,6 +26,7 @@ import com.kotva.presentation.scene.RoomWaitingScene;
 import com.kotva.presentation.scene.SettingsScene;
 import com.kotva.presentation.scene.SettlementScene;
 import com.kotva.presentation.viewmodel.GameLaunchContext;
+import com.kotva.tutorial.TutorialScriptId;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
@@ -68,6 +69,10 @@ public class SceneNavigator {
     public void showGame(GameLaunchContext gameLaunchContext) {
         this.gameLaunchContext = gameLaunchContext;
         showPage(PageType.GAME, true);
+    }
+
+    public void showTutorial() {
+        showGame(GameLaunchContext.forTutorial(TutorialScriptId.BASIC_ONBOARDING));
     }
 
     public void showLocalMultiplayerSetup() {
