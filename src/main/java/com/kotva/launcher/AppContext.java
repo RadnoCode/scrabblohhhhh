@@ -19,6 +19,8 @@ public class AppContext {
     private final SettlementService settlementService;
     private final DictionaryRepository dictionaryRepository;
     private final SettingsRepository settingsRepository;
+    private final GameApplicationService gameApplicationService;
+    private final GameSetupService gameSetupService;
     private final GameRuntimeFactory gameRuntimeFactory;
 
     public AppContext() {
@@ -44,13 +46,13 @@ public class AppContext {
         this.settingsRepository =
                 Objects.requireNonNull(settingsRepository, "settingsRepository cannot be null.");
         Random nonNullRandom = Objects.requireNonNull(random, "random cannot be null.");
-        GameApplicationService gameApplicationService =
+        this.gameApplicationService =
                 new GameApplicationServiceImpl(this.clockService, this.dictionaryRepository);
-        GameSetupService gameSetupService =
+        this.gameSetupService =
                 new GameSetupServiceImpl(this.dictionaryRepository, this.clockService, nonNullRandom);
         this.gameRuntimeFactory = new GameRuntimeFactory(
-                gameSetupService,
-                gameApplicationService);
+                this.gameSetupService,
+                this.gameApplicationService);
     }
 
     public ClockService getClockService() {
@@ -71,5 +73,13 @@ public class AppContext {
 
     public GameRuntimeFactory getGameRuntimeFactory() {
         return gameRuntimeFactory;
+    }
+
+    public GameApplicationService getGameApplicationService() {
+        return gameApplicationService;
+    }
+
+    public GameSetupService getGameSetupService() {
+        return gameSetupService;
     }
 }

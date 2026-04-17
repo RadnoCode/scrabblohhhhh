@@ -7,6 +7,9 @@ import com.kotva.application.session.ClientRuntimeSnapshot;
 import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.session.GameSessionSnapshotFactory;
 import com.kotva.lan.GameSessionBroker;
+import com.kotva.lan.LocalGameSession;
+import com.kotva.lan.udp.DiscoveredRoom;
+import com.kotva.lan.udp.LanHostBroadcaster;
 import com.kotva.policy.SessionStatus;
 import java.io.IOException;
 import java.util.Objects;
@@ -17,6 +20,7 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
 
     private LanHostService lanHostService;
     private GameSessionBroker gameSessionBroker;
+    private LanHostBroadcaster lanHostBroadcaster;
     private long pendingClockBroadcastMillis;
 
     HostGameRuntime(
@@ -36,6 +40,8 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
                     lanHostService,
                     LOCAL_PLAYER_ID,
                     requireLocalPlayerName());
+            lanHostBroadcaster = new LanHostBroadcaster();
+            lanHostBroadcaster.startBroadcasting(this::buildDiscoveredRoom);
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to start LAN host broker.", exception);
         }
@@ -95,6 +101,10 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
 
     @Override
     public void shutdown() {
+        if (lanHostBroadcaster != null) {
+            lanHostBroadcaster.stop();
+            lanHostBroadcaster = null;
+        }
         if (gameSessionBroker != null) {
             gameSessionBroker.stopServer();
             gameSessionBroker = null;
@@ -128,5 +138,40 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
 
     private String requireLocalPlayerName() {
         return requireSession().getGameState().getPlayerById(LOCAL_PLAYER_ID).getPlayerName();
+    }
+
+    private DiscoveredRoom buildDiscoveredRoom() {
+        LocalGameSession localGameSession =
+                gameSessionBroker == null ? null : gameSessionBroker.getLocalGameSession();
+        int currentPlayers =
+                localGameSession == null
+                        ? requireSession().getConfig().getPlayerCount()
+                        : localGameSession.getCurrentPlayerCount();
+        return new DiscoveredRoom(
+                requireSession().getSessionId(),
+                requireLocalPlayerName(),
+                "",
+                gameSessionBroker == null ? GameSessionBroker.DEFAULT_PORT : gameSessionBroker.getBoundPort(),
+                currentPlayers,
+                requireSession().getConfig().getPlayerCount(),
+                resolveLanguageLabel(),
+                resolveGameTimeLabel(),
+                System.currentTimeMillis());
+    }
+
+    private String resolveLanguageLabel() {
+        return switch (requireSession().getConfig().getDictionaryType()) {
+            case BR -> "British";
+            case AM -> "American";
+        };
+    }
+
+    private String resolveGameTimeLabel() {
+        if (requireSession().getConfig().getTimeControlConfig() == null) {
+            return "--";
+        }
+        long minutes =
+                requireSession().getConfig().getTimeControlConfig().getMainTimeMillis() / 60_000L;
+        return minutes + "min";
     }
 }
