@@ -1,5 +1,6 @@
 package com.kotva.presentation.viewmodel;
 
+import com.kotva.application.runtime.GameRuntime;
 import com.kotva.application.runtime.LanLaunchConfig;
 import com.kotva.application.runtime.RuntimeLaunchSpec;
 import com.kotva.application.session.TimeControlConfig;
@@ -20,6 +21,7 @@ public class GameLaunchContext {
     private static final long DEFAULT_STEP_TIME_MILLIS = 30_000L;
 
     private final RuntimeLaunchSpec launchSpec;
+    private final GameRuntime providedRuntime;
     private final String modeLabel;
     private final String gameTimeLabel;
     private final String languageLabel;
@@ -29,13 +31,19 @@ public class GameLaunchContext {
 
     public GameLaunchContext(
             RuntimeLaunchSpec launchSpec,
+            GameRuntime providedRuntime,
             String modeLabel,
             String gameTimeLabel,
             String languageLabel,
             String playerCountLabel,
             String difficultyLabel,
             AiDifficulty aiDifficulty) {
-        this.launchSpec = Objects.requireNonNull(launchSpec, "launchSpec cannot be null.");
+        if (launchSpec == null && providedRuntime == null) {
+            throw new IllegalArgumentException(
+                    "Either launchSpec or providedRuntime must be supplied.");
+        }
+        this.launchSpec = launchSpec;
+        this.providedRuntime = providedRuntime;
         this.modeLabel = Objects.requireNonNull(modeLabel, "modeLabel cannot be null.");
         this.gameTimeLabel = Objects.requireNonNull(gameTimeLabel, "gameTimeLabel cannot be null.");
         this.languageLabel = Objects.requireNonNull(languageLabel, "languageLabel cannot be null.");
@@ -59,6 +67,7 @@ public class GameLaunchContext {
                                 playerNames,
                                 mapDictionaryType(languageLabel),
                                 mapTimeControl(gameTimeLabel))),
+                null,
                 "Local Multiplayer",
                 gameTimeLabel,
                 languageLabel,
@@ -79,6 +88,7 @@ public class GameLaunchContext {
                                 mapDictionaryType(languageLabel),
                                 mapTimeControl(gameTimeLabel),
                                 aiDifficulty)),
+                null,
                 "Local AI",
                 gameTimeLabel,
                 languageLabel,
@@ -103,6 +113,7 @@ public class GameLaunchContext {
                                 playerNames,
                                 mapDictionaryType(languageLabel),
                                 mapTimeControl(gameTimeLabel))),
+                null,
                 "Create Room",
                 gameTimeLabel,
                 languageLabel,
@@ -120,6 +131,24 @@ public class GameLaunchContext {
         Objects.requireNonNull(lanLaunchConfig, "lanLaunchConfig cannot be null.");
         return new GameLaunchContext(
                 RuntimeLaunchSpec.forLanClient(lanLaunchConfig),
+                null,
+                modeLabel,
+                gameTimeLabel,
+                languageLabel,
+                playerCountLabel,
+                "--",
+                null);
+    }
+
+    public static GameLaunchContext forProvidedRuntime(
+            GameRuntime providedRuntime,
+            String modeLabel,
+            String gameTimeLabel,
+            String languageLabel,
+            String playerCountLabel) {
+        return new GameLaunchContext(
+                null,
+                Objects.requireNonNull(providedRuntime, "providedRuntime cannot be null."),
                 modeLabel,
                 gameTimeLabel,
                 languageLabel,
@@ -132,8 +161,16 @@ public class GameLaunchContext {
         return launchSpec;
     }
 
+    public boolean hasProvidedRuntime() {
+        return providedRuntime != null;
+    }
+
+    public GameRuntime requireProvidedRuntime() {
+        return Objects.requireNonNull(providedRuntime, "providedRuntime cannot be null.");
+    }
+
     public NewGameRequest getRequest() {
-        return launchSpec.hasRequest() ? launchSpec.requireRequest() : null;
+        return launchSpec != null && launchSpec.hasRequest() ? launchSpec.requireRequest() : null;
     }
 
     public String getModeLabel() {

@@ -2,10 +2,12 @@ package com.kotva.presentation.controller;
 
 import com.kotva.application.runtime.LanLaunchConfig;
 import com.kotva.lan.LanClientConnector;
+import com.kotva.lan.LanLobbyClientSession;
 import com.kotva.lan.udp.DiscoveredRoom;
 import com.kotva.lan.udp.LanHostBroadcaster;
 import com.kotva.lan.udp.LanRoomScanner;
 import com.kotva.presentation.component.CommonButton;
+import com.kotva.presentation.fx.RoomWaitingContext;
 import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.GameLaunchContext;
 import com.kotva.presentation.viewmodel.RoomViewModel;
@@ -57,7 +59,7 @@ public class RoomSearchController {
         searchField.setPromptText(viewModel.getSearchPromptText());
         searchField.setOnAction(event -> {
             lastSearchQuery = searchField.getText() == null ? "" : searchField.getText().trim();
-            connectToRoom(lastSearchQuery);
+            joinLobby(lastSearchQuery);
         });
     }
 
@@ -89,10 +91,10 @@ public class RoomSearchController {
     public void bindJoinAction(CommonButton joinButton) {
         joinButton.setOnAction(event -> {
             if (selectedRoom != null) {
-                connectToRoom(selectedRoom.createEndpoint());
+                joinLobby(selectedRoom.createEndpoint());
                 return;
             }
-            connectToRoom(lastSearchQuery);
+            joinLobby(lastSearchQuery);
         });
     }
 
@@ -150,27 +152,30 @@ public class RoomSearchController {
         });
     }
 
-    private void connectToRoom(String endpoint) {
+    private void joinLobby(String endpoint) {
         String normalizedEndpoint = endpoint == null ? "" : endpoint.trim();
         if (normalizedEndpoint.isBlank()) {
             updateStatus("Select a LAN room or type host:port first.");
             return;
         }
 
-        updateStatus("Connecting to " + normalizedEndpoint + "...");
+        updateStatus("Joining lobby at " + normalizedEndpoint + "...");
         Thread connectionThread = new Thread(() -> {
             try {
-                LanLaunchConfig lanLaunchConfig = LanClientConnector.connect(normalizedEndpoint);
-                GameLaunchContext launchContext =
-                        GameLaunchContext.forLanClient(
-                                lanLaunchConfig,
-                                "Search Room",
-                                resolveGameTimeLabel(lanLaunchConfig),
-                                resolveLanguageLabel(lanLaunchConfig),
-                                String.valueOf(lanLaunchConfig.getGameConfig().getPlayerCount()));
+                LanLobbyClientSession lobbyClientSession =
+                        LanClientConnector.joinLobby(normalizedEndpoint, "Guest");
+                String playerCountLabel =
+                        String.valueOf(
+                                lobbyClientSession.getLobbySnapshot().getSettings().getMaxPlayers());
                 Platform.runLater(() -> {
                     stopScanning();
-                    navigator.showGame(launchContext);
+                    navigator.showRoomWaiting(
+                            RoomWaitingContext.forClient(
+                                    "Search Room",
+                                    resolveGameTimeLabel(lobbyClientSession.getLobbySnapshot()),
+                                    resolveLanguageLabel(lobbyClientSession.getLobbySnapshot()),
+                                    playerCountLabel,
+                                    lobbyClientSession));
                 });
             } catch (Exception exception) {
                 Platform.runLater(
@@ -199,6 +204,21 @@ public class RoomSearchController {
 
     private String resolveLanguageLabel(LanLaunchConfig lanLaunchConfig) {
         return switch (lanLaunchConfig.getGameConfig().getDictionaryType()) {
+            case BR -> "British";
+            case AM -> "American";
+        };
+    }
+
+    private String resolveGameTimeLabel(com.kotva.lan.LanLobbySnapshot snapshot) {
+        if (snapshot.getSettings().getTimeControlConfig() == null) {
+            return "--";
+        }
+        long minutes = snapshot.getSettings().getTimeControlConfig().getMainTimeMillis() / 60_000L;
+        return minutes + "min";
+    }
+
+    private String resolveLanguageLabel(com.kotva.lan.LanLobbySnapshot snapshot) {
+        return switch (snapshot.getSettings().getDictionaryType()) {
             case BR -> "British";
             case AM -> "American";
         };

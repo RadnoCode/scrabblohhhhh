@@ -89,6 +89,14 @@
     -fx-max-width: 420px;
 }
 
+.room-summary-label {
+    -fx-text-fill: rgba(79, 97, 132, 0.96);
+    -fx-font-size: 18px;
+    -fx-font-weight: 600;
+    -fx-wrap-text: true;
+    -fx-max-width: 420px;
+}
+
 .room-waiting-hint {
     -fx-text-fill: rgba(79, 97, 132, 0.78);
     -fx-font-size: 24px;

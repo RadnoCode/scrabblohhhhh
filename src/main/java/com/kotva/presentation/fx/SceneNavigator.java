@@ -39,8 +39,10 @@ public class SceneNavigator {
     private final AppContext appContext;
     private final Deque<PageType> history;
     private GameLaunchContext gameLaunchContext;
+    private RoomWaitingContext roomWaitingContext;
     private PageType currentPage;
     private GameController gameController;
+    private RoomWaitingController roomWaitingController;
 
     public SceneNavigator(Stage stage, AppContext appContext) {
         this.stage = java.util.Objects.requireNonNull(stage, "stage cannot be null.");
@@ -95,6 +97,15 @@ public class SceneNavigator {
 
     public void showRoomWaiting() {
         showPage(PageType.ROOM_WAITING, true);
+    }
+
+    public void showRoomWaiting(RoomWaitingContext roomWaitingContext) {
+        this.roomWaitingContext = roomWaitingContext;
+        showPage(PageType.ROOM_WAITING, true);
+    }
+
+    public RoomWaitingContext getRoomWaitingContext() {
+        return roomWaitingContext;
     }
 
     public void goBack() {
@@ -162,6 +173,10 @@ public class SceneNavigator {
             gameController.shutdown();
             gameController = null;
         }
+        if (currentPage == PageType.ROOM_WAITING && roomWaitingController != null) {
+            roomWaitingController.shutdown();
+            roomWaitingController = null;
+        }
     }
 
     private void showSettingsScene() {
@@ -222,6 +237,7 @@ public class SceneNavigator {
 
     private void showRoomWaitingScene() {
         RoomWaitingController controller = new RoomWaitingController(this);
+        roomWaitingController = controller;
         RoomWaitingScene scene = new RoomWaitingScene(controller);
         stage.setTitle("Scrabble Room Waiting");
         stage.setScene(scene);

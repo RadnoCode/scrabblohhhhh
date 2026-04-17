@@ -86,8 +86,12 @@ public class GameController implements GameActionPort {
     private void startGameFromLaunchContext() {
         stopPolling();
         shutdownRuntime();
-        gameRuntime = gameRuntimeFactory.create(launchContext.getLaunchSpec());
-        gameRuntime.start(launchContext.getRequest());
+        if (launchContext.hasProvidedRuntime()) {
+            gameRuntime = launchContext.requireProvidedRuntime();
+        } else {
+            gameRuntime = gameRuntimeFactory.create(launchContext.getLaunchSpec());
+            gameRuntime.start(launchContext.getRequest());
+        }
 
         GameSessionSnapshot firstSnapshot = gameRuntime.getSessionSnapshot();
         renderSnapshot(firstSnapshot);
