@@ -146,15 +146,25 @@ public class RoomSearchController {
 
     private void handleRoomScanUpdate(List<DiscoveredRoom> rooms) {
         Platform.runLater(() -> {
+            String previouslySelectedKey =
+                    selectedRoom != null ? selectedRoom.uniqueKey() : null;
+
             viewModel.setRooms(rooms);
             roomItems.setAll(rooms);
-            if (selectedRoom != null) {
-                selectedRoom = rooms.stream()
-                        .filter(room -> room.uniqueKey().equals(selectedRoom.uniqueKey()))
+
+            if (previouslySelectedKey != null) {
+                DiscoveredRoom restoredSelection = rooms.stream()
+                        .filter(room -> room.uniqueKey().equals(previouslySelectedKey))
                         .findFirst()
                         .orElse(null);
-                if (selectedRoom != null && roomListView != null) {
-                    roomListView.getSelectionModel().select(selectedRoom);
+
+                if (restoredSelection != null) {
+                    selectedRoom = restoredSelection;
+                    if (roomListView != null) {
+                        roomListView.getSelectionModel().select(restoredSelection);
+                    }
+                } else if (roomListView != null) {
+                    roomListView.getSelectionModel().clearSelection();
                 }
             }
             if (rooms.isEmpty()) {
