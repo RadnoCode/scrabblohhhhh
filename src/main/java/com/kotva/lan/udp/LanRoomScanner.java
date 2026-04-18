@@ -3,6 +3,7 @@ package com.kotva.lan.udp;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -56,7 +57,10 @@ public class LanRoomScanner {
             return;
         }
 
-        socket = new DatagramSocket(discoveryPort);
+        socket = new DatagramSocket(null);
+        socket.setReuseAddress(true);
+        socket.setBroadcast(true);
+        socket.bind(new InetSocketAddress(discoveryPort));
         socket.setSoTimeout(1000);
         running.set(true);
 

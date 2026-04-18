@@ -3,7 +3,14 @@ package com.kotva.lan.udp;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -42,18 +49,18 @@ public class LanHostBroadcaster {
 
     private void broadcastLoop(Supplier<DiscoveredRoom> roomSupplier) {
         try {
-            InetAddress broadcastAddress = InetAddress.getByName("255.255.255.255");
-
             while (running.get()) {
                 DiscoveredRoom room = roomSupplier.get();
                 if (room != null) {
                     byte[] payload = LanDiscoveryCodec.encode(room);
-                    DatagramPacket packet = new DatagramPacket(
-                            payload,
-                            payload.length,
-                            broadcastAddress,
-                            discoveryPort);
-                    socket.send(packet);
+                    for (InetAddress broadcastAddress : resolveBroadcastAddresses()) {
+                        DatagramPacket packet = new DatagramPacket(
+                                payload,
+                                payload.length,
+                                broadcastAddress,
+                                discoveryPort);
+                        socket.send(packet);
+                    }
                 }
 
                 Thread.sleep(BROADCAST_INTERVAL_MILLIS);
@@ -71,9 +78,31 @@ public class LanHostBroadcaster {
     public void stop() {
         running.set(false);
 
+        if (workerThread != null) {
+            workerThread.interrupt();
+        }
+
         if (socket != null && !socket.isClosed()) {
             socket.close();
         }
+    }
+
+    private Set<InetAddress> resolveBroadcastAddresses() throws SocketException, IOException {
+        Set<InetAddress> targets = new LinkedHashSet<>();
+        for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            if (!networkInterface.isUp() || networkInterface.isLoopback() || networkInterface.isPointToPoint()) {
+                continue;
+            }
+            for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+                InetAddress address = interfaceAddress.getAddress();
+                InetAddress broadcast = interfaceAddress.getBroadcast();
+                if (address instanceof Inet4Address && broadcast instanceof Inet4Address) {
+                    targets.add(broadcast);
+                }
+            }
+        }
+        targets.add(InetAddress.getByName("255.255.255.255"));
+        return targets;
     }
 
 

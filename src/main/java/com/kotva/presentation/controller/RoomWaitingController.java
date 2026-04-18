@@ -2,6 +2,7 @@ package com.kotva.presentation.controller;
 
 import com.kotva.application.runtime.LobbyHostGameRuntime;
 import com.kotva.application.runtime.LanLaunchConfig;
+import com.kotva.lan.LanHostAddressResolver;
 import com.kotva.lan.LanHostGameLaunch;
 import com.kotva.lan.LanLobbyPlayerSnapshot;
 import com.kotva.lan.LanLobbySnapshot;
@@ -29,6 +30,7 @@ public class RoomWaitingController {
     private final RoomViewModel viewModel;
     private final RoomWaitingContext waitingContext;
     private final ObservableList<String> playerItems;
+    private final String hostJoinEndpoint;
 
     private UiScheduler uiScheduler;
     private Label roomSummaryLabel;
@@ -43,6 +45,11 @@ public class RoomWaitingController {
                 "Search room...",
                 "Waiting for players...");
         this.playerItems = FXCollections.observableArrayList();
+        this.hostJoinEndpoint =
+                waitingContext != null && waitingContext.isHost()
+                        ? LanHostAddressResolver.resolveJoinEndpoint(
+                                waitingContext.requireHostBroker().getBoundPort())
+                        : "";
     }
 
     public RoomViewModel getViewModel() {
@@ -217,13 +224,19 @@ public class RoomWaitingController {
         if (waitingContext == null) {
             return "No waiting room";
         }
-        return waitingContext.getRoomTitle()
+        String summary = waitingContext.getRoomTitle()
                 + " | "
                 + waitingContext.getLanguageLabel()
                 + " | "
                 + waitingContext.getGameTimeLabel()
                 + " | "
                 + waitingContext.getPlayerCountLabel() + " players";
+        if (waitingContext.isHost()) {
+            summary += hostJoinEndpoint.isBlank()
+                    ? " | Join address unavailable"
+                    : " | Join " + hostJoinEndpoint;
+        }
+        return summary;
     }
 
     private String formatPlayerEntry(LanLobbyPlayerSnapshot player) {
