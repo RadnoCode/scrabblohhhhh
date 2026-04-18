@@ -1,14 +1,10 @@
 package com.kotva.lan.udp;
 
+import com.kotva.lan.LanHostAddressResolver;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.InterfaceAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -87,20 +83,9 @@ public class LanHostBroadcaster {
         }
     }
 
-    private Set<InetAddress> resolveBroadcastAddresses() throws SocketException, IOException {
+    private Set<InetAddress> resolveBroadcastAddresses() throws IOException {
         Set<InetAddress> targets = new LinkedHashSet<>();
-        for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-            if (!networkInterface.isUp() || networkInterface.isLoopback() || networkInterface.isPointToPoint()) {
-                continue;
-            }
-            for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
-                InetAddress address = interfaceAddress.getAddress();
-                InetAddress broadcast = interfaceAddress.getBroadcast();
-                if (address instanceof Inet4Address && broadcast instanceof Inet4Address) {
-                    targets.add(broadcast);
-                }
-            }
-        }
+        targets.addAll(LanHostAddressResolver.resolvePreferredBroadcastAddresses());
         targets.add(InetAddress.getByName("255.255.255.255"));
         return targets;
     }

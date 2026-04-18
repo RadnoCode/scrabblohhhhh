@@ -8,6 +8,8 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 public final class LanHostAddressResolver {
@@ -25,7 +27,53 @@ public final class LanHostAddressResolver {
         return address.getHostAddress() + ":" + port;
     }
 
-    static InetAddress resolvePreferredIpv4Address() {
+    public static Set<InetAddress> resolvePreferredBroadcastAddresses() {
+        Set<InetAddress> addresses = new LinkedHashSet<>();
+        InetAddress preferredAddress = resolvePreferredIpv4Address();
+
+        try {
+            for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                if (!isCandidateInterface(networkInterface)) {
+                    continue;
+                }
+
+                boolean matchesPreferredInterface = preferredAddress == null;
+                for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+                    InetAddress address = interfaceAddress.getAddress();
+                    InetAddress broadcast = interfaceAddress.getBroadcast();
+                    if (!(address instanceof Inet4Address) || !(broadcast instanceof Inet4Address)) {
+                        continue;
+                    }
+                    if (!isUsableIpv4Address(address)) {
+                        continue;
+                    }
+                    if (preferredAddress != null && preferredAddress.equals(address)) {
+                        matchesPreferredInterface = true;
+                    }
+                }
+
+                if (!matchesPreferredInterface) {
+                    continue;
+                }
+
+                for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+                    InetAddress address = interfaceAddress.getAddress();
+                    InetAddress broadcast = interfaceAddress.getBroadcast();
+                    if (address instanceof Inet4Address
+                            && broadcast instanceof Inet4Address
+                            && isUsableIpv4Address(address)) {
+                        addresses.add(broadcast);
+                    }
+                }
+            }
+        } catch (SocketException exception) {
+            logger.fine("Failed to resolve LAN broadcast addresses: " + exception.getMessage());
+        }
+
+        return addresses;
+    }
+
+    public static InetAddress resolvePreferredIpv4Address() {
         InetAddress routedAddress = resolveRoutedIpv4Address();
         if (isUsableIpv4Address(routedAddress)) {
             return routedAddress;
@@ -73,7 +121,8 @@ public final class LanHostAddressResolver {
         return networkInterface.isUp()
                 && !networkInterface.isLoopback()
                 && !networkInterface.isPointToPoint()
-                && !networkInterface.isVirtual();
+                && !networkInterface.isVirtual()
+                && scoreInterface(networkInterface) > 0;
     }
 
     private static boolean isUsableIpv4Address(InetAddress address) {
