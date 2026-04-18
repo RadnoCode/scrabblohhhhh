@@ -424,7 +424,45 @@ public final class QuackleNativeBridge {
                     RESULT_LAYOUT.byteSize());
                 moves.add(decodeMove(moveResult));
             }
-            return new AiMoveOptionSet(moves);
+            return new AiMoveOptionSet(prioritizePlayableMoves(moves));
+        }
+
+        private static List<AiMove> prioritizePlayableMoves(List<AiMove> moves) {
+            if (moves.isEmpty()) {
+                return moves;
+            }
+
+            boolean hasPlayableMove = moves.stream().anyMatch(move -> move.action() == AiMove.Action.PLACE);
+            if (!hasPlayableMove) {
+                return moves;
+            }
+
+            List<AiMove> playableMoves = new ArrayList<>(moves.size());
+            List<AiMove> fallbackPassMoves = new ArrayList<>();
+            for (AiMove move : moves) {
+                if (move.action() == AiMove.Action.PLACE) {
+                    playableMoves.add(move);
+                    continue;
+                }
+
+                if (!looksLikeEncodedExchange(move)) {
+                    fallbackPassMoves.add(move);
+                }
+            }
+
+            if (playableMoves.isEmpty()) {
+                return moves;
+            }
+
+            playableMoves.addAll(fallbackPassMoves);
+            return playableMoves;
+        }
+
+        private static boolean looksLikeEncodedExchange(AiMove move) {
+            return move.action() == AiMove.Action.PASS
+                && move.score() == 0
+                && move.placements().isEmpty()
+                && move.equity() > -900.0;
         }
     }
 

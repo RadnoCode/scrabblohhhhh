@@ -138,13 +138,18 @@ public class GameController implements GameActionPort {
         clearClientActionTracking();
 
         GameSessionSnapshot firstSnapshot = gameRuntime.getSessionSnapshot();
+        if (gameRuntime.isSessionInProgress() && gameRuntime.hasTimeControl()) {
+            // Prime the clock baseline before the initial render can trigger an AI move.
+            lastTickNanos = System.nanoTime();
+        } else {
+            lastTickNanos = 0L;
+        }
         renderSnapshot(firstSnapshot);
 
         if (!gameRuntime.isSessionInProgress() || !gameRuntime.hasTimeControl()) {
             return;
         }
 
-        lastTickNanos = System.nanoTime();
         uiScheduler = new UiScheduler(POLLING_INTERVAL, this::pollSnapshot);
         uiScheduler.start();
     }
@@ -161,7 +166,7 @@ public class GameController implements GameActionPort {
         }
 
         long now = System.nanoTime();
-        long elapsedMillis = Math.max(0L, (now - lastTickNanos) / 1_000_000L);
+        long elapsedMillis = calculateElapsedMillis(lastTickNanos, now);
         lastTickNanos = now;
 
         GameSessionSnapshot snapshot = gameRuntime.tickClock(elapsedMillis);
@@ -497,11 +502,18 @@ public class GameController implements GameActionPort {
         }
 
         long now = System.nanoTime();
-        long elapsedMillis = Math.max(0L, (now - lastTickNanos) / 1_000_000L);
+        long elapsedMillis = calculateElapsedMillis(lastTickNanos, now);
         lastTickNanos = now;
         if (elapsedMillis > 0L) {
             gameRuntime.tickClock(elapsedMillis);
         }
+    }
+
+    static long calculateElapsedMillis(long previousTickNanos, long currentTickNanos) {
+        if (previousTickNanos <= 0L || currentTickNanos <= previousTickNanos) {
+            return 0L;
+        }
+        return (currentTickNanos - previousTickNanos) / 1_000_000L;
     }
 
     private String resolveDisplayLetter(Character displayLetter) {
@@ -515,6 +527,7 @@ public class GameController implements GameActionPort {
         }
         clearClientActionTracking();
         interactionLocked = false;
+        lastTickNanos = 0L;
     }
 
     private void navigateToSettlementIfNeeded() {
