@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.Socket;
 import java.util.UUID;
 
@@ -143,7 +144,7 @@ public final class LanClientConnector {
     }
 
     private static Socket openSocket(Endpoint resolvedEndpoint) throws IOException {
-        Socket socket = new Socket();
+        Socket socket = new Socket(Proxy.NO_PROXY);
         try {
             socket.connect(
                     new InetSocketAddress(resolvedEndpoint.host(), resolvedEndpoint.port()),
