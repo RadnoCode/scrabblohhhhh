@@ -4,6 +4,7 @@
  */
 package com.kotva.infrastructure.dictionary;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.kotva.policy.DictionaryType;
@@ -38,5 +39,11 @@ public class DictionaryRepositorySmokeTest {
 
         assertTrue(!repository.getDictionary().isEmpty());
         assertTrue(repository.isAccepted("BOOK"));
+    }
+
+    @Test
+    public void dictionaryResourcesAreAvailableOnClasspath() {
+        assertNotNull(DictionaryLoader.class.getResourceAsStream("/Dicts/North-America/NWL2018.txt"));
+        assertNotNull(DictionaryLoader.class.getResourceAsStream("/Dicts/British/CSW19.txt"));
     }
 }

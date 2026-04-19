@@ -2,10 +2,10 @@ package com.kotva.infrastructure.dictionary;
 
 import com.kotva.policy.DictionaryType;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.Locale;
 
@@ -17,25 +17,33 @@ public class DictionaryLoader {
     }
 
     public HashSet<String> load() {
-        Path dictionaryPath = resolveDictionaryPath(dictionaryType);
-        try {
+        String dictionaryResourcePath = resolveDictionaryResourcePath(dictionaryType);
+        try (InputStream inputStream = DictionaryLoader.class.getResourceAsStream(dictionaryResourcePath)) {
+            if (inputStream == null) {
+                throw new IllegalStateException("Dictionary resource not found: " + dictionaryResourcePath);
+            }
+
             HashSet<String> dictionary = new HashSet<>();
-            for (String line : Files.readAllLines(dictionaryPath, StandardCharsets.UTF_8)) {
-                String word = line.trim().toUpperCase(Locale.ROOT);
-                if (!word.isEmpty()) {
-                    dictionary.add(word);
+            try (BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(inputStream, java.nio.charset.StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String word = line.trim().toUpperCase(Locale.ROOT);
+                    if (!word.isEmpty()) {
+                        dictionary.add(word);
+                    }
                 }
             }
             return dictionary;
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to load dictionary from " + dictionaryPath, e);
+            throw new IllegalStateException("Failed to load dictionary from " + dictionaryResourcePath, e);
         }
     }
 
-    private Path resolveDictionaryPath(DictionaryType dictionaryType) {
+    private String resolveDictionaryResourcePath(DictionaryType dictionaryType) {
         return switch (dictionaryType) {
-            case AM -> Path.of("src/resources/Dicts/North-America/NWL2018.txt");
-            case BR -> Path.of("src/resources/Dicts/British/CSW19.txt");
+            case AM -> "/Dicts/North-America/NWL2018.txt";
+            case BR -> "/Dicts/British/CSW19.txt";
         };
     }
 }
