@@ -8,7 +8,9 @@ import com.kotva.application.service.AiTurnCoordinator;
 import com.kotva.application.service.GameApplicationService;
 import com.kotva.application.service.GameActionResult;
 import com.kotva.application.session.GameSession;
+import com.kotva.domain.action.PlayerAction;
 import com.kotva.domain.model.Position;
+import com.kotva.infrastructure.network.CommandEnvelope;
 import com.kotva.policy.PlayerType;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -28,7 +30,7 @@ public class PlayerController {
 
         return switch (type) {
         case LOCAL -> new LocalPlayerController(playerId);
-        case LAN -> throw new IllegalArgumentException("LAN player type is not supported on this branch.");
+        case LAN -> new LANPlayerController(playerId);
         case AI -> new AIPlayerController(playerId);
         };
     }
@@ -87,6 +89,11 @@ public class PlayerController {
     public GameActionResult resign(
         GameApplicationService service, GameSession session, String clientActionId) {
         return requireService(service).resign(session, clientActionId);
+    }
+
+    public CommandEnvelope buildLanCommand(
+        String sessionId, int expectedTurnNumber, PlayerAction action) {
+        throw new UnsupportedOperationException("This player controller does not support LAN commands.");
     }
 
     public boolean supportsAutomatedTurn() {

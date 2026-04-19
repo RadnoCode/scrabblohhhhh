@@ -2,10 +2,11 @@ package com.kotva.application.session;
 
 import com.kotva.tutorial.TutorialActionKey;
 import com.kotva.tutorial.TutorialScriptId;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-public final class TutorialSnapshot {
+public final class TutorialSnapshot implements Serializable {
     private final TutorialScriptId scriptId;
     private final int stepNumber;
     private final int stepCount;

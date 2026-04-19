@@ -1,9 +1,10 @@
 package com.kotva.application.service;
 
 import com.kotva.domain.action.ActionType;
+import java.io.Serializable;
 import java.util.Objects;
 
-public final class GameActionResult {
+public final class GameActionResult implements Serializable {
     private final String actionId;
     private final String clientActionId;
     private final String playerId;

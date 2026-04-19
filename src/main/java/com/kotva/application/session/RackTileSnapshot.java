@@ -1,6 +1,8 @@
 package com.kotva.application.session;
 
-public class RackTileSnapshot {
+import java.io.Serializable;
+
+public class RackTileSnapshot implements Serializable {
     private final int slotIndex;
     private final String tileId;
     private final Character letter;

@@ -11,6 +11,10 @@ import java.util.function.Consumer;
 public interface GameRuntime {
     void start(NewGameRequest request);
 
+    default boolean requiresBackgroundRefresh() {
+        return false;
+    }
+
     boolean hasSession();
 
     GameSession getSession();
@@ -33,13 +37,13 @@ public interface GameRuntime {
 
     void submitDraft();
 
-default void submitDraft(String clientActionId) {
+    default void submitDraft(String clientActionId) {
         submitDraft();
     }
 
     void passTurn();
 
-default void passTurn(String clientActionId) {
+    default void passTurn(String clientActionId) {
         passTurn();
     }
 

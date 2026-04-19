@@ -8,6 +8,7 @@ import com.kotva.application.service.AiSessionRuntime;
 import com.kotva.application.service.GameActionResult;
 import com.kotva.application.session.AiRuntimeSnapshot;
 import com.kotva.application.session.BoardCellRenderSnapshot;
+import com.kotva.application.session.ClientRuntimeSnapshot;
 import com.kotva.application.session.GamePlayerSnapshot;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
@@ -128,9 +129,15 @@ public class GameController implements GameActionPort {
         settlementNavigated = false;
         tutorialCompletionPersisted = false;
 
-        if (launchContext.getLaunchKind() == LaunchKind.TUTORIAL) {
+        if (launchContext.hasProvidedRuntime()) {
+            gameRuntime = launchContext.requireProvidedRuntime();
+            gameRuntime.start(launchContext.getRequest());
+        } else if (launchContext.getLaunchKind() == LaunchKind.TUTORIAL) {
             gameRuntime = tutorialRuntimeFactory.create(launchContext.getTutorialScriptId());
             gameRuntime.start(null);
+        } else if (launchContext.getLaunchSpec() != null) {
+            gameRuntime = gameRuntimeFactory.create(launchContext.getLaunchSpec());
+            gameRuntime.start(launchContext.getRequest());
         } else {
             gameRuntime = gameRuntimeFactory.create(launchContext.getRequest());
             gameRuntime.start(launchContext.getRequest());
@@ -178,6 +185,7 @@ public class GameController implements GameActionPort {
 
     private void renderSnapshot(GameSessionSnapshot snapshot) {
         AiRuntimeSnapshot aiRuntimeSnapshot = snapshot.getAiRuntimeSnapshot();
+        ClientRuntimeSnapshot clientRuntimeSnapshot = snapshot.getClientRuntimeSnapshot();
         TutorialSnapshot tutorialSnapshot = snapshot.getTutorial();
         syncClientActionTracking(snapshot);
         syncActionFeedback(snapshot);
@@ -192,10 +200,14 @@ public class GameController implements GameActionPort {
         viewModel.setBoardTiles(buildBoardTiles(snapshot, tutorialSnapshot));
         viewModel.setRackTiles(buildRackTiles(snapshot, tutorialSnapshot));
         viewModel.setActionPanel(resolveActionPanel(tutorialSnapshot));
-        interactionLocked = resolveInteractionLocked(snapshot, aiRuntimeSnapshot, tutorialSnapshot);
+        interactionLocked = resolveInteractionLocked(
+            snapshot,
+            aiRuntimeSnapshot,
+            clientRuntimeSnapshot,
+            tutorialSnapshot);
         viewModel.setInteractionLocked(interactionLocked);
-        viewModel.setAiErrorSummary(aiRuntimeSnapshot == null ? "" : aiRuntimeSnapshot.summary());
-        viewModel.setAiErrorDetails(aiRuntimeSnapshot == null ? "" : aiRuntimeSnapshot.details());
+        viewModel.setAiErrorSummary(resolveRuntimeStatusSummary(aiRuntimeSnapshot, clientRuntimeSnapshot));
+        viewModel.setAiErrorDetails(resolveRuntimeStatusDetails(aiRuntimeSnapshot, clientRuntimeSnapshot));
         draftState.syncSnapshot(viewModel.getRackTiles(), viewModel.getBoardTiles());
         renderer.render(viewModel);
         persistTutorialCompletionIfNeeded(tutorialSnapshot);
@@ -709,8 +721,12 @@ public class GameController implements GameActionPort {
     private boolean resolveInteractionLocked(
         GameSessionSnapshot snapshot,
         AiRuntimeSnapshot aiRuntimeSnapshot,
+        ClientRuntimeSnapshot clientRuntimeSnapshot,
         TutorialSnapshot tutorialSnapshot) {
         if (aiRuntimeSnapshot != null && aiRuntimeSnapshot.interactionLocked()) {
+            return true;
+        }
+        if (clientRuntimeSnapshot != null && clientRuntimeSnapshot.interactionLocked()) {
             return true;
         }
         if (tutorialSnapshot != null
@@ -720,6 +736,24 @@ public class GameController implements GameActionPort {
         return gameRuntime != null
             && snapshot.getSessionStatus() == SessionStatus.IN_PROGRESS
             && gameRuntime.isCurrentTurnAutomated();
+    }
+
+    private String resolveRuntimeStatusSummary(
+        AiRuntimeSnapshot aiRuntimeSnapshot,
+        ClientRuntimeSnapshot clientRuntimeSnapshot) {
+        if (aiRuntimeSnapshot != null && !aiRuntimeSnapshot.summary().isBlank()) {
+            return aiRuntimeSnapshot.summary();
+        }
+        return clientRuntimeSnapshot == null ? "" : clientRuntimeSnapshot.summary();
+    }
+
+    private String resolveRuntimeStatusDetails(
+        AiRuntimeSnapshot aiRuntimeSnapshot,
+        ClientRuntimeSnapshot clientRuntimeSnapshot) {
+        if (aiRuntimeSnapshot != null && !aiRuntimeSnapshot.summary().isBlank()) {
+            return aiRuntimeSnapshot.details();
+        }
+        return clientRuntimeSnapshot == null ? "" : clientRuntimeSnapshot.details();
     }
 
     private void persistTutorialCompletionIfNeeded(TutorialSnapshot tutorialSnapshot) {

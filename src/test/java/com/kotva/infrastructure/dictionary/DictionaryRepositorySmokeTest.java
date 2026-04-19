@@ -1,6 +1,7 @@
 
 package com.kotva.infrastructure.dictionary;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.kotva.policy.DictionaryType;

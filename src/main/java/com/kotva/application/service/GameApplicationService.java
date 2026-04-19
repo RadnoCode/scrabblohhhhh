@@ -3,6 +3,7 @@ package com.kotva.application.service;
 import com.kotva.application.preview.PreviewResult;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
+import com.kotva.domain.action.PlayerAction;
 import com.kotva.domain.model.Position;
 
 public interface GameApplicationService {
@@ -27,6 +28,13 @@ public interface GameApplicationService {
     GameActionResult resign(GameSession session);
 
     GameActionResult resign(GameSession session, String clientActionId);
+
+    GameActionResult executeRemoteCommand(GameSession session, PlayerAction action);
+
+    GameActionResult executeRemoteCommand(
+            GameSession session,
+            PlayerAction action,
+            String clientActionId);
 
     void confirmHotSeatHandoff(GameSession session);
 
