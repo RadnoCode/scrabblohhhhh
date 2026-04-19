@@ -1,11 +1,12 @@
 package com.kotva.presentation.controller;
 
 import com.kotva.application.runtime.LanLaunchConfig;
+import com.kotva.infrastructure.logging.AppLog;
 import com.kotva.lan.LanClientConnector;
 import com.kotva.lan.LanLobbyClientSession;
+import com.kotva.lan.discovery.LanDiscoveryClientService;
+import com.kotva.lan.discovery.UdpLanDiscoveryClientService;
 import com.kotva.lan.udp.DiscoveredRoom;
-import com.kotva.lan.udp.LanHostBroadcaster;
-import com.kotva.lan.udp.LanRoomScanner;
 import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.fx.RoomWaitingContext;
 import com.kotva.presentation.fx.SceneNavigator;
@@ -34,7 +35,7 @@ public class RoomSearchController {
     private final RoomViewModel viewModel;
     private final ObservableList<DiscoveredRoom> roomItems;
 
-    private LanRoomScanner roomScanner;
+    private LanDiscoveryClientService discoveryClientService;
     private ListView<DiscoveredRoom> roomListView;
     private Label statusLabel;
     private TextField searchField;
@@ -120,9 +121,9 @@ public class RoomSearchController {
     }
 
     public void stopScanning() {
-        if (roomScanner != null) {
-            roomScanner.stop();
-            roomScanner = null;
+        if (discoveryClientService != null) {
+            discoveryClientService.stop();
+            discoveryClientService = null;
         }
         viewModel.setScanning(false);
     }
@@ -136,10 +137,11 @@ public class RoomSearchController {
         updateStatus("Scanning LAN rooms...");
 
         try {
-            roomScanner = new LanRoomScanner(LanHostBroadcaster.BROADCAST_PORT);
-            roomScanner.startScanning(this::handleRoomScanUpdate);
+            discoveryClientService = new UdpLanDiscoveryClientService();
+            discoveryClientService.startScanning(this::handleRoomScanUpdate);
             viewModel.setScanning(true);
         } catch (IOException exception) {
+            AppLog.logException(RoomSearchController.class, "Failed to start LAN scanning.", exception);
             updateStatus("Failed to start LAN scanning: " + exception.getMessage());
         }
     }
@@ -206,12 +208,16 @@ public class RoomSearchController {
                                     resolveGameTimeLabel(lobbyClientSession.getLobbySnapshot()),
                                     resolveLanguageLabel(lobbyClientSession.getLobbySnapshot()),
                                     playerCountLabel,
-                                     lobbyClientSession));
-                 });
-             } catch (Exception exception) {
+                                    lobbyClientSession));
+                });
+            } catch (Exception exception) {
+                AppLog.logException(
+                        RoomSearchController.class,
+                        "Failed to join LAN lobby at " + resolvedEndpoint + ".",
+                        exception);
                 Platform.runLater(
                         () -> updateStatus(formatJoinFailure(resolvedEndpoint, exception)));
-             }
+            }
         }, "LAN-ClientConnect");
         connectionThread.setDaemon(true);
         connectionThread.start();

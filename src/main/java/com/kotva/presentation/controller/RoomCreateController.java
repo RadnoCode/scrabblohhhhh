@@ -1,10 +1,12 @@
 package com.kotva.presentation.controller;
 
+import com.kotva.infrastructure.logging.AppLog;
 import com.kotva.lan.GameSessionBroker;
 import com.kotva.lan.LanLobbySettings;
 import com.kotva.lan.LanLobbySnapshot;
+import com.kotva.lan.discovery.LanDiscoveryHostService;
+import com.kotva.lan.discovery.UdpLanDiscoveryHostService;
 import com.kotva.lan.udp.DiscoveredRoom;
-import com.kotva.lan.udp.LanHostBroadcaster;
 import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.SwitchButton;
 import com.kotva.presentation.fx.RoomWaitingContext;
@@ -92,8 +94,8 @@ public class RoomCreateController {
                     Integer.parseInt(playerCounts[playerCountIndex]));
             broker.createLobby(settings, HOST_PLAYER_ID, HOST_PLAYER_NAME);
 
-            LanHostBroadcaster broadcaster = new LanHostBroadcaster();
-            broadcaster.startBroadcasting(() -> buildDiscoveredRoom(broker, settings));
+            LanDiscoveryHostService discoveryHostService = new UdpLanDiscoveryHostService();
+            discoveryHostService.startHosting(() -> buildDiscoveredRoom(broker, settings));
 
             navigator.showRoomWaiting(
                     RoomWaitingContext.forHost(
@@ -102,8 +104,9 @@ public class RoomCreateController {
                             languages[languageIndex],
                             playerCounts[playerCountIndex],
                             broker,
-                            broadcaster));
+                            discoveryHostService));
         } catch (Exception exception) {
+            AppLog.logException(RoomCreateController.class, "Failed to create LAN room.", exception);
             showError("Failed to create LAN room", exception.getMessage());
         }
     }

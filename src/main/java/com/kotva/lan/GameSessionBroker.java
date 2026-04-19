@@ -17,6 +17,7 @@ import com.kotva.lan.message.JoinSessionMessage;
 import com.kotva.lan.message.LobbyStateMessage;
 import com.kotva.lan.message.LocalGameMessage;
 import com.kotva.lan.message.MessageType;
+import com.kotva.lan.message.PlayerDisconnectedMessage;
 import com.kotva.lan.message.PlayerJoinedMessage;
 import com.kotva.lan.message.SnapshotUpdateMessage;
 import com.kotva.policy.PlayerType;
@@ -24,14 +25,19 @@ import com.kotva.policy.SessionStatus;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -42,13 +48,17 @@ import java.util.logging.Logger;
  */
 public class GameSessionBroker {
     public static final int DEFAULT_PORT = 5050;
+    private static final int HANDSHAKE_TIMEOUT_MILLIS = 4_000;
 
     private static final Logger logger = Logger.getLogger(GameSessionBroker.class.getName());
 
     private final int port;
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final Queue<LanSystemNotice> pendingSystemNotices = new ConcurrentLinkedQueue<>();
 
     private volatile ServerSocket serverSocket;
+    private volatile InetAddress listeningAddress;
+    private volatile LanSystemNotice blockingSystemNotice;
     private volatile LocalGameSession localGameSession;
     private volatile GameSession authoritativeSession;
     private volatile LanHostService lanHostService;
@@ -68,6 +78,36 @@ public class GameSessionBroker {
 
     public int getBoundPort() {
         return serverSocket == null ? port : serverSocket.getLocalPort();
+    }
+
+    public InetAddress getListeningAddress() {
+        return listeningAddress;
+    }
+
+    public String getAdvertisedHostAddress() {
+        InetAddress address = LanHostAddressResolver.resolvePreferredIpv4Address();
+        return address == null ? "" : address.getHostAddress();
+    }
+
+    public String getAdvertisedJoinEndpoint() {
+        return LanHostAddressResolver.resolveJoinEndpoint(getBoundPort());
+    }
+
+    public List<LanSystemNotice> drainSystemNotices() {
+        List<LanSystemNotice> notices = new ArrayList<>();
+        LanSystemNotice notice;
+        while ((notice = pendingSystemNotices.poll()) != null) {
+            notices.add(notice);
+        }
+        return notices;
+    }
+
+    public LanSystemNotice getBlockingSystemNotice() {
+        return blockingSystemNotice;
+    }
+
+    public boolean hasBlockingSystemNotice() {
+        return blockingSystemNotice != null;
     }
 
     public LanLobbySnapshot getLobbySnapshot() {
@@ -91,6 +131,8 @@ public class GameSessionBroker {
                         session.getConfig().getDictionaryType(),
                         session.getConfig().getTimeControlConfig(),
                         session.getConfig().getPlayerCount());
+        pendingSystemNotices.clear();
+        blockingSystemNotice = null;
         this.brokerMode = BrokerMode.DIRECT_SESSION;
         this.lobbyPhase = LanLobbyPhase.STARTED;
 
@@ -113,6 +155,8 @@ public class GameSessionBroker {
         this.authoritativeSession = null;
         this.lanHostService = null;
         this.lobbySettings = settings;
+        pendingSystemNotices.clear();
+        blockingSystemNotice = null;
         this.brokerMode = BrokerMode.LOBBY;
         this.lobbyPhase = LanLobbyPhase.WAITING_FOR_PLAYERS;
 
@@ -149,6 +193,7 @@ public class GameSessionBroker {
         this.authoritativeSession = session;
         this.lanHostService = hostService;
         this.lobbyPhase = LanLobbyPhase.STARTED;
+        blockingSystemNotice = null;
 
         broadcastGameStart();
 
@@ -191,6 +236,9 @@ public class GameSessionBroker {
             }
         }
         serverSocket = null;
+        listeningAddress = null;
+        blockingSystemNotice = null;
+        pendingSystemNotices.clear();
         localGameSession = null;
         authoritativeSession = null;
         lanHostService = null;
@@ -204,7 +252,7 @@ public class GameSessionBroker {
             throw new IllegalStateException("Server is already running.");
         }
         this.localGameSession = Objects.requireNonNull(session, "session cannot be null.");
-        this.serverSocket = new ServerSocket(port);
+        this.serverSocket = openServerSocket();
         running.set(true);
 
         Thread acceptThread = new Thread(this::acceptLoop, "LAN-AcceptLoop");
@@ -212,18 +260,45 @@ public class GameSessionBroker {
         acceptThread.start();
 
         logger.info(
-                "LAN broker started on port "
-                        + getBoundPort()
+                "LAN broker started on "
+                        + describeListeningEndpoint()
                         + " for session "
                         + localGameSession.getSessionId());
         return localGameSession.getSessionId();
+    }
+
+    private ServerSocket openServerSocket() throws IOException {
+        ServerSocket fallbackSocket = new ServerSocket();
+        fallbackSocket.setReuseAddress(true);
+        fallbackSocket.bind(new InetSocketAddress(port));
+        listeningAddress = fallbackSocket.getInetAddress();
+        return fallbackSocket;
+    }
+
+    private String describeListeningEndpoint() {
+        String host =
+                listeningAddress == null
+                        ? "0.0.0.0"
+                        : listeningAddress.isAnyLocalAddress()
+                                ? "0.0.0.0"
+                                : listeningAddress.getHostAddress();
+        return host
+                + ":"
+                        + getBoundPort()
+                ;
     }
 
     private void acceptLoop() {
         while (running.get()) {
             try {
                 Socket clientSocket = serverSocket.accept();
-                handleNewClient(clientSocket);
+                logger.info("Accepted LAN TCP connection from " + describeRemoteEndpoint(clientSocket) + ".");
+                Thread handshakeThread =
+                        new Thread(
+                                () -> handleNewClient(clientSocket),
+                                "LAN-Handshake-" + clientSocket.getPort());
+                handshakeThread.setDaemon(true);
+                handshakeThread.start();
             } catch (SocketException exception) {
                 if (running.get()) {
                     logger.warning("Accept loop socket error: " + exception.getMessage());
@@ -238,6 +313,7 @@ public class GameSessionBroker {
 
     private void handleNewClient(Socket clientSocket) {
         try {
+            clientSocket.setSoTimeout(HANDSHAKE_TIMEOUT_MILLIS);
             ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
             out.flush();
             ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
@@ -279,6 +355,7 @@ public class GameSessionBroker {
                         new PlayerJoinedMessage(assignedSeat.playerId(), assignedSeat.playerName()));
             }
 
+            clientSocket.setSoTimeout(0);
             connection.startListening(
                     message -> onClientMessage(assignedSeat.playerId(), message),
                     () -> onClientDisconnect(assignedSeat.playerId()));
@@ -288,12 +365,29 @@ public class GameSessionBroker {
                             + assignedSeat.playerId()
                             + " ("
                             + assignedSeat.playerName()
-                            + ").");
+                            + ") from "
+                            + describeRemoteEndpoint(clientSocket)
+                            + ".");
+        } catch (SocketTimeoutException exception) {
+            logger.warning(
+                    "LAN client handshake timed out from "
+                            + describeRemoteEndpoint(clientSocket)
+                            + ": "
+                            + exception.getMessage());
+            safeClose(clientSocket);
         } catch (IOException exception) {
-            logger.warning("Failed to accept LAN client: " + exception.getMessage());
+            logger.warning(
+                    "Failed to accept LAN client from "
+                            + describeRemoteEndpoint(clientSocket)
+                            + ": "
+                            + exception.getMessage());
             safeClose(clientSocket);
         } catch (ClassNotFoundException exception) {
-            logger.warning("Unknown class during LAN handshake: " + exception.getMessage());
+            logger.warning(
+                    "Unknown class during LAN handshake from "
+                            + describeRemoteEndpoint(clientSocket)
+                            + ": "
+                            + exception.getMessage());
             safeClose(clientSocket);
         }
     }
@@ -496,6 +590,7 @@ public class GameSessionBroker {
         if (localGameSession == null) {
             return;
         }
+        String playerName = localGameSession.getPlayersReadonly().get(playerId);
         ClientConnection connection = localGameSession.getConnectionsReadonly().get(playerId);
         if (connection != null && !connection.isClosed()) {
             connection.disconnect();
@@ -503,6 +598,25 @@ public class GameSessionBroker {
         localGameSession.removePlayer(playerId);
         if (brokerMode == BrokerMode.LOBBY && lobbyPhase == LanLobbyPhase.WAITING_FOR_PLAYERS) {
             broadcastLobbyState(null);
+            if (playerName != null && !playerName.isBlank()) {
+                pendingSystemNotices.add(
+                        new LanSystemNotice(
+                                playerName + " disconnected.",
+                                "Lobby player disconnected.",
+                                false));
+            }
+        } else if (playerName != null && !playerName.isBlank()) {
+            LanSystemNotice notice = new LanSystemNotice(
+                    playerName + " disconnected.",
+                    "Remote player disconnected. The LAN match cannot continue.",
+                    true);
+            blockingSystemNotice = notice;
+            broadcastExcept(
+                    playerId,
+                    new PlayerDisconnectedMessage(
+                            playerId,
+                            playerName,
+                            notice.details()));
         }
         logger.info("LAN player disconnected: " + playerId);
     }
@@ -520,6 +634,13 @@ public class GameSessionBroker {
         } catch (IOException exception) {
             logger.warning("Failed to close socket: " + exception.getMessage());
         }
+    }
+
+    private String describeRemoteEndpoint(Socket socket) {
+        if (socket == null || socket.getRemoteSocketAddress() == null) {
+            return "unknown-remote";
+        }
+        return socket.getRemoteSocketAddress().toString();
     }
 
     private static int extractSeatIndex(String playerId) {

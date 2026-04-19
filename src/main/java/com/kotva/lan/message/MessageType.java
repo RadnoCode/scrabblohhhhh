@@ -8,6 +8,7 @@ public enum MessageType {
     //waiting room messages
     LOBBY_STATE,
     PLAYER_JOINED,  //server -> client, notify other clients that a new player has joined the session
+    PLAYER_DISCONNECTED,  //server -> client, sent when a player disconnects from the session
     GAME_START,
 
     //gameplay messages
@@ -18,5 +19,4 @@ public enum MessageType {
 
     //connection messages
     GAME_OVER,  //server -> client, sent when the game ends
-    PLAYER_DISCONNECTED,  //server -> client, sent when a player disconnects from the session
 }

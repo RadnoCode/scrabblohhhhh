@@ -11,6 +11,7 @@ import com.kotva.application.setup.NewGameRequest;
 import com.kotva.domain.model.Player;
 import com.kotva.domain.model.Position;
 import com.kotva.lan.GameSessionBroker;
+import com.kotva.lan.LanSystemNotice;
 import com.kotva.mode.PlayerController;
 import com.kotva.policy.SessionStatus;
 import java.util.Objects;
@@ -83,6 +84,9 @@ public final class LobbyHostGameRuntime implements GameRuntime {
 
     @Override
     public GameSessionSnapshot tickClock(long elapsedMillis) {
+        if (gameSessionBroker.hasBlockingSystemNotice()) {
+            return getSessionSnapshot();
+        }
         GameSessionSnapshot previousSnapshot = hasTimeControl() ? getSessionSnapshot() : null;
         GameSessionSnapshot snapshot =
                 hasTimeControl()
@@ -189,6 +193,16 @@ public final class LobbyHostGameRuntime implements GameRuntime {
         Objects.requireNonNull(snapshot, "snapshot cannot be null.");
         GameSessionSnapshot viewerSnapshot =
                 GameSessionSnapshotFactory.fromSessionForViewer(requireSession(), LOCAL_PLAYER_ID);
+        LanSystemNotice blockingNotice = gameSessionBroker.getBlockingSystemNotice();
+        if (blockingNotice != null && blockingNotice.interactionLocked()) {
+            return GameSessionSnapshotFactory.withClientRuntimeSnapshot(
+                    viewerSnapshot,
+                    new ClientRuntimeSnapshot(
+                            true,
+                            null,
+                            blockingNotice.summary(),
+                            blockingNotice.details()));
+        }
         if (viewerSnapshot.getSessionStatus() != SessionStatus.IN_PROGRESS
                 || Objects.equals(viewerSnapshot.getCurrentPlayerId(), LOCAL_PLAYER_ID)) {
             return viewerSnapshot;

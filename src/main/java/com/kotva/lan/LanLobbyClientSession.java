@@ -13,8 +13,12 @@ public class LanLobbyClientSession {
     private final ClientConnection connection;
     private final SocketLanClientTransport transport;
     private final AtomicReference<LanLaunchConfig> pendingStartLaunchConfig;
+    private final AtomicReference<LanSystemNotice> pendingDisconnectNotice;
 
     private volatile LanLobbySnapshot latestSnapshot;
+    private volatile boolean disconnected;
+    private volatile boolean closedByUser;
+    private volatile LanSystemNotice disconnectNotice;
 
     LanLobbyClientSession(
             String localPlayerId,
@@ -26,6 +30,10 @@ public class LanLobbyClientSession {
         this.connection = Objects.requireNonNull(connection, "connection cannot be null.");
         this.transport = Objects.requireNonNull(transport, "transport cannot be null.");
         this.pendingStartLaunchConfig = new AtomicReference<>();
+        this.pendingDisconnectNotice = new AtomicReference<>();
+        this.disconnected = false;
+        this.closedByUser = false;
+        this.disconnectNotice = null;
     }
 
     public String getLocalPlayerId() {
@@ -45,10 +53,30 @@ public class LanLobbyClientSession {
     }
 
     public void disconnect() {
+        closedByUser = true;
         connection.disconnect();
     }
 
+    public boolean isDisconnected() {
+        return disconnected;
+    }
+
+    public String getDisconnectSummary() {
+        return disconnectNotice == null ? "" : disconnectNotice.summary();
+    }
+
+    public String getDisconnectDetails() {
+        return disconnectNotice == null ? "" : disconnectNotice.details();
+    }
+
+    public LanSystemNotice consumeDisconnectNotice() {
+        return pendingDisconnectNotice.getAndSet(null);
+    }
+
     void onNetworkMessage(LocalGameMessage message) {
+        if (disconnected) {
+            return;
+        }
         if (message instanceof LobbyStateMessage lobbyStateMessage) {
             latestSnapshot = lobbyStateMessage.getSnapshot();
             return;
@@ -69,6 +97,14 @@ public class LanLobbyClientSession {
     }
 
     void onDisconnect() {
+        if (!closedByUser && !disconnected) {
+            disconnected = true;
+            disconnectNotice = new LanSystemNotice(
+                    "Connection lost to host.",
+                    "Lost TCP connection to host.",
+                    true);
+            pendingDisconnectNotice.set(disconnectNotice);
+        }
         connection.disconnect();
     }
 }

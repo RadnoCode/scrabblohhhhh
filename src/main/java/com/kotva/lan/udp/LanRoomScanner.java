@@ -3,7 +3,10 @@ package com.kotva.lan.udp;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -107,15 +110,10 @@ public class LanRoomScanner {
 
                     DiscoveredRoom decodedRoom = LanDiscoveryCodec.decode(rawMessage);
                     if (decodedRoom != null) {
-                        /*
-                         * We intentionally trust the packet source address more than
-                         * the hostIp field carried inside the UDP payload.
-                         * The source address is usually more reliable.
-                         */
                         DiscoveredRoom normalizedRoom = new DiscoveredRoom(
                                 decodedRoom.sessionId(),
                                 decodedRoom.hostPlayerName(),
-                                packet.getAddress().getHostAddress(),
+                                resolveAdvertisedHost(packet.getAddress(), decodedRoom.hostIp()),
                                 decodedRoom.tcpPort(),
                                 decodedRoom.currentPlayers(),
                                 decodedRoom.maxPlayers(),
@@ -141,6 +139,36 @@ public class LanRoomScanner {
         } finally {
             stop();
         }
+    }
+
+    private String resolveAdvertisedHost(InetAddress packetSource, String payloadHost) {
+        if (isUsableIpv4(packetSource)) {
+            return packetSource.getHostAddress();
+        }
+        InetAddress payloadAddress = parseIpv4(payloadHost);
+        if (isUsableIpv4(payloadAddress)) {
+            return payloadAddress.getHostAddress();
+        }
+        return packetSource == null ? "" : packetSource.getHostAddress();
+    }
+
+    private InetAddress parseIpv4(String host) {
+        if (host == null || host.isBlank()) {
+            return null;
+        }
+        try {
+            InetAddress address = InetAddress.getByName(host.trim());
+            return address instanceof Inet4Address ? address : null;
+        } catch (UnknownHostException exception) {
+            return null;
+        }
+    }
+
+    private boolean isUsableIpv4(InetAddress address) {
+        return address instanceof Inet4Address
+                && !address.isAnyLocalAddress()
+                && !address.isLoopbackAddress()
+                && !address.isLinkLocalAddress();
     }
 
     /**

@@ -50,6 +50,10 @@ public class RoomWaitingScene extends Scene {
         roomSummaryLabel.getStyleClass().add("room-summary-label");
         controller.bindRoomSummaryLabel(roomSummaryLabel);
 
+        Label joinAddressLabel = new Label();
+        joinAddressLabel.getStyleClass().add("room-join-address-label");
+        controller.bindJoinAddressLabel(joinAddressLabel);
+
         ListView<String> playerListView = new ListView<>();
         playerListView.getStyleClass().add("room-list-view");
         playerListView.setPrefSize(420, 180);
@@ -65,7 +69,13 @@ public class RoomWaitingScene extends Scene {
         CommonButton primaryActionButton = new CommonButton("Start Game");
         controller.bindPrimaryAction(primaryActionButton);
 
-        VBox rightColumn = new VBox(18, roomSummaryLabel, waitingPanelBox, statusLabel, primaryActionButton);
+        VBox rightColumn = new VBox(
+                18,
+                roomSummaryLabel,
+                joinAddressLabel,
+                waitingPanelBox,
+                statusLabel,
+                primaryActionButton);
         rightColumn.setAlignment(Pos.TOP_CENTER);
 
         Region spacer = new Region();

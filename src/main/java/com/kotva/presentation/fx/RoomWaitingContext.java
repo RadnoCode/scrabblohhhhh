@@ -2,7 +2,7 @@ package com.kotva.presentation.fx;
 
 import com.kotva.lan.GameSessionBroker;
 import com.kotva.lan.LanLobbyClientSession;
-import com.kotva.lan.udp.LanHostBroadcaster;
+import com.kotva.lan.discovery.LanDiscoveryHostService;
 import java.util.Objects;
 
 /**
@@ -20,7 +20,7 @@ public final class RoomWaitingContext {
     private final String languageLabel;
     private final String playerCountLabel;
     private final GameSessionBroker hostBroker;
-    private final LanHostBroadcaster hostBroadcaster;
+    private final LanDiscoveryHostService hostDiscoveryService;
     private final LanLobbyClientSession clientSession;
 
     private RoomWaitingContext(
@@ -30,7 +30,7 @@ public final class RoomWaitingContext {
             String languageLabel,
             String playerCountLabel,
             GameSessionBroker hostBroker,
-            LanHostBroadcaster hostBroadcaster,
+            LanDiscoveryHostService hostDiscoveryService,
             LanLobbyClientSession clientSession) {
         this.mode = Objects.requireNonNull(mode, "mode cannot be null.");
         this.roomTitle = Objects.requireNonNull(roomTitle, "roomTitle cannot be null.");
@@ -38,7 +38,7 @@ public final class RoomWaitingContext {
         this.languageLabel = Objects.requireNonNull(languageLabel, "languageLabel cannot be null.");
         this.playerCountLabel = Objects.requireNonNull(playerCountLabel, "playerCountLabel cannot be null.");
         this.hostBroker = hostBroker;
-        this.hostBroadcaster = hostBroadcaster;
+        this.hostDiscoveryService = hostDiscoveryService;
         this.clientSession = clientSession;
     }
 
@@ -48,7 +48,7 @@ public final class RoomWaitingContext {
             String languageLabel,
             String playerCountLabel,
             GameSessionBroker hostBroker,
-            LanHostBroadcaster hostBroadcaster) {
+            LanDiscoveryHostService hostDiscoveryService) {
         return new RoomWaitingContext(
                 Mode.HOST,
                 roomTitle,
@@ -56,7 +56,7 @@ public final class RoomWaitingContext {
                 languageLabel,
                 playerCountLabel,
                 Objects.requireNonNull(hostBroker, "hostBroker cannot be null."),
-                Objects.requireNonNull(hostBroadcaster, "hostBroadcaster cannot be null."),
+                Objects.requireNonNull(hostDiscoveryService, "hostDiscoveryService cannot be null."),
                 null);
     }
 
@@ -105,8 +105,8 @@ public final class RoomWaitingContext {
         return Objects.requireNonNull(hostBroker, "hostBroker cannot be null.");
     }
 
-    public LanHostBroadcaster getHostBroadcaster() {
-        return hostBroadcaster;
+    public LanDiscoveryHostService getHostDiscoveryService() {
+        return hostDiscoveryService;
     }
 
     public LanLobbyClientSession requireClientSession() {
@@ -114,8 +114,8 @@ public final class RoomWaitingContext {
     }
 
     public void closeForExit() {
-        if (hostBroadcaster != null) {
-            hostBroadcaster.stop();
+        if (hostDiscoveryService != null) {
+            hostDiscoveryService.stop();
         }
         if (hostBroker != null) {
             hostBroker.stopServer();

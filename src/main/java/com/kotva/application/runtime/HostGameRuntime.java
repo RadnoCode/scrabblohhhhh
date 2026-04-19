@@ -7,9 +7,11 @@ import com.kotva.application.session.ClientRuntimeSnapshot;
 import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.session.GameSessionSnapshotFactory;
 import com.kotva.lan.GameSessionBroker;
+import com.kotva.lan.LanSystemNotice;
 import com.kotva.lan.LocalGameSession;
+import com.kotva.lan.discovery.LanDiscoveryHostService;
+import com.kotva.lan.discovery.UdpLanDiscoveryHostService;
 import com.kotva.lan.udp.DiscoveredRoom;
-import com.kotva.lan.udp.LanHostBroadcaster;
 import com.kotva.policy.SessionStatus;
 import java.io.IOException;
 import java.util.Objects;
@@ -20,7 +22,7 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
 
     private LanHostService lanHostService;
     private GameSessionBroker gameSessionBroker;
-    private LanHostBroadcaster lanHostBroadcaster;
+    private LanDiscoveryHostService lanDiscoveryHostService;
     private long pendingClockBroadcastMillis;
 
     HostGameRuntime(
@@ -40,8 +42,8 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
                     lanHostService,
                     LOCAL_PLAYER_ID,
                     requireLocalPlayerName());
-            lanHostBroadcaster = new LanHostBroadcaster();
-            lanHostBroadcaster.startBroadcasting(this::buildDiscoveredRoom);
+            lanDiscoveryHostService = new UdpLanDiscoveryHostService();
+            lanDiscoveryHostService.startHosting(this::buildDiscoveredRoom);
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to start LAN host broker.", exception);
         }
@@ -52,6 +54,17 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
         Objects.requireNonNull(snapshot, "snapshot cannot be null.");
         GameSessionSnapshot viewerSnapshot =
                 GameSessionSnapshotFactory.fromSessionForViewer(requireSession(), LOCAL_PLAYER_ID);
+        LanSystemNotice blockingNotice =
+                gameSessionBroker == null ? null : gameSessionBroker.getBlockingSystemNotice();
+        if (blockingNotice != null && blockingNotice.interactionLocked()) {
+            return GameSessionSnapshotFactory.withClientRuntimeSnapshot(
+                    viewerSnapshot,
+                    new ClientRuntimeSnapshot(
+                            true,
+                            null,
+                            blockingNotice.summary(),
+                            blockingNotice.details()));
+        }
         if (viewerSnapshot.getSessionStatus() != SessionStatus.IN_PROGRESS
                 || Objects.equals(viewerSnapshot.getCurrentPlayerId(), LOCAL_PLAYER_ID)) {
             return viewerSnapshot;
@@ -72,6 +85,9 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
 
     @Override
     public GameSessionSnapshot tickClock(long elapsedMillis) {
+        if (gameSessionBroker != null && gameSessionBroker.hasBlockingSystemNotice()) {
+            return getSessionSnapshot();
+        }
         GameSessionSnapshot previousSnapshot = hasTimeControl() ? getSessionSnapshot() : null;
         GameSessionSnapshot snapshot =
                 hasTimeControl()
@@ -101,9 +117,9 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
 
     @Override
     public void shutdown() {
-        if (lanHostBroadcaster != null) {
-            lanHostBroadcaster.stop();
-            lanHostBroadcaster = null;
+        if (lanDiscoveryHostService != null) {
+            lanDiscoveryHostService.stop();
+            lanDiscoveryHostService = null;
         }
         if (gameSessionBroker != null) {
             gameSessionBroker.stopServer();

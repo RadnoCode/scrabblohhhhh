@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import javafx.util.Duration;
 
 /**
@@ -45,6 +46,7 @@ public class GameController implements GameActionPort {
     private GameRuntime gameRuntime;
     private long lastTickNanos;
     private boolean interactionLocked;
+    private String lastDisconnectAlertKey;
 
     public GameController(SceneNavigator navigator, GameLaunchContext launchContext) {
         Objects.requireNonNull(navigator, "navigator cannot be null.");
@@ -52,6 +54,7 @@ public class GameController implements GameActionPort {
         this.launchContext = Objects.requireNonNull(launchContext, "launchContext cannot be null.");
         this.viewModel = new GameViewModel("S C R A B B L E");
         this.draftState = new GameDraftState();
+        this.lastDisconnectAlertKey = null;
     }
 
     public GameViewModel getViewModel() {
@@ -134,6 +137,7 @@ public class GameController implements GameActionPort {
         viewModel.setInteractionLocked(interactionLocked);
         viewModel.setAiErrorSummary(resolveStatusSummary(aiRuntimeSnapshot, clientRuntimeSnapshot));
         viewModel.setAiErrorDetails(resolveStatusDetails(aiRuntimeSnapshot, clientRuntimeSnapshot));
+        maybeShowDisconnectAlert(clientRuntimeSnapshot);
         draftState.syncSnapshot(viewModel.getRackTiles(), viewModel.getBoardTiles());
         renderer.render(viewModel);
         syncAiTurn(snapshot);
@@ -431,5 +435,29 @@ public class GameController implements GameActionPort {
         long elapsedMillis = Math.max(0L, (now - lastTickNanos) / 1_000_000L);
         lastTickNanos = now;
         return elapsedMillis;
+    }
+
+    private void maybeShowDisconnectAlert(ClientRuntimeSnapshot clientRuntimeSnapshot) {
+        if (!isDisconnectNotice(clientRuntimeSnapshot)) {
+            return;
+        }
+        String alertKey = clientRuntimeSnapshot.summary() + "\n" + clientRuntimeSnapshot.details();
+        if (Objects.equals(lastDisconnectAlertKey, alertKey)) {
+            return;
+        }
+        lastDisconnectAlertKey = alertKey;
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setHeaderText(clientRuntimeSnapshot.summary());
+        alert.setContentText(clientRuntimeSnapshot.details());
+        alert.showAndWait();
+    }
+
+    private boolean isDisconnectNotice(ClientRuntimeSnapshot clientRuntimeSnapshot) {
+        if (clientRuntimeSnapshot == null || !clientRuntimeSnapshot.interactionLocked()) {
+            return false;
+        }
+        String summary = clientRuntimeSnapshot.summary();
+        return "Connection lost to host.".equals(summary)
+                || summary.endsWith(" disconnected.");
     }
 }

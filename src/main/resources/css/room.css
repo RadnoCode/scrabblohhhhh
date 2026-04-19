@@ -97,6 +97,20 @@
     -fx-max-width: 420px;
 }
 
+.room-join-address-label {
+    -fx-text-fill: rgba(58, 75, 110, 0.98);
+    -fx-font-size: 15px;
+    -fx-font-weight: 600;
+    -fx-wrap-text: true;
+    -fx-max-width: 420px;
+    -fx-padding: 8 12 8 12;
+    -fx-background-color: rgba(255, 255, 255, 0.78);
+    -fx-background-radius: 6;
+    -fx-border-color: rgba(159, 176, 207, 0.85);
+    -fx-border-width: 1.5;
+    -fx-border-radius: 6;
+}
+
 .room-waiting-hint {
     -fx-text-fill: rgba(79, 97, 132, 0.78);
     -fx-font-size: 24px;

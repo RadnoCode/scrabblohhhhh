@@ -9,6 +9,7 @@ import com.kotva.domain.model.Position;
 import com.kotva.infrastructure.network.CommandEnvelope;
 import com.kotva.infrastructure.network.LanClientTransport;
 import com.kotva.infrastructure.network.LanCommandResultMessage;
+import com.kotva.infrastructure.network.LanDisconnectNoticeMessage;
 import com.kotva.infrastructure.network.LanInboundMessage;
 import com.kotva.infrastructure.network.LanSnapshotMessage;
 import com.kotva.infrastructure.network.RemoteCommandResult;
@@ -27,6 +28,7 @@ public class LanClientService {
     private String pendingCommandId;
     private String statusSummary;
     private String statusDetails;
+    private boolean disconnected;
 
     public LanClientService(ClientGameContext context, LanClientTransport transport) {
         this(
@@ -49,6 +51,7 @@ public class LanClientService {
         this.pendingCommandId = null;
         this.statusSummary = "";
         this.statusDetails = "";
+        this.disconnected = false;
     }
 
     public PreviewResult placeDraftTile(String tileId, Position position) {
@@ -92,9 +95,13 @@ public class LanClientService {
                 applyAuthoritativeSnapshot(snapshotMessage.snapshot(), true);
             } else if (inboundMessage instanceof LanCommandResultMessage resultMessage) {
                 applyCommandResult(resultMessage.result());
+            } else if (inboundMessage instanceof LanDisconnectNoticeMessage disconnectNoticeMessage) {
+                applyDisconnectNotice(disconnectNoticeMessage);
             }
         }
-        context.advanceLocalClock(elapsedMillis);
+        if (!disconnected) {
+            context.advanceLocalClock(elapsedMillis);
+        }
         return getUiSnapshot();
     }
 
@@ -120,6 +127,9 @@ public class LanClientService {
     }
 
     private void applyCommandResult(RemoteCommandResult result) {
+        if (disconnected) {
+            return;
+        }
         Objects.requireNonNull(result, "result cannot be null.");
         boolean matchesPending =
                 pendingCommandId != null && Objects.equals(pendingCommandId, result.commandId());
@@ -145,6 +155,9 @@ public class LanClientService {
 
     private void applyAuthoritativeSnapshot(
             GameSessionSnapshot snapshot, boolean preserveDraftWhenSameEditableTurn) {
+        if (disconnected) {
+            return;
+        }
         Objects.requireNonNull(snapshot, "snapshot cannot be null.");
         boolean keepDraft =
                 preserveDraftWhenSameEditableTurn && isSameEditableTurn(snapshot);
@@ -164,13 +177,16 @@ public class LanClientService {
 
     private ClientRuntimeSnapshot buildRuntimeSnapshot() {
         return new ClientRuntimeSnapshot(
-                pendingCommandId != null,
+                disconnected || pendingCommandId != null,
                 pendingCommandId,
                 statusSummary,
                 statusDetails);
     }
 
     private void ensureInteractiveEditingAllowed() {
+        if (disconnected) {
+            throw new IllegalStateException("LAN client is disconnected.");
+        }
         if (pendingCommandId != null) {
             throw new IllegalStateException("A client command is already pending host confirmation.");
         }
@@ -185,5 +201,12 @@ public class LanClientService {
     private void clearStatusMessage() {
         statusSummary = "";
         statusDetails = "";
+    }
+
+    private void applyDisconnectNotice(LanDisconnectNoticeMessage disconnectNoticeMessage) {
+        disconnected = true;
+        pendingCommandId = null;
+        statusSummary = disconnectNoticeMessage.summary();
+        statusDetails = disconnectNoticeMessage.details();
     }
 }

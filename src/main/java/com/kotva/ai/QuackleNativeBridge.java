@@ -12,9 +12,11 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -244,14 +246,16 @@ public final class QuackleNativeBridge {
             return Path.of(configuredPath);
         }
 
-        Path projectRoot = Path.of(System.getProperty("user.dir"));
         String libraryFileName = defaultLibraryFileName();
-        Path bundledLibrary = projectRoot.resolve("native").resolve(libraryFileName);
-        if (Files.isRegularFile(bundledLibrary)) {
-            return bundledLibrary;
+        for (Path candidate : resolveLibraryCandidates(libraryFileName)) {
+            if (Files.isRegularFile(candidate)) {
+                return candidate;
+            }
         }
 
-        return projectRoot.resolve("target/native").resolve(libraryFileName);
+        return resolveCandidateBaseDirectories().getFirst()
+                .resolve("native")
+                .resolve(libraryFileName);
     }
 
     private static String defaultLibraryFileName() {
@@ -270,13 +274,82 @@ public final class QuackleNativeBridge {
             return Path.of(configuredPath);
         }
 
-        Path projectRoot = Path.of(System.getProperty("user.dir"));
-        Path bundledDataDirectory = projectRoot.resolve("quackle-master").resolve("data");
-        if (Files.isDirectory(bundledDataDirectory)) {
-            return bundledDataDirectory;
+        for (Path candidate : resolveDataCandidates()) {
+            if (Files.isDirectory(candidate)) {
+                return candidate;
+            }
         }
 
-        return projectRoot.resolve("../../quackle-master/data");
+        return resolveCandidateBaseDirectories().getFirst()
+                .resolve("quackle-data");
+    }
+
+    private static List<Path> resolveLibraryCandidates(String libraryFileName) {
+        LinkedHashSet<Path> candidates = new LinkedHashSet<>();
+        for (Path baseDirectory : resolveCandidateBaseDirectories()) {
+            candidates.add(baseDirectory.resolve("native").resolve(libraryFileName));
+            candidates.add(baseDirectory.resolve("app").resolve("native").resolve(libraryFileName));
+            candidates.add(baseDirectory.resolve("target").resolve("native").resolve(libraryFileName));
+            candidates.add(baseDirectory.resolve(libraryFileName));
+        }
+        return new ArrayList<>(candidates);
+    }
+
+    private static List<Path> resolveDataCandidates() {
+        LinkedHashSet<Path> candidates = new LinkedHashSet<>();
+        for (Path baseDirectory : resolveCandidateBaseDirectories()) {
+            candidates.add(baseDirectory.resolve("quackle-data"));
+            candidates.add(baseDirectory.resolve("app").resolve("quackle-data"));
+            candidates.add(baseDirectory.resolve("quackle-master").resolve("data"));
+        }
+        return new ArrayList<>(candidates);
+    }
+
+    private static List<Path> resolveCandidateBaseDirectories() {
+        LinkedHashSet<Path> baseDirectories = new LinkedHashSet<>();
+        addBaseDirectory(baseDirectories, Path.of(System.getProperty("user.dir", ".")));
+
+        String packagedAppPath = System.getProperty("jpackage.app-path");
+        if (packagedAppPath != null && !packagedAppPath.isBlank()) {
+            Path executablePath = Path.of(packagedAppPath).toAbsolutePath().normalize();
+            addBaseDirectory(baseDirectories, executablePath.getParent());
+        }
+
+        Path codeSourcePath = resolveCodeSourcePath();
+        if (codeSourcePath != null) {
+            Path current = Files.isRegularFile(codeSourcePath) ? codeSourcePath.getParent() : codeSourcePath;
+            while (current != null) {
+                addBaseDirectory(baseDirectories, current);
+                current = current.getParent();
+            }
+        }
+
+        return new ArrayList<>(baseDirectories);
+    }
+
+    private static void addBaseDirectory(Set<Path> baseDirectories, Path candidate) {
+        if (candidate == null) {
+            return;
+        }
+        baseDirectories.add(candidate.toAbsolutePath().normalize());
+    }
+
+    private static Path resolveCodeSourcePath() {
+        try {
+            if (QuackleNativeBridge.class.getProtectionDomain() == null
+                    || QuackleNativeBridge.class.getProtectionDomain().getCodeSource() == null
+                    || QuackleNativeBridge.class.getProtectionDomain().getCodeSource().getLocation() == null) {
+                return null;
+            }
+            return Path.of(
+                    QuackleNativeBridge.class
+                            .getProtectionDomain()
+                            .getCodeSource()
+                            .getLocation()
+                            .toURI());
+        } catch (URISyntaxException | IllegalArgumentException exception) {
+            return null;
+        }
     }
 
     private static boolean isWindows() {

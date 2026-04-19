@@ -5,8 +5,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -21,6 +20,8 @@ public class LanHostBroadcaster {
     private final AtomicBoolean running;
 
     private DatagramSocket socket;
+    private DatagramSocket fallbackSocket;
+    private List<LanHostAddressResolver.BroadcastEndpoint> broadcastEndpoints;
     private Thread workerThread;
 
     public LanHostBroadcaster() {
@@ -33,8 +34,27 @@ public class LanHostBroadcaster {
             throw new IllegalStateException("Broadcaster is already running.");
         }
 
+        broadcastEndpoints = LanHostAddressResolver.resolveBroadcastEndpoints();
         socket = new DatagramSocket();
+        if (!broadcastEndpoints.isEmpty()) {
+            String targets = broadcastEndpoints.stream()
+                    .map(endpoint -> endpoint.localAddress().getHostAddress()
+                            + " -> "
+                            + endpoint.broadcastAddress().getHostAddress())
+                    .collect(java.util.stream.Collectors.joining(", "));
+            logger.info(
+                    "Broadcasting LAN room announcements on "
+                            + broadcastEndpoints.size()
+                            + " subnet broadcast interface(s): "
+                            + targets);
+        } else {
+            logger.warning("No preferred LAN subnet broadcast interface was found. Falling back to 255.255.255.255 only.");
+        }
         socket.setBroadcast(true);
+        if (broadcastEndpoints.isEmpty()) {
+            fallbackSocket = new DatagramSocket();
+            fallbackSocket.setBroadcast(true);
+        }
         running.set(true);
 
         workerThread = new Thread(() -> broadcastLoop(roomSupplier),"LAN-HostBroadcasterThread");
@@ -48,14 +68,26 @@ public class LanHostBroadcaster {
             while (running.get()) {
                 DiscoveredRoom room = roomSupplier.get();
                 if (room != null) {
-                    byte[] payload = LanDiscoveryCodec.encode(room);
-                    for (InetAddress broadcastAddress : resolveBroadcastAddresses()) {
+                    for (LanHostAddressResolver.BroadcastEndpoint broadcastEndpoint : broadcastEndpoints) {
+                        DiscoveredRoom interfaceRoom =
+                                withHostIp(room, broadcastEndpoint.localAddress().getHostAddress());
+                        byte[] payload = LanDiscoveryCodec.encode(interfaceRoom);
                         DatagramPacket packet = new DatagramPacket(
                                 payload,
                                 payload.length,
-                                broadcastAddress,
+                                broadcastEndpoint.broadcastAddress(),
                                 discoveryPort);
                         socket.send(packet);
+                    }
+
+                    if (fallbackSocket != null) {
+                        byte[] fallbackPayload = LanDiscoveryCodec.encode(room);
+                        DatagramPacket fallbackPacket = new DatagramPacket(
+                                fallbackPayload,
+                                fallbackPayload.length,
+                                InetAddress.getByName("255.255.255.255"),
+                                discoveryPort);
+                        fallbackSocket.send(fallbackPacket);
                     }
                 }
 
@@ -81,14 +113,23 @@ public class LanHostBroadcaster {
         if (socket != null && !socket.isClosed()) {
             socket.close();
         }
+        if (fallbackSocket != null && !fallbackSocket.isClosed()) {
+            fallbackSocket.close();
+        }
+        broadcastEndpoints = List.of();
     }
 
-    private Set<InetAddress> resolveBroadcastAddresses() throws IOException {
-        Set<InetAddress> targets = new LinkedHashSet<>();
-        targets.addAll(LanHostAddressResolver.resolvePreferredBroadcastAddresses());
-        targets.add(InetAddress.getByName("255.255.255.255"));
-        return targets;
+    private DiscoveredRoom withHostIp(DiscoveredRoom room, String hostIp) {
+        return new DiscoveredRoom(
+                room.sessionId(),
+                room.hostPlayerName(),
+                hostIp,
+                room.tcpPort(),
+                room.currentPlayers(),
+                room.maxPlayers(),
+                room.dictionaryLabel(),
+                room.timeLabel(),
+                room.lastSeenAtMillis());
     }
-
 
 }

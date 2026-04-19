@@ -2,10 +2,11 @@ package com.kotva.presentation.controller;
 
 import com.kotva.application.runtime.LobbyHostGameRuntime;
 import com.kotva.application.runtime.LanLaunchConfig;
-import com.kotva.lan.LanHostAddressResolver;
+import com.kotva.infrastructure.logging.AppLog;
 import com.kotva.lan.LanHostGameLaunch;
 import com.kotva.lan.LanLobbyPlayerSnapshot;
 import com.kotva.lan.LanLobbySnapshot;
+import com.kotva.lan.LanSystemNotice;
 import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.fx.RoomWaitingContext;
 import com.kotva.presentation.fx.SceneNavigator;
@@ -15,6 +16,7 @@ import com.kotva.presentation.viewmodel.RoomViewModel;
 import java.util.List;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -25,6 +27,7 @@ import javafx.util.Duration;
  */
 public class RoomWaitingController {
     private static final Duration LOBBY_POLL_INTERVAL = Duration.millis(200);
+    private static final String JOIN_ADDRESS_PREFIX = "Join from another device: ";
 
     private final SceneNavigator navigator;
     private final RoomViewModel viewModel;
@@ -36,6 +39,8 @@ public class RoomWaitingController {
     private Label roomSummaryLabel;
     private Label statusLabel;
     private CommonButton primaryActionButton;
+    private boolean clientDisconnectAlertShown;
+    private String hostStatusOverride;
 
     public RoomWaitingController(SceneNavigator navigator) {
         this.navigator = navigator;
@@ -45,11 +50,9 @@ public class RoomWaitingController {
                 "Search room...",
                 "Waiting for players...");
         this.playerItems = FXCollections.observableArrayList();
-        this.hostJoinEndpoint =
-                waitingContext != null && waitingContext.isHost()
-                        ? LanHostAddressResolver.resolveJoinEndpoint(
-                                waitingContext.requireHostBroker().getBoundPort())
-                        : "";
+        this.hostJoinEndpoint = resolveHostJoinEndpoint();
+        this.clientDisconnectAlertShown = false;
+        this.hostStatusOverride = "";
     }
 
     public RoomViewModel getViewModel() {
@@ -79,6 +82,17 @@ public class RoomWaitingController {
                 : waitingContext.isHost()
                         ? "Waiting for players to join..."
                         : "Connected to lobby. Waiting for host...");
+    }
+
+    public void bindJoinAddressLabel(Label joinAddressLabel) {
+        if (waitingContext == null || !waitingContext.isHost() || hostJoinEndpoint.isBlank()) {
+            joinAddressLabel.setVisible(false);
+            joinAddressLabel.setManaged(false);
+            joinAddressLabel.setText("");
+            return;
+        }
+
+        joinAddressLabel.setText(JOIN_ADDRESS_PREFIX + hostJoinEndpoint);
     }
 
     public void bindPrimaryAction(CommonButton primaryActionButton) {
@@ -131,14 +145,28 @@ public class RoomWaitingController {
         if (waitingContext.isHost()) {
             LanLobbySnapshot snapshot = waitingContext.requireHostBroker().getLobbySnapshot();
             renderLobbySnapshot(snapshot, true);
+            consumeHostSystemNotices();
             return;
         }
 
-        LanLobbySnapshot snapshot = waitingContext.requireClientSession().getLobbySnapshot();
+        com.kotva.lan.LanLobbyClientSession clientSession = waitingContext.requireClientSession();
+        LanLobbySnapshot snapshot = clientSession.getLobbySnapshot();
         renderLobbySnapshot(snapshot, false);
-        if (waitingContext.requireClientSession().hasPendingStartLaunchConfig()) {
-            LanLaunchConfig lanLaunchConfig =
-                    waitingContext.requireClientSession().consumeStartLaunchConfig();
+        LanSystemNotice disconnectNotice = clientSession.consumeDisconnectNotice();
+        if (disconnectNotice != null) {
+            applyClientDisconnectState(disconnectNotice);
+            return;
+        }
+        if (clientSession.isDisconnected()) {
+            applyClientDisconnectState(
+                    new LanSystemNotice(
+                            clientSession.getDisconnectSummary(),
+                            clientSession.getDisconnectDetails(),
+                            true));
+            return;
+        }
+        if (clientSession.hasPendingStartLaunchConfig()) {
+            LanLaunchConfig lanLaunchConfig = clientSession.consumeStartLaunchConfig();
             if (lanLaunchConfig != null) {
                 shutdown();
                 navigator.showGame(
@@ -176,10 +204,7 @@ public class RoomWaitingController {
         }
 
         if (hostView) {
-            updateStatus(
-                    snapshot.canStart()
-                            ? "Players are ready. Start when you want."
-                            : "Need at least 2 players before starting.");
+            updateStatus(resolveHostStatus(snapshot));
             if (primaryActionButton != null) {
                 primaryActionButton.setDisable(!snapshot.canStart());
             }
@@ -200,8 +225,8 @@ public class RoomWaitingController {
                     waitingContext.requireHostBroker().startGame(
                             navigator.getAppContext().getGameSetupService(),
                             navigator.getAppContext().getGameApplicationService());
-            if (waitingContext.getHostBroadcaster() != null) {
-                waitingContext.getHostBroadcaster().stop();
+            if (waitingContext.getHostDiscoveryService() != null) {
+                waitingContext.getHostDiscoveryService().stop();
             }
             shutdown();
             navigator.showGame(
@@ -216,6 +241,7 @@ public class RoomWaitingController {
                             waitingContext.getLanguageLabel(),
                             waitingContext.getPlayerCountLabel()));
         } catch (Exception exception) {
+            AppLog.logException(RoomWaitingController.class, "Failed to start LAN game from waiting room.", exception);
             updateStatus("Failed to start the game: " + exception.getMessage());
         }
     }
@@ -224,19 +250,13 @@ public class RoomWaitingController {
         if (waitingContext == null) {
             return "No waiting room";
         }
-        String summary = waitingContext.getRoomTitle()
+        return waitingContext.getRoomTitle()
                 + " | "
                 + waitingContext.getLanguageLabel()
                 + " | "
                 + waitingContext.getGameTimeLabel()
                 + " | "
                 + waitingContext.getPlayerCountLabel() + " players";
-        if (waitingContext.isHost()) {
-            summary += hostJoinEndpoint.isBlank()
-                    ? " | Join address unavailable"
-                    : " | Join " + hostJoinEndpoint;
-        }
-        return summary;
     }
 
     private String formatPlayerEntry(LanLobbyPlayerSnapshot player) {
@@ -244,8 +264,52 @@ public class RoomWaitingController {
     }
 
     private void updateStatus(String message) {
+        viewModel.setStatusText(message);
         if (statusLabel != null) {
             statusLabel.setText(message);
         }
+    }
+
+    private String resolveHostJoinEndpoint() {
+        if (waitingContext == null || !waitingContext.isHost()) {
+            return "";
+        }
+        return waitingContext.requireHostBroker().getAdvertisedJoinEndpoint();
+    }
+
+    private void consumeHostSystemNotices() {
+        List<LanSystemNotice> notices = waitingContext.requireHostBroker().drainSystemNotices();
+        if (!notices.isEmpty()) {
+            hostStatusOverride = notices.get(notices.size() - 1).summary();
+            updateStatus(hostStatusOverride);
+        }
+    }
+
+    private String resolveHostStatus(LanLobbySnapshot snapshot) {
+        if (hostStatusOverride != null && !hostStatusOverride.isBlank()) {
+            return hostStatusOverride;
+        }
+        return snapshot.canStart()
+                ? "Players are ready. Start when you want."
+                : "Need at least 2 players before starting.";
+    }
+
+    private void applyClientDisconnectState(LanSystemNotice notice) {
+        updateStatus(notice.summary().isBlank() ? "Connection lost to host." : notice.summary());
+        if (primaryActionButton != null) {
+            primaryActionButton.setText("Disconnected");
+            primaryActionButton.setDisable(true);
+        }
+        if (!clientDisconnectAlertShown) {
+            clientDisconnectAlertShown = true;
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setHeaderText(resolveAlertHeader(notice));
+            alert.setContentText(notice.details());
+            alert.showAndWait();
+        }
+    }
+
+    private String resolveAlertHeader(LanSystemNotice notice) {
+        return notice.summary().isBlank() ? "Connection lost to host." : notice.summary();
     }
 }

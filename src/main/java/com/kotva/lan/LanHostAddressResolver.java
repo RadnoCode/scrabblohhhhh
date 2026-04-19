@@ -7,8 +7,10 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -27,60 +29,46 @@ public final class LanHostAddressResolver {
         return address.getHostAddress() + ":" + port;
     }
 
+    public static BroadcastEndpoint resolvePreferredBroadcastEndpoint() {
+        List<BroadcastEndpoint> endpoints = resolveBroadcastEndpoints();
+        if (endpoints.isEmpty()) {
+            return null;
+        }
+        return endpoints.get(0);
+    }
+
+    public static List<BroadcastEndpoint> resolveBroadcastEndpoints() {
+        List<BroadcastEndpoint> endpoints = new ArrayList<>();
+        for (InterfaceCandidate candidate : resolveIpv4Candidates()) {
+            endpoints.add(new BroadcastEndpoint(candidate.address(), candidate.broadcast()));
+        }
+        return endpoints;
+    }
+
     public static Set<InetAddress> resolvePreferredBroadcastAddresses() {
         Set<InetAddress> addresses = new LinkedHashSet<>();
-        InetAddress preferredAddress = resolvePreferredIpv4Address();
-
-        try {
-            for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-                if (!isCandidateInterface(networkInterface)) {
-                    continue;
-                }
-
-                boolean matchesPreferredInterface = preferredAddress == null;
-                for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
-                    InetAddress address = interfaceAddress.getAddress();
-                    InetAddress broadcast = interfaceAddress.getBroadcast();
-                    if (!(address instanceof Inet4Address) || !(broadcast instanceof Inet4Address)) {
-                        continue;
-                    }
-                    if (!isUsableIpv4Address(address)) {
-                        continue;
-                    }
-                    if (preferredAddress != null && preferredAddress.equals(address)) {
-                        matchesPreferredInterface = true;
-                    }
-                }
-
-                if (!matchesPreferredInterface) {
-                    continue;
-                }
-
-                for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
-                    InetAddress address = interfaceAddress.getAddress();
-                    InetAddress broadcast = interfaceAddress.getBroadcast();
-                    if (address instanceof Inet4Address
-                            && broadcast instanceof Inet4Address
-                            && isUsableIpv4Address(address)) {
-                        addresses.add(broadcast);
-                    }
-                }
-            }
-        } catch (SocketException exception) {
-            logger.fine("Failed to resolve LAN broadcast addresses: " + exception.getMessage());
+        for (BroadcastEndpoint endpoint : resolveBroadcastEndpoints()) {
+            addresses.add(endpoint.broadcastAddress());
         }
-
         return addresses;
     }
 
     public static InetAddress resolvePreferredIpv4Address() {
+        List<InterfaceCandidate> candidates = resolveIpv4Candidates();
+        if (!candidates.isEmpty()) {
+            return candidates.get(0).address();
+        }
+
         InetAddress routedAddress = resolveRoutedIpv4Address();
         if (isUsableIpv4Address(routedAddress)) {
             return routedAddress;
         }
+        return null;
+    }
 
-        InetAddress bestAddress = null;
-        int bestScore = Integer.MIN_VALUE;
+    private static List<InterfaceCandidate> resolveIpv4Candidates() {
+        InetAddress routedAddress = resolveRoutedIpv4Address();
+        List<InterfaceCandidate> candidates = new ArrayList<>();
         try {
             for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
                 if (!isCandidateInterface(networkInterface)) {
@@ -94,17 +82,19 @@ public final class LanHostAddressResolver {
                         continue;
                     }
 
-                    int score = scoreInterface(networkInterface);
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestAddress = address;
-                    }
+                    candidates.add(
+                            new InterfaceCandidate(
+                                    address,
+                                    interfaceAddress.getBroadcast(),
+                                    scoreCandidate(networkInterface, address, routedAddress)));
                 }
             }
         } catch (SocketException exception) {
             logger.fine("Failed to enumerate LAN interfaces: " + exception.getMessage());
         }
-        return bestAddress;
+
+        candidates.sort((left, right) -> Integer.compare(right.score(), left.score()));
+        return candidates;
     }
 
     private static InetAddress resolveRoutedIpv4Address() {
@@ -118,11 +108,11 @@ public final class LanHostAddressResolver {
     }
 
     private static boolean isCandidateInterface(NetworkInterface networkInterface) throws SocketException {
+        String descriptor = describeInterface(networkInterface);
         return networkInterface.isUp()
                 && !networkInterface.isLoopback()
                 && !networkInterface.isPointToPoint()
-                && !networkInterface.isVirtual()
-                && scoreInterface(networkInterface) > 0;
+                && !isRejectedDescriptor(descriptor);
     }
 
     private static boolean isUsableIpv4Address(InetAddress address) {
@@ -133,10 +123,12 @@ public final class LanHostAddressResolver {
     }
 
     private static int scoreInterface(NetworkInterface networkInterface) throws SocketException {
-        String descriptor = (
-                networkInterface.getName() + " " + networkInterface.getDisplayName()).toLowerCase();
+        String descriptor = describeInterface(networkInterface);
 
         int score = 0;
+        if (isHotspotDescriptor(descriptor)) {
+            score += 80;
+        }
         if (descriptor.contains("wifi") || descriptor.contains("wi-fi") || descriptor.contains("wlan")) {
             score += 50;
         }
@@ -146,22 +138,90 @@ public final class LanHostAddressResolver {
         if (descriptor.contains("ethernet") || descriptor.contains("eth")) {
             score += 35;
         }
+        if (descriptor.contains("bluetooth")) {
+            score -= 150;
+        }
         if (descriptor.contains("vmware")
                 || descriptor.contains("virtualbox")
                 || descriptor.contains("hyper-v")
+                || descriptor.contains("clash")
                 || descriptor.contains("docker")
+                || descriptor.contains("meta tunnel")
                 || descriptor.contains("tailscale")
+                || descriptor.contains("zerotier")
+                || descriptor.contains("hamachi")
+                || descriptor.contains("wireguard")
+                || descriptor.contains("wintun")
+                || descriptor.contains("tap")
+                || descriptor.contains("tun")
                 || descriptor.contains("utun")
-                || descriptor.contains("vpn")
-                || descriptor.contains("bluetooth")) {
-            score -= 100;
+                || descriptor.contains("iftype53")
+                || descriptor.contains("vpn")) {
+            score -= 200;
         }
         if (networkInterface.supportsMulticast()) {
             score += 10;
         }
         if (!networkInterface.isVirtual()) {
             score += 5;
+        } else if (isHotspotDescriptor(descriptor)) {
+            score += 20;
+        } else {
+            score -= 25;
         }
         return score;
+    }
+
+    private static int scoreCandidate(
+            NetworkInterface networkInterface,
+            InetAddress address,
+            InetAddress routedAddress) throws SocketException {
+        int score = scoreInterface(networkInterface);
+        if (address.isSiteLocalAddress()) {
+            score += 40;
+        }
+        if (routedAddress != null && routedAddress.equals(address)) {
+            score += 10;
+        }
+        return score;
+    }
+
+    private static boolean isRejectedDescriptor(String descriptor) {
+        return descriptor.contains("vmware")
+                || descriptor.contains("virtualbox")
+                || descriptor.contains("hyper-v")
+                || descriptor.contains("clash")
+                || descriptor.contains("docker")
+                || descriptor.contains("meta tunnel")
+                || descriptor.contains("tailscale")
+                || descriptor.contains("zerotier")
+                || descriptor.contains("hamachi")
+                || descriptor.contains("wireguard")
+                || descriptor.contains("wintun")
+                || descriptor.contains("tap")
+                || descriptor.contains("tun")
+                || descriptor.contains("utun")
+                || descriptor.contains("iftype53")
+                || descriptor.contains("vpn")
+                || descriptor.contains("bluetooth");
+    }
+
+    private static boolean isHotspotDescriptor(String descriptor) {
+        return descriptor.contains("wi-fi direct")
+                || descriptor.contains("wifi direct")
+                || descriptor.contains("mobile hotspot");
+    }
+
+    private static String describeInterface(NetworkInterface networkInterface) {
+        String name = networkInterface.getName() == null ? "" : networkInterface.getName();
+        String displayName =
+                networkInterface.getDisplayName() == null ? "" : networkInterface.getDisplayName();
+        return (name + " " + displayName).toLowerCase();
+    }
+
+    public record BroadcastEndpoint(InetAddress localAddress, InetAddress broadcastAddress) {
+    }
+
+    private record InterfaceCandidate(InetAddress address, InetAddress broadcast, int score) {
     }
 }
