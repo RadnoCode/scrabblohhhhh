@@ -99,6 +99,11 @@ final class ClientGameRuntime implements GameRuntime {
     }
 
     @Override
+    public void resign() {
+        requireLanClientService().resign();
+    }
+
+    @Override
     public boolean hasAutomatedTurnSupport() {
         return false;
     }

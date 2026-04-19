@@ -1,6 +1,8 @@
 package com.kotva.application.session;
 
-public class TimeControlConfig {
+import java.io.Serializable;
+
+public class TimeControlConfig implements Serializable {
     private final long mainTimeMillis;
     private final long byoYomiMillisPerTurn;
 

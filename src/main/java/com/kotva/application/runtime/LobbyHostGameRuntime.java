@@ -142,8 +142,41 @@ public final class LobbyHostGameRuntime implements GameRuntime {
     }
 
     @Override
+    public void submitDraft(String clientActionId) {
+        requireCurrentPlayerController().submitDraft(
+                gameApplicationService,
+                requireSession(),
+                clientActionId);
+        broadcastViewerSnapshots();
+    }
+
+    @Override
     public void passTurn() {
         requireCurrentPlayerController().passTurn(gameApplicationService, requireSession());
+        broadcastViewerSnapshots();
+    }
+
+    @Override
+    public void passTurn(String clientActionId) {
+        requireCurrentPlayerController().passTurn(
+                gameApplicationService,
+                requireSession(),
+                clientActionId);
+        broadcastViewerSnapshots();
+    }
+
+    @Override
+    public void resign() {
+        requireCurrentPlayerController().resign(gameApplicationService, requireSession());
+        broadcastViewerSnapshots();
+    }
+
+    @Override
+    public void resign(String clientActionId) {
+        requireCurrentPlayerController().resign(
+                gameApplicationService,
+                requireSession(),
+                clientActionId);
         broadcastViewerSnapshots();
     }
 

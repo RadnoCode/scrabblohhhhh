@@ -3,7 +3,6 @@ package com.kotva.application.runtime;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.kotva.application.service.ClockService;
@@ -97,7 +96,7 @@ public class GameRuntimeFactoryTest {
     }
 
         @Test
-    public void lanModeRemainsUnsupportedAtRuntimeFactoryBoundary() {
+    public void lanModeCreatesHostRuntime() {
         GameRuntimeFactory runtimeFactory = createRuntimeFactory();
         NewGameRequest request =
         new NewGameRequest(
@@ -107,10 +106,9 @@ public class GameRuntimeFactoryTest {
             DictionaryType.AM,
             null);
 
-        IllegalArgumentException exception =
-        assertThrows(IllegalArgumentException.class, () -> runtimeFactory.create(request));
+        GameRuntime runtime = runtimeFactory.create(request);
 
-        assertEquals("LAN_MULTIPLAYER is not supported on this branch.", exception.getMessage());
+        assertTrue(runtime instanceof HostGameRuntime);
     }
 
     private static GameRuntimeFactory createRuntimeFactory() {

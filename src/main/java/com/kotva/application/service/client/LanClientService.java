@@ -88,6 +88,11 @@ public class LanClientService {
         dispatchCommand(PlayerAction.pass(context.getLocalPlayerId()), "Waiting for host confirmation.");
     }
 
+    public void resign() {
+        ensureInteractiveEditingAllowed();
+        dispatchCommand(PlayerAction.lose(context.getLocalPlayerId()), "Waiting for host confirmation.");
+    }
+
     public GameSessionSnapshot tickClock(long elapsedMillis) {
         List<LanInboundMessage> inboundMessages = transport.drainInboundMessages();
         for (LanInboundMessage inboundMessage : inboundMessages) {

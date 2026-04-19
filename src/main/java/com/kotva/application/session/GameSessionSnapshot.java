@@ -7,10 +7,11 @@ import com.kotva.domain.endgame.GameEndReason;
 import com.kotva.mode.GameMode;
 import com.kotva.policy.ClockPhase;
 import com.kotva.policy.SessionStatus;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-public class GameSessionSnapshot {
+public class GameSessionSnapshot implements Serializable {
     private final String sessionId;
     private final GameMode gameMode;
     private final SessionStatus sessionStatus;
@@ -33,30 +34,36 @@ public class GameSessionSnapshot {
     private final GameActionResult latestActionResult;
     private final SettlementResult settlementResult;
     private final AiRuntimeSnapshot aiRuntimeSnapshot;
+    private final ClientRuntimeSnapshot clientRuntimeSnapshot;
+    private final long snapshotSentAtEpochMillis;
+    private final long snapshotReceivedAtEpochMillis;
 
     public GameSessionSnapshot(
-        String sessionId,
-        GameMode gameMode,
-        SessionStatus sessionStatus,
-        boolean gameEnded,
-        GameEndReason gameEndReason,
-        int turnNumber,
-        String currentPlayerId,
-        String currentPlayerName,
-        long currentPlayerMainTimeRemainingMillis,
-        long currentPlayerByoYomiRemainingMillis,
-        ClockPhase currentPlayerClockPhase,
-        List<PlayerClockSnapshot> playerClockSnapshots,
-        List<GamePlayerSnapshot> players,
-        BoardSnapshot boardSnapshot,
-        List<BoardCellRenderSnapshot> boardCells,
-        List<RackTileSnapshot> currentRackTiles,
-        List<DraftPlacementSnapshot> draftPlacements,
-        PreviewSnapshot preview,
-        TutorialSnapshot tutorial,
-        GameActionResult latestActionResult,
-        SettlementResult settlementResult,
-        AiRuntimeSnapshot aiRuntimeSnapshot) {
+            String sessionId,
+            GameMode gameMode,
+            SessionStatus sessionStatus,
+            boolean gameEnded,
+            GameEndReason gameEndReason,
+            int turnNumber,
+            String currentPlayerId,
+            String currentPlayerName,
+            long currentPlayerMainTimeRemainingMillis,
+            long currentPlayerByoYomiRemainingMillis,
+            ClockPhase currentPlayerClockPhase,
+            List<PlayerClockSnapshot> playerClockSnapshots,
+            List<GamePlayerSnapshot> players,
+            BoardSnapshot boardSnapshot,
+            List<BoardCellRenderSnapshot> boardCells,
+            List<RackTileSnapshot> currentRackTiles,
+            List<DraftPlacementSnapshot> draftPlacements,
+            PreviewSnapshot preview,
+            TutorialSnapshot tutorial,
+            GameActionResult latestActionResult,
+            SettlementResult settlementResult,
+            AiRuntimeSnapshot aiRuntimeSnapshot,
+            ClientRuntimeSnapshot clientRuntimeSnapshot,
+            long snapshotSentAtEpochMillis,
+            long snapshotReceivedAtEpochMillis) {
         this.sessionId = Objects.requireNonNull(sessionId, "sessionId cannot be null.");
         this.gameMode = Objects.requireNonNull(gameMode, "gameMode cannot be null.");
         this.sessionStatus = Objects.requireNonNull(sessionStatus, "sessionStatus cannot be null.");
@@ -67,74 +74,29 @@ public class GameSessionSnapshot {
         this.currentPlayerName = currentPlayerName;
         this.currentPlayerMainTimeRemainingMillis = currentPlayerMainTimeRemainingMillis;
         this.currentPlayerByoYomiRemainingMillis = currentPlayerByoYomiRemainingMillis;
-        this.currentPlayerClockPhase =
-        Objects.requireNonNull(
-            currentPlayerClockPhase, "currentPlayerClockPhase cannot be null.");
-        this.playerClockSnapshots =
-        List.copyOf(
-            Objects.requireNonNull(
-            playerClockSnapshots, "playerClockSnapshots cannot be null."));
+        this.currentPlayerClockPhase = Objects.requireNonNull(
+                currentPlayerClockPhase,
+                "currentPlayerClockPhase cannot be null.");
+        this.playerClockSnapshots = List.copyOf(Objects.requireNonNull(
+                playerClockSnapshots,
+                "playerClockSnapshots cannot be null."));
         this.players = List.copyOf(Objects.requireNonNull(players, "players cannot be null."));
         this.boardSnapshot = Objects.requireNonNull(boardSnapshot, "boardSnapshot cannot be null.");
         this.boardCells = List.copyOf(Objects.requireNonNull(boardCells, "boardCells cannot be null."));
-        this.currentRackTiles =
-        List.copyOf(
-            Objects.requireNonNull(currentRackTiles, "currentRackTiles cannot be null."));
-        this.draftPlacements =
-        List.copyOf(
-            Objects.requireNonNull(draftPlacements, "draftPlacements cannot be null."));
+        this.currentRackTiles = List.copyOf(Objects.requireNonNull(
+                currentRackTiles,
+                "currentRackTiles cannot be null."));
+        this.draftPlacements = List.copyOf(Objects.requireNonNull(
+                draftPlacements,
+                "draftPlacements cannot be null."));
         this.preview = preview;
         this.tutorial = tutorial;
         this.latestActionResult = latestActionResult;
         this.settlementResult = settlementResult;
         this.aiRuntimeSnapshot = aiRuntimeSnapshot;
-    }
-
-    public GameSessionSnapshot(
-        String sessionId,
-        GameMode gameMode,
-        SessionStatus sessionStatus,
-        boolean gameEnded,
-        GameEndReason gameEndReason,
-        int turnNumber,
-        String currentPlayerId,
-        String currentPlayerName,
-        long currentPlayerMainTimeRemainingMillis,
-        long currentPlayerByoYomiRemainingMillis,
-        ClockPhase currentPlayerClockPhase,
-        List<PlayerClockSnapshot> playerClockSnapshots,
-        List<GamePlayerSnapshot> players,
-        BoardSnapshot boardSnapshot,
-        List<BoardCellRenderSnapshot> boardCells,
-        List<RackTileSnapshot> currentRackTiles,
-        List<DraftPlacementSnapshot> draftPlacements,
-        PreviewSnapshot preview,
-        GameActionResult latestActionResult,
-        SettlementResult settlementResult,
-        AiRuntimeSnapshot aiRuntimeSnapshot) {
-        this(
-            sessionId,
-            gameMode,
-            sessionStatus,
-            gameEnded,
-            gameEndReason,
-            turnNumber,
-            currentPlayerId,
-            currentPlayerName,
-            currentPlayerMainTimeRemainingMillis,
-            currentPlayerByoYomiRemainingMillis,
-            currentPlayerClockPhase,
-            playerClockSnapshots,
-            players,
-            boardSnapshot,
-            boardCells,
-            currentRackTiles,
-            draftPlacements,
-            preview,
-            null,
-            latestActionResult,
-            settlementResult,
-            aiRuntimeSnapshot);
+        this.clientRuntimeSnapshot = clientRuntimeSnapshot;
+        this.snapshotSentAtEpochMillis = snapshotSentAtEpochMillis;
+        this.snapshotReceivedAtEpochMillis = snapshotReceivedAtEpochMillis;
     }
 
     public String getSessionId() {
@@ -201,6 +163,10 @@ public class GameSessionSnapshot {
         return currentRackTiles;
     }
 
+    public List<RackTileSnapshot> getVisibleRackTiles() {
+        return currentRackTiles;
+    }
+
     public List<DraftPlacementSnapshot> getDraftPlacements() {
         return draftPlacements;
     }
@@ -225,29 +191,44 @@ public class GameSessionSnapshot {
         return aiRuntimeSnapshot;
     }
 
+    public ClientRuntimeSnapshot getClientRuntimeSnapshot() {
+        return clientRuntimeSnapshot;
+    }
+
+    public long getSnapshotSentAtEpochMillis() {
+        return snapshotSentAtEpochMillis;
+    }
+
+    public long getSnapshotReceivedAtEpochMillis() {
+        return snapshotReceivedAtEpochMillis;
+    }
+
     public GameSessionSnapshot withTutorial(TutorialSnapshot tutorialSnapshot) {
         return new GameSessionSnapshot(
-            sessionId,
-            gameMode,
-            sessionStatus,
-            gameEnded,
-            gameEndReason,
-            turnNumber,
-            currentPlayerId,
-            currentPlayerName,
-            currentPlayerMainTimeRemainingMillis,
-            currentPlayerByoYomiRemainingMillis,
-            currentPlayerClockPhase,
-            playerClockSnapshots,
-            players,
-            boardSnapshot,
-            boardCells,
-            currentRackTiles,
-            draftPlacements,
-            preview,
-            tutorialSnapshot,
-            latestActionResult,
-            settlementResult,
-            aiRuntimeSnapshot);
+                sessionId,
+                gameMode,
+                sessionStatus,
+                gameEnded,
+                gameEndReason,
+                turnNumber,
+                currentPlayerId,
+                currentPlayerName,
+                currentPlayerMainTimeRemainingMillis,
+                currentPlayerByoYomiRemainingMillis,
+                currentPlayerClockPhase,
+                playerClockSnapshots,
+                players,
+                boardSnapshot,
+                boardCells,
+                currentRackTiles,
+                draftPlacements,
+                preview,
+                tutorialSnapshot,
+                latestActionResult,
+                settlementResult,
+                aiRuntimeSnapshot,
+                clientRuntimeSnapshot,
+                snapshotSentAtEpochMillis,
+                snapshotReceivedAtEpochMillis);
     }
 }
