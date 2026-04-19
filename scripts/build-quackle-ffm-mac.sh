@@ -8,7 +8,7 @@ BUILD_DIR="${QUACKLE_ROOT}/build/macos"
 OUTPUT_DIR="${PROJECT_ROOT}/native"
 TARGET_DYLIB="${OUTPUT_DIR}/libquackle_ffm.dylib"
 
-cmake \
+cmake --fresh \
   -S "${QUACKLE_ROOT}" \
   -B "${BUILD_DIR}" \
   -DCMAKE_BUILD_TYPE=Release

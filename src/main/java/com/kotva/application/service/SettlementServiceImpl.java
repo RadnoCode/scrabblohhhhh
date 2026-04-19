@@ -24,21 +24,21 @@ public class SettlementServiceImpl implements SettlementService {
 
     public SettlementServiceImpl(SettlementNavigationPort settlementNavigationPort) {
         this.settlementNavigationPort =
-                Objects.requireNonNull(
-                        settlementNavigationPort, "settlementNavigationPort cannot be null.");
+        Objects.requireNonNull(
+            settlementNavigationPort, "settlementNavigationPort cannot be null.");
     }
 
-    @Override
+        @Override
     public SettlementResult settle(GameState gameState, GameEndReason endReason) {
         Objects.requireNonNull(gameState, "gameState cannot be null.");
         Objects.requireNonNull(endReason, "endReason cannot be null.");
 
         SettlementResult result =
-                new SettlementResult(
-                        endReason,
-                        buildRankings(gameState),
-                        buildSummaryMessages(gameState, endReason),
-                        BoardSnapshotFactory.fromBoard(gameState.getBoard()));
+        new SettlementResult(
+            endReason,
+            buildRankings(gameState),
+            buildSummaryMessages(gameState, endReason),
+            BoardSnapshotFactory.fromBoard(gameState.getBoard()));
         settlementNavigationPort.showSettlement(result);
         return result;
     }
@@ -75,10 +75,10 @@ public class SettlementServiceImpl implements SettlementService {
 
         int winningRank = rankings.get(0).getRank();
         List<String> topNames =
-                rankings.stream()
-                        .filter(playerSettlement -> playerSettlement.getRank() == winningRank)
-                        .map(PlayerSettlement::getPlayerName)
-                        .collect(Collectors.toList());
+        rankings.stream()
+            .filter(playerSettlement -> playerSettlement.getRank() == winningRank)
+            .map(PlayerSettlement::getPlayerName)
+            .collect(Collectors.toList());
         if (topNames.size() == 1) {
             messages.add("Winner: " + topNames.get(0));
         } else {
@@ -89,17 +89,17 @@ public class SettlementServiceImpl implements SettlementService {
 
     private String buildEndReasonMessage(GameEndReason endReason) {
         return switch (endReason) {
-            case ALL_PLAYERS_PASSED -> "Game ended because all active players passed in the round.";
-            case ONLY_ONE_PLAYER_REMAINING -> "Game ended because only one active player remained.";
-            case TILE_BAG_EMPTY_AND_PLAYER_FINISHED ->
-                    "Game ended because the tile bag was empty and a player emptied their rack.";
-            case BOARD_FULL -> "Game ended because the board became full.";
-            case TARGET_SCORE_REACHED -> "Game ended because the target score was reached.";
-            case NO_LEGAL_PLACEMENT_AVAILABLE ->
-                    "Game ended because no legal placement was available.";
-            case AI_RUNTIME_FAILURE ->
-                    "Game ended because the AI runtime failed and the match was frozen.";
-            case NORMAL_FINISH -> "Game ended normally.";
+        case ALL_PLAYERS_PASSED -> "Game ended because all active players passed in the round.";
+        case ONLY_ONE_PLAYER_REMAINING -> "Game ended because only one active player remained.";
+        case TILE_BAG_EMPTY_AND_PLAYER_FINISHED ->
+            "Game ended because the tile bag was empty and a player emptied their rack.";
+        case BOARD_FULL -> "Game ended because the board became full.";
+        case TARGET_SCORE_REACHED -> "Game ended because the target score was reached.";
+        case NO_LEGAL_PLACEMENT_AVAILABLE ->
+            "Game ended because no legal placement was available.";
+        case AI_RUNTIME_FAILURE ->
+            "Game ended because the AI runtime failed and the match was frozen.";
+        case NORMAL_FINISH -> "Game ended normally.";
         };
     }
 }

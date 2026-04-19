@@ -5,6 +5,7 @@ import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.setup.NewGameRequest;
 import com.kotva.domain.model.Position;
+import com.kotva.tutorial.TutorialUiEvent;
 import java.util.function.Consumer;
 
 public interface GameRuntime {
@@ -36,14 +37,42 @@ public interface GameRuntime {
 
     void submitDraft();
 
+    default void submitDraft(String clientActionId) {
+        submitDraft();
+    }
+
     void passTurn();
+
+    default void passTurn(String clientActionId) {
+        passTurn();
+    }
+
+    void resign();
+
+    default void resign(String clientActionId) {
+        resign();
+    }
+
+    default boolean isTutorialRuntime() {
+        return false;
+    }
+
+    default void advanceTutorialInstruction() {
+    }
+
+    default boolean shouldReturnHomeAfterTutorial() {
+        return false;
+    }
+
+    default void recordTutorialEvent(TutorialUiEvent event) {
+    }
 
     boolean hasAutomatedTurnSupport();
 
     boolean isCurrentTurnAutomated();
 
     void requestAutomatedTurnIfIdle(
-            Consumer<AiSessionRuntime.TurnCompletion> completionConsumer);
+        Consumer<AiSessionRuntime.TurnCompletion> completionConsumer);
 
     boolean matchesAutomatedTurn(AiSessionRuntime.TurnCompletion completion);
 

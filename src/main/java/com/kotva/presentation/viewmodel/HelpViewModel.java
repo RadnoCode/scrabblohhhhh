@@ -1,8 +1,5 @@
 package com.kotva.presentation.viewmodel;
 
-/**
- * HelpViewModel stores the long help text shown in the Help page.
- */
 public class HelpViewModel {
     private final String titleText;
     private final String helpText;

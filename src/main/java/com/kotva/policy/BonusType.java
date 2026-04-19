@@ -1,8 +1,5 @@
 package com.kotva.policy;
 
-/**
- * Represents the premium bonus types for a board cell.
- */
 public enum BonusType {
     NONE,           // Normal cell (No bonus)
     DOUBLE_LETTER,  // Double Letter score (DL)

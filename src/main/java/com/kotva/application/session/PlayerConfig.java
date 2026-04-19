@@ -1,10 +1,9 @@
 package com.kotva.application.session;
 
 import com.kotva.policy.PlayerType;
-import java.io.Serializable;
 import java.util.Objects;
 
-public class PlayerConfig implements Serializable {
+public class PlayerConfig {
     private final String playerName;
     private final PlayerType playerType;
 

@@ -1,6 +1,7 @@
 package com.kotva.ai;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -14,9 +15,9 @@ import org.junit.Test;
 
 public class QuackleNativeBridgeSmokeTest {
     private static final String STANDARD_TILE_POOL =
-            "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ??";
+    "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ??";
 
-    @Test
+        @Test
     public void createChooseDestroyRoundTrip() {
         QuackleNativeBridge bridge = new QuackleNativeBridge();
         Assume.assumeTrue(Files.isRegularFile(bridge.getLibraryPath()));
@@ -24,14 +25,14 @@ public class QuackleNativeBridgeSmokeTest {
 
         String rack = "AEIRST?";
         AiPositionSnapshot snapshot = new AiPositionSnapshot(
-                emptyBoard(),
-                rack,
-                buildUnseenTiles(rack),
-                0,
-                0);
+            emptyBoard(),
+            rack,
+            buildUnseenTiles(rack),
+            0,
+            0);
 
         try (QuackleNativeBridge.Engine engine =
-                    bridge.createEngine(DictionaryType.AM, AiDifficulty.EASY)) {
+            bridge.createEngine(DictionaryType.AM, AiDifficulty.EASY)) {
             AiMoveOptionSet moveOptions = engine.chooseMoveOptions(snapshot);
             assertNotNull(moveOptions);
             assertTrue(!moveOptions.isEmpty());
@@ -44,6 +45,31 @@ public class QuackleNativeBridgeSmokeTest {
             if (move.action() == AiMove.Action.PLACE) {
                 assertTrue(!move.placements().isEmpty());
             }
+        }
+    }
+
+        @Test
+    public void exchangeCandidatesDoNotDisplacePlayableMoves() {
+        QuackleNativeBridge bridge = new QuackleNativeBridge();
+        Assume.assumeTrue(Files.isRegularFile(bridge.getLibraryPath()));
+        Assume.assumeTrue(Files.isDirectory(bridge.getDataDirectory()));
+
+        String rack = "OBEEEOE";
+        AiPositionSnapshot snapshot = new AiPositionSnapshot(
+            emptyBoard(),
+            rack,
+            buildUnseenTiles(rack),
+            0,
+            0);
+
+        try (QuackleNativeBridge.Engine engine =
+            bridge.createEngine(DictionaryType.AM, AiDifficulty.EASY)) {
+            AiMoveOptionSet moveOptions = engine.chooseMoveOptions(snapshot);
+            assertNotNull(moveOptions);
+            assertFalse(moveOptions.isEmpty());
+            assertEquals(AiMove.Action.PLACE, moveOptions.moves().get(0).action());
+            assertTrue(
+                moveOptions.moves().stream().anyMatch(move -> move.action() == AiMove.Action.PLACE));
         }
     }
 

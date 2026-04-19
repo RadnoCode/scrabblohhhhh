@@ -6,10 +6,6 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 
-/**
- * SwitchButton is a special common component with a right-side trigger area.
- * Clicking the small right area rotates the current language text.
- */
 public class SwitchButton extends CommonButton {
     private final Label leftLabel;
     private final Label valueLabel;
@@ -37,11 +33,12 @@ public class SwitchButton extends CommonButton {
         switchTrigger.setPrefHeight(42);
 
         switchTrigger.setOnMouseClicked(event -> {
-            if (onSwitchAction != null) {
-                onSwitchAction.run();
-            }
-            event.consume();
-        });
+                playClickSound();
+                if (onSwitchAction != null) {
+                    onSwitchAction.run();
+                }
+                event.consume();
+            });
 
         BorderPane content = new BorderPane();
         content.getStyleClass().add("setting-item-content");
@@ -61,8 +58,9 @@ public class SwitchButton extends CommonButton {
         this.onSwitchAction = () -> setCurrentValue(switchAction.onSwitch());
     }
 
-    @FunctionalInterface
+        @FunctionalInterface
     public interface SwitchAction {
+
         String onSwitch();
     }
 }

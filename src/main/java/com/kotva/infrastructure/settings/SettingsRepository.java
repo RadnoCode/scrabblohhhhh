@@ -12,13 +12,14 @@ import java.util.Properties;
 public class SettingsRepository {
     private static final String MUSIC_VOLUME_KEY = "musicVolume";
     private static final String SFX_VOLUME_KEY = "sfxVolume";
+    private static final String TUTORIAL_PROMPT_ACKNOWLEDGED_KEY = "tutorialPromptAcknowledged";
+    private static final String TUTORIAL_COMPLETED_KEY = "tutorialCompleted";
 
     private final Path storagePath;
 
     public SettingsRepository() {
         this(defaultStoragePath());
     }
-    
 
     public SettingsRepository(Path storagePath) {
         if (storagePath == null) {
@@ -36,8 +37,16 @@ public class SettingsRepository {
         try (Reader reader = Files.newBufferedReader(storagePath, StandardCharsets.UTF_8)) {
             properties.load(reader);
             return new AppSettings(
-                    readVolume(properties, MUSIC_VOLUME_KEY, AppSettings.DEFAULT_MUSIC_VOLUME),
-                    readVolume(properties, SFX_VOLUME_KEY, AppSettings.DEFAULT_SFX_VOLUME));
+                readVolume(properties, MUSIC_VOLUME_KEY, AppSettings.DEFAULT_MUSIC_VOLUME),
+                readVolume(properties, SFX_VOLUME_KEY, AppSettings.DEFAULT_SFX_VOLUME),
+                readBoolean(
+                    properties,
+                    TUTORIAL_PROMPT_ACKNOWLEDGED_KEY,
+                    AppSettings.DEFAULT_TUTORIAL_PROMPT_ACKNOWLEDGED),
+                readBoolean(
+                    properties,
+                    TUTORIAL_COMPLETED_KEY,
+                    AppSettings.DEFAULT_TUTORIAL_COMPLETED));
         } catch (IOException e) {
             return AppSettings.defaults();
         } catch (IllegalArgumentException e) {
@@ -59,6 +68,12 @@ public class SettingsRepository {
             Properties properties = new Properties();
             properties.setProperty(MUSIC_VOLUME_KEY, Double.toString(settings.getMusicVolume()));
             properties.setProperty(SFX_VOLUME_KEY, Double.toString(settings.getSfxVolume()));
+            properties.setProperty(
+                TUTORIAL_PROMPT_ACKNOWLEDGED_KEY,
+                Boolean.toString(settings.isTutorialPromptAcknowledged()));
+            properties.setProperty(
+                TUTORIAL_COMPLETED_KEY,
+                Boolean.toString(settings.isTutorialCompleted()));
 
             try (Writer writer = Files.newBufferedWriter(storagePath, StandardCharsets.UTF_8)) {
                 properties.store(writer, "settings");
@@ -70,9 +85,9 @@ public class SettingsRepository {
 
     static Path defaultStoragePath() {
         return Path.of(
-                System.getProperty("user.home"),
-                ".scrabblohhhhh",
-                "settings.properties");
+            System.getProperty("user.home"),
+            ".scrabblohhhhh",
+            "settings.properties");
     }
 
     private double readVolume(Properties properties, String key, double defaultValue) {
@@ -81,5 +96,13 @@ public class SettingsRepository {
             return defaultValue;
         }
         return Double.parseDouble(rawValue.trim());
+    }
+
+    private boolean readBoolean(Properties properties, String key, boolean defaultValue) {
+        String rawValue = properties.getProperty(key);
+        if (rawValue == null || rawValue.isBlank()) {
+            return defaultValue;
+        }
+        return Boolean.parseBoolean(rawValue.trim());
     }
 }

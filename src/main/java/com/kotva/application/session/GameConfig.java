@@ -3,11 +3,10 @@ package com.kotva.application.session;
 import com.kotva.mode.GameMode;
 import com.kotva.policy.AiDifficulty;
 import com.kotva.policy.DictionaryType;
-import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-public class GameConfig implements Serializable {
+public class GameConfig {
     private final GameMode gameMode;
     private final List<PlayerConfig> players;
     private final DictionaryType dictionaryType;
@@ -15,19 +14,19 @@ public class GameConfig implements Serializable {
     private final AiDifficulty aiDifficulty;
 
     public GameConfig(
-            GameMode gameMode,
-            List<PlayerConfig> players,
-            DictionaryType dictionaryType,
-            TimeControlConfig timeControlConfig) {
+        GameMode gameMode,
+        List<PlayerConfig> players,
+        DictionaryType dictionaryType,
+        TimeControlConfig timeControlConfig) {
         this(gameMode, players, dictionaryType, timeControlConfig, null);
     }
 
     public GameConfig(
-            GameMode gameMode,
-            List<PlayerConfig> players,
-            DictionaryType dictionaryType,
-            TimeControlConfig timeControlConfig,
-            AiDifficulty aiDifficulty) {
+        GameMode gameMode,
+        List<PlayerConfig> players,
+        DictionaryType dictionaryType,
+        TimeControlConfig timeControlConfig,
+        AiDifficulty aiDifficulty) {
         this.gameMode = Objects.requireNonNull(gameMode, "gameMode cannot be null.");
         this.players = List.copyOf(Objects.requireNonNull(players, "players cannot be null."));
         this.dictionaryType = Objects.requireNonNull(dictionaryType, "dictionaryType cannot be null.");

@@ -1,8 +1,6 @@
 package com.kotva.application.session;
 
-import java.io.Serializable;
-
-public class PreviewPositionSnapshot implements Serializable {
+public class PreviewPositionSnapshot {
     private final int row;
     private final int col;
 

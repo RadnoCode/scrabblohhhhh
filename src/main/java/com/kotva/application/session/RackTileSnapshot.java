@@ -1,8 +1,6 @@
 package com.kotva.application.session;
 
-import java.io.Serializable;
-
-public class RackTileSnapshot implements Serializable {
+public class RackTileSnapshot {
     private final int slotIndex;
     private final String tileId;
     private final Character letter;
@@ -12,13 +10,13 @@ public class RackTileSnapshot implements Serializable {
     private final Character assignedLetter;
 
     public RackTileSnapshot(
-            int slotIndex,
-            String tileId,
-            Character letter,
-            Character displayLetter,
-            int score,
-            boolean blank,
-            Character assignedLetter) {
+        int slotIndex,
+        String tileId,
+        Character letter,
+        Character displayLetter,
+        int score,
+        boolean blank,
+        Character assignedLetter) {
         this.slotIndex = slotIndex;
         this.tileId = tileId;
         this.letter = letter;

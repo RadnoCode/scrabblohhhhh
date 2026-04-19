@@ -1,6 +1,6 @@
 package com.kotva.application.service.lan;
 
-import com.kotva.application.service.ActionDispatchResult;
+import com.kotva.application.service.GameActionResult;
 import com.kotva.application.service.GameApplicationService;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.GameSessionSnapshot;
@@ -44,8 +44,11 @@ public class LanHostService {
     private RemoteCommandResult execute(CommandEnvelope commandEnvelope) {
         try {
             validateCommandEnvelope(commandEnvelope);
-            ActionDispatchResult dispatchResult =
-                    gameApplicationService.executeRemoteAction(session, commandEnvelope.getAction());
+            GameActionResult dispatchResult =
+                    gameApplicationService.executeRemoteCommand(
+                            session,
+                            commandEnvelope.getAction(),
+                            commandEnvelope.getCommandId());
             return new RemoteCommandResult(
                     commandEnvelope.getCommandId(),
                     dispatchResult.isSuccess(),
@@ -53,7 +56,7 @@ public class LanHostService {
                     dispatchResult.getAwardedScore(),
                     dispatchResult.getNextPlayerId(),
                     dispatchResult.isGameEnded(),
-                    dispatchResult.getSettlementResult(),
+                    session.getTurnCoordinator().getSettlementResult(),
                     snapshotForViewer(commandEnvelope.getPlayerId()));
         } catch (RuntimeException exception) {
             return new RemoteCommandResult(

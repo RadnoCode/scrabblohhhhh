@@ -1,10 +1,9 @@
 package com.kotva.application.session;
 
 import com.kotva.policy.BonusType;
-import java.io.Serializable;
 import java.util.Objects;
 
-public class BoardCellRenderSnapshot implements Serializable {
+public class BoardCellRenderSnapshot {
     private final int row;
     private final int col;
     private final BonusType bonusType;
@@ -19,18 +18,18 @@ public class BoardCellRenderSnapshot implements Serializable {
     private final boolean crossWordHighlighted;
 
     public BoardCellRenderSnapshot(
-            int row,
-            int col,
-            BonusType bonusType,
-            String tileId,
-            Character displayLetter,
-            int score,
-            boolean blank,
-            boolean draft,
-            boolean previewValid,
-            boolean previewInvalid,
-            boolean mainWordHighlighted,
-            boolean crossWordHighlighted) {
+        int row,
+        int col,
+        BonusType bonusType,
+        String tileId,
+        Character displayLetter,
+        int score,
+        boolean blank,
+        boolean draft,
+        boolean previewValid,
+        boolean previewInvalid,
+        boolean mainWordHighlighted,
+        boolean crossWordHighlighted) {
         this.row = row;
         this.col = col;
         this.bonusType = Objects.requireNonNull(bonusType, "bonusType cannot be null.");

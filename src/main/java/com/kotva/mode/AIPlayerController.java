@@ -10,27 +10,28 @@ import com.kotva.policy.PlayerType;
 import java.util.concurrent.CompletableFuture;
 
 final class AIPlayerController extends PlayerController {
+
     AIPlayerController(String playerId) {
         super(playerId, PlayerType.AI);
     }
 
-    @Override
+        @Override
     public boolean supportsAutomatedTurn() {
         return true;
     }
 
-    @Override
+        @Override
     public CompletableFuture<AiMoveOptionSet> requestAutomatedTurn(
-            AiTurnCoordinator aiTurnCoordinator, GameSession session) {
+        AiTurnCoordinator aiTurnCoordinator, GameSession session) {
         return aiTurnCoordinator.requestMove(session);
     }
 
-    @Override
+        @Override
     public AiTurnAttemptResult applyAutomatedTurn(
-            AiTurnCoordinator aiTurnCoordinator,
-            GameApplicationService gameApplicationService,
-            GameSession session,
-            AiMove move) {
+        AiTurnCoordinator aiTurnCoordinator,
+        GameApplicationService gameApplicationService,
+        GameSession session,
+        AiMove move) {
         return aiTurnCoordinator.applyMove(this, gameApplicationService, session, move);
     }
 }

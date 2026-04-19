@@ -5,10 +5,6 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 
-/**
- * EnvelopeIconView draws the envelope by JavaFX shapes instead of using an image.
- * This makes later animation work easier, because each envelope part can be controlled separately.
- */
 public class EnvelopeIconView extends Pane {
     private final Rectangle envelopeBody;
     private final Polygon topFlap;
@@ -40,7 +36,7 @@ public class EnvelopeIconView extends Pane {
         setMinSize(USE_PREF_SIZE, USE_PREF_SIZE);
     }
 
-    @Override
+        @Override
     protected void layoutChildren() {
         double width = getWidth();
         double height = getHeight();
@@ -63,9 +59,9 @@ public class EnvelopeIconView extends Pane {
         envelopeBody.setHeight(envelopeHeight);
 
         topFlap.getPoints().setAll(
-                left, top,
-                centerX, centerY,
-                right, top
+            left, top,
+            centerX, centerY,
+            right, top
         );
 
         leftFold.setStartX(left);
@@ -88,10 +84,6 @@ public class EnvelopeIconView extends Pane {
         seal.setArcHeight(10);
     }
 
-    /**
-     * These getters are reserved for future animation work.
-     * For example, later you can animate the top flap or the seal independently.
-     */
     public Polygon getTopFlap() {
         return topFlap;
     }

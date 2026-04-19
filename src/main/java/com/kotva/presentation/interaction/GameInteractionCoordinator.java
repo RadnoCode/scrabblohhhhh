@@ -10,11 +10,10 @@ import com.kotva.presentation.viewmodel.GameViewModel;
 import java.util.Objects;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 
-/**
- * GameInteractionCoordinator 负责把 JavaFX 事件接到控制器和纯视觉预览层。
- */
 public class GameInteractionCoordinator {
     private final BoardView boardView;
     private final RackView rackView;
@@ -25,16 +24,17 @@ public class GameInteractionCoordinator {
     private final GameActionPort actionPort;
     private final EventHandler<MouseEvent> sceneDragHandler;
     private final EventHandler<MouseEvent> sceneReleaseHandler;
+    private final EventHandler<KeyEvent> sceneKeyPressedHandler;
     private Scene attachedScene;
 
     public GameInteractionCoordinator(
-            BoardView boardView,
-            RackView rackView,
-            ActionPanelView actionPanelView,
-            GameDraftState draftState,
-            PreviewRenderer previewRenderer,
-            GameRenderer gameRenderer,
-            GameActionPort actionPort) {
+        BoardView boardView,
+        RackView rackView,
+        ActionPanelView actionPanelView,
+        GameDraftState draftState,
+        PreviewRenderer previewRenderer,
+        GameRenderer gameRenderer,
+        GameActionPort actionPort) {
         this.boardView = Objects.requireNonNull(boardView, "boardView cannot be null.");
         this.rackView = Objects.requireNonNull(rackView, "rackView cannot be null.");
         this.actionPanelView = Objects.requireNonNull(actionPanelView, "actionPanelView cannot be null.");
@@ -44,6 +44,7 @@ public class GameInteractionCoordinator {
         this.actionPort = Objects.requireNonNull(actionPort, "actionPort cannot be null.");
         this.sceneDragHandler = this::handleSceneMouseDragged;
         this.sceneReleaseHandler = this::handleSceneMouseReleased;
+        this.sceneKeyPressedHandler = this::handleSceneKeyPressed;
     }
 
     public void attach() {
@@ -51,9 +52,9 @@ public class GameInteractionCoordinator {
         bindBoardInteractions();
         bindWorkbenchButtons();
         boardView.sceneProperty().addListener((observable, oldScene, newScene) -> {
-            detachSceneHandlers(oldScene);
-            attachSceneHandlers(newScene);
-        });
+                detachSceneHandlers(oldScene);
+                attachSceneHandlers(newScene);
+            });
         attachSceneHandlers(boardView.getScene());
     }
 
@@ -83,6 +84,7 @@ public class GameInteractionCoordinator {
         attachedScene = scene;
         attachedScene.addEventFilter(MouseEvent.MOUSE_DRAGGED, sceneDragHandler);
         attachedScene.addEventFilter(MouseEvent.MOUSE_RELEASED, sceneReleaseHandler);
+        attachedScene.addEventFilter(KeyEvent.KEY_PRESSED, sceneKeyPressedHandler);
     }
 
     private void detachSceneHandlers(Scene scene) {
@@ -91,6 +93,7 @@ public class GameInteractionCoordinator {
         }
         scene.removeEventFilter(MouseEvent.MOUSE_DRAGGED, sceneDragHandler);
         scene.removeEventFilter(MouseEvent.MOUSE_RELEASED, sceneReleaseHandler);
+        scene.removeEventFilter(KeyEvent.KEY_PRESSED, sceneKeyPressedHandler);
         if (scene == attachedScene) {
             attachedScene = null;
         }
@@ -162,6 +165,14 @@ public class GameInteractionCoordinator {
 
         BoardCoordinate targetCoordinate = previewRenderer.getHoveredCoordinate();
         String tileId = previewRenderer.getDraggedTileId();
+        Integer targetRackIndex = previewRenderer.getHoveredRackIndex();
+        if (previewRenderer.isDraggingFromBoard() && targetRackIndex != null) {
+            actionPort.onDraftTileRemoved(tileId);
+            previewRenderer.clear();
+            gameRenderer.refresh();
+            event.consume();
+            return;
+        }
         if (targetCoordinate == null || draftState.isCellOccupied(targetCoordinate, tileId)) {
             previewRenderer.clear();
             gameRenderer.refresh();
@@ -177,6 +188,14 @@ public class GameInteractionCoordinator {
 
         previewRenderer.clear();
         gameRenderer.refresh();
+        event.consume();
+    }
+
+    private void handleSceneKeyPressed(KeyEvent event) {
+        if (event.getCode() != KeyCode.ENTER || !event.isShortcutDown()) {
+            return;
+        }
+        submitDraft();
         event.consume();
     }
 

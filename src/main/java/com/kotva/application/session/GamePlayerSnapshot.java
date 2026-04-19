@@ -1,10 +1,9 @@
 package com.kotva.application.session;
 
 import com.kotva.policy.PlayerType;
-import java.io.Serializable;
 import java.util.Objects;
 
-public class GamePlayerSnapshot implements Serializable {
+public class GamePlayerSnapshot {
     private final String playerId;
     private final String playerName;
     private final PlayerType playerType;
@@ -15,14 +14,14 @@ public class GamePlayerSnapshot implements Serializable {
     private final PlayerClockSnapshot clockSnapshot;
 
     public GamePlayerSnapshot(
-            String playerId,
-            String playerName,
-            PlayerType playerType,
-            int score,
-            boolean active,
-            boolean currentTurn,
-            int rackTileCount,
-            PlayerClockSnapshot clockSnapshot) {
+        String playerId,
+        String playerName,
+        PlayerType playerType,
+        int score,
+        boolean active,
+        boolean currentTurn,
+        int rackTileCount,
+        PlayerClockSnapshot clockSnapshot) {
         this.playerId = Objects.requireNonNull(playerId, "playerId cannot be null.");
         this.playerName = Objects.requireNonNull(playerName, "playerName cannot be null.");
         this.playerType = Objects.requireNonNull(playerType, "playerType cannot be null.");

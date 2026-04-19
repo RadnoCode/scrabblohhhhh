@@ -1,10 +1,9 @@
 package com.kotva.application.session;
 
 import com.kotva.policy.ClockPhase;
-import java.io.Serializable;
 import java.util.Objects;
 
-public class PlayerClockSnapshot implements Serializable {
+public class PlayerClockSnapshot {
     private final String playerId;
     private final String playerName;
     private final long mainTimeRemainingMillis;
@@ -13,12 +12,12 @@ public class PlayerClockSnapshot implements Serializable {
     private final boolean active;
 
     public PlayerClockSnapshot(
-            String playerId,
-            String playerName,
-            long mainTimeRemainingMillis,
-            long byoYomiRemainingMillis,
-            ClockPhase phase,
-            boolean active) {
+        String playerId,
+        String playerName,
+        long mainTimeRemainingMillis,
+        long byoYomiRemainingMillis,
+        ClockPhase phase,
+        boolean active) {
         this.playerId = Objects.requireNonNull(playerId, "playerId cannot be null.");
         this.playerName = Objects.requireNonNull(playerName, "playerName cannot be null.");
         this.mainTimeRemainingMillis = mainTimeRemainingMillis;

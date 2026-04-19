@@ -1,32 +1,36 @@
 package com.kotva.presentation.controller;
 
+import com.kotva.infrastructure.AudioManager;
 import com.kotva.presentation.component.CommonButton;
+import com.kotva.presentation.component.InputButton;
 import com.kotva.presentation.component.SwitchButton;
+import com.kotva.presentation.component.TransientMessageView;
 import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
 import com.kotva.presentation.viewmodel.GameLaunchContext;
 
-/**
- * LocalAiSetupController handles the local AI detail setup page.
- */
 public class LocalAiSetupController {
+    private static final String DEFAULT_GAME_TIME_MINUTES = "15";
+    private static final String INVALID_GAME_TIME_MESSAGE =
+    "Please enter an integer between 15 and 90 minutes.";
+
     private final SceneNavigator navigator;
     private final GameBranchSetupViewModel viewModel;
-    private final String[] gameTimes = {"15min", "30min", "45min"};
-    private final String[] languages = {"American", "British"};
+    private final AudioManager audioManager;
+    private final String[] dictionaries = {"North American", "British"};
     private final String[] difficulties = {"Easy", "Middle", "Hard"};
-    private int gameTimeIndex;
-    private int languageIndex;
+    private int dictionaryIndex;
     private int difficultyIndex;
 
     public LocalAiSetupController(SceneNavigator navigator) {
         this.navigator = navigator;
+        this.audioManager = navigator.getAppContext().getAudioManager();
         this.viewModel = new GameBranchSetupViewModel(
-                "SCRABBLE",
-                "Play With Robot",
-                "Select Game Time",
-                "Language",
-                "Difficulty");
+            "SCRABBLE",
+            "Play With Robot",
+            "Select Game Time",
+            "Dictionary",
+            "Difficulty");
     }
 
     public GameBranchSetupViewModel getViewModel() {
@@ -34,32 +38,27 @@ public class LocalAiSetupController {
     }
 
     public void bindActions(
-            SwitchButton firstButton,
-            SwitchButton secondButton,
-            SwitchButton thirdButton,
-            CommonButton goButton) {
-        firstButton.setCurrentValue(gameTimes[gameTimeIndex]);
-        secondButton.setCurrentValue(languages[languageIndex]);
+        InputButton firstButton,
+        SwitchButton secondButton,
+        SwitchButton thirdButton,
+        CommonButton goButton,
+        TransientMessageView messageView) {
+        firstButton.setInputText(DEFAULT_GAME_TIME_MINUTES);
+        secondButton.setCurrentValue(dictionaries[dictionaryIndex]);
         thirdButton.setCurrentValue(difficulties[difficultyIndex]);
 
-        firstButton.setOnSwitchAction(this::rotateGameTime);
-        secondButton.setOnSwitchAction(this::rotateLanguage);
+        secondButton.setOnSwitchAction(this::rotateDictionary);
         thirdButton.setOnSwitchAction(this::rotateDifficulty);
-        goButton.setOnAction(event -> navigateToGame());
+        goButton.setOnAction(event -> navigateToGame(firstButton, messageView));
     }
 
     public void bindBackAction(CommonButton backButton) {
         backButton.setOnAction(event -> navigator.goBack());
     }
 
-    private String rotateGameTime() {
-        gameTimeIndex = (gameTimeIndex + 1) % gameTimes.length;
-        return gameTimes[gameTimeIndex];
-    }
-
-    private String rotateLanguage() {
-        languageIndex = (languageIndex + 1) % languages.length;
-        return languages[languageIndex];
+    private String rotateDictionary() {
+        dictionaryIndex = (dictionaryIndex + 1) % dictionaries.length;
+        return dictionaries[dictionaryIndex];
     }
 
     private String rotateDifficulty() {
@@ -67,14 +66,37 @@ public class LocalAiSetupController {
         return difficulties[difficultyIndex];
     }
 
-    private GameLaunchContext buildLaunchContext() {
+    private GameLaunchContext buildLaunchContext(String gameTimeInput) {
         return GameLaunchContext.forLocalAi(
-                gameTimes[gameTimeIndex],
-                languages[languageIndex],
-                difficulties[difficultyIndex]);
+            gameTimeInput,
+            dictionaries[dictionaryIndex],
+            difficulties[difficultyIndex]);
     }
 
-    private void navigateToGame() {
-        navigator.showGame(buildLaunchContext());
+    private void navigateToGame(InputButton gameTimeButton, TransientMessageView messageView) {
+        if (!isValidGameTimeInput(gameTimeButton.getTextField().getText())) {
+            messageView.showMessage(INVALID_GAME_TIME_MESSAGE);
+            return;
+        }
+        audioManager.playActionConfirm();
+        navigator.showGame(buildLaunchContext(gameTimeButton.getTextField().getText()));
+    }
+
+    private boolean isValidGameTimeInput(String rawInput) {
+        if (rawInput == null) {
+            return false;
+        }
+
+        String normalizedInput = rawInput.trim();
+        if (!normalizedInput.matches("\\d+")) {
+            return false;
+        }
+
+        try {
+            int minutes = Integer.parseInt(normalizedInput);
+            return minutes >= 15 && minutes <= 90;
+        } catch (NumberFormatException exception) {
+            return false;
+        }
     }
 }

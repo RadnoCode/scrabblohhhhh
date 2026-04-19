@@ -36,6 +36,13 @@ public class RuleEngine {
 
         Board board = state.getBoard();
         List<Position> placements = new ArrayList<>();
+        if (!state.isFirstMoveMade()) {
+            if(!MoveValidator.firstMove(action.placements().stream().map(ActionPlacement::position).toList())) {
+                return "First word shall sit on the center";
+            } else {
+                state.markFirstMoveMade();
+            }
+        }
         for (ActionPlacement placement : action.placements()) {
             placements.add(placement.position());
         }
@@ -73,37 +80,37 @@ public class RuleEngine {
         com.kotva.domain.model.Player currentPlayer = state.getCurrentPlayer();
 
         switch (action.type()) {
-            case PLACE_TILE:
-                Board board = state.getBoard();
-                TileBag tileBag = state.getTileBag();
-                Rack rack = currentPlayer.getRack();
+        case PLACE_TILE:
+            Board board = state.getBoard();
+            TileBag tileBag = state.getTileBag();
+            Rack rack = currentPlayer.getRack();
 
-                for (ActionPlacement placement : action.placements()) {
-                    String tileId = placement.tileId();
-                    Position pos = placement.position();
+            for (ActionPlacement placement : action.placements()) {
+                String tileId = placement.tileId();
+                Position pos = placement.position();
 
-                    Tile realTile = tileBag.getTileById(tileId);
-                    Cell cell = board.getCell(pos);
-                    cell.setPlacedTile(realTile);
-                    if (realTile != null && realTile.isBlank()) {
-                        realTile.markFixed();
-                    }
+                Tile realTile = tileBag.getTileById(tileId);
+                Cell cell = board.getCell(pos);
+                cell.setPlacedTile(realTile);
+                if (realTile != null && realTile.isBlank()) {
+                    realTile.markFixed();
+                }
 
-                    for (RackSlot slot : rack.getSlots()) {
-                        if (!slot.isEmpty() && slot.getTile().getTileID().equals(tileId)) {
-                            rack.setTileAt(slot.getIndex(), null);
-                            break;
-                        }
+                for (RackSlot slot : rack.getSlots()) {
+                    if (!slot.isEmpty() && slot.getTile().getTileID().equals(tileId)) {
+                        rack.setTileAt(slot.getIndex(), null);
+                        break;
                     }
                 }
-                break;
+            }
+            break;
 
-            case PASS_TURN:
-                break;
+        case PASS_TURN:
+            break;
 
-            case LOSE:
-                currentPlayer.setActive(false);
-                break;
+        case LOSE:
+            currentPlayer.setActive(false);
+            break;
         }
     }
 }

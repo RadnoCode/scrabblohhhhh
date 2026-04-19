@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 
 public final class BoardSnapshotFactory {
+
     private BoardSnapshotFactory() {
     }
 
@@ -25,9 +26,9 @@ public final class BoardSnapshotFactory {
                 if (placedTile != null) {
                     blank = placedTile.isBlank();
                     letter =
-                            placedTile.getAssignedLetter() != null
-                                    ? placedTile.getAssignedLetter()
-                                    : placedTile.getLetter();
+                    placedTile.getAssignedLetter() != null
+                    ? placedTile.getAssignedLetter()
+                    : placedTile.getLetter();
                 }
                 cells.add(new BoardCellSnapshot(row, col, cell.getBonusType(), letter, blank));
             }

@@ -1,9 +1,8 @@
 package com.kotva.application.session;
 
-import java.io.Serializable;
 import java.util.Objects;
 
-public class DraftPlacementSnapshot implements Serializable {
+public class DraftPlacementSnapshot {
     private final String tileId;
     private final int row;
     private final int col;

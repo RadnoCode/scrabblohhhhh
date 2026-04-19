@@ -30,7 +30,8 @@ import java.util.Set;
 import org.junit.Test;
 
 public class GameSessionSnapshotTest {
-    @Test
+
+        @Test
     public void sessionSnapshotIncludesBoardPlayersRackDraftAndPreview() {
         GameSession session = createInProgressSession();
         GameApplicationServiceImpl service = createService(Set.of("AT"));
@@ -67,27 +68,28 @@ public class GameSessionSnapshotTest {
         assertEquals(2, snapshot.getPreview().getWords().get(0).getCoveredPositions().size());
         assertEquals(4, snapshot.getPreview().getHighlights().size());
         assertTrue(
-                snapshot.getPreview().getHighlights().stream()
-                        .allMatch(highlight -> highlight.getRow() == 7 && highlight.getCol() >= 7 && highlight.getCol() <= 8));
+            snapshot.getPreview().getHighlights().stream()
+            .allMatch(highlight -> highlight.getRow() == 7 && highlight.getCol() >= 7 && highlight.getCol() <= 8));
+        assertNull(snapshot.getLatestActionResult());
         assertNull(snapshot.getSettlementResult());
         assertNull(snapshot.getAiRuntimeSnapshot());
 
         GamePlayerSnapshot firstPlayer =
-                snapshot.getPlayers().stream()
-                        .filter(player -> "p1".equals(player.getPlayerId()))
-                        .findFirst()
-                        .orElseThrow();
+        snapshot.getPlayers().stream()
+            .filter(player -> "p1".equals(player.getPlayerId()))
+            .findFirst()
+            .orElseThrow();
         assertTrue(firstPlayer.isCurrentTurn());
         assertEquals(2, firstPlayer.getRackTileCount());
         assertEquals(tileA.getTileID(), snapshot.getCurrentRackTiles().get(0).getTileId());
         assertEquals(Character.valueOf('A'), snapshot.getCurrentRackTiles().get(0).getDisplayLetter());
         assertTrue(
-                snapshot.getBoardSnapshot().getCells().stream()
-                        .filter(cell -> cell.getRow() == 7 && cell.getCol() == 7)
-                        .findFirst()
-                        .orElseThrow()
-                        .getLetter()
-                        == null);
+            snapshot.getBoardSnapshot().getCells().stream()
+            .filter(cell -> cell.getRow() == 7 && cell.getCol() == 7)
+            .findFirst()
+            .orElseThrow()
+            .getLetter()
+            == null);
 
         BoardCellRenderSnapshot firstDraftCell = findBoardCell(snapshot, 7, 7);
         assertEquals(tileA.getTileID(), firstDraftCell.getTileId());
@@ -99,7 +101,7 @@ public class GameSessionSnapshotTest {
         assertFalse(firstDraftCell.isCrossWordHighlighted());
     }
 
-    @Test
+        @Test
     public void sessionSnapshotMarksMainAndCrossWordPositionsOnBoardCells() {
         GameSession session = createInProgressSession();
         GameApplicationServiceImpl service = createService(Set.of("AT"));
@@ -136,7 +138,7 @@ public class GameSessionSnapshotTest {
         assertTrue(sharedDraftCell.isCrossWordHighlighted());
     }
 
-    @Test
+        @Test
     public void sessionSnapshotMarksInvalidPreviewOnDraftBoardCells() {
         GameSession session = createInProgressSession();
         GameApplicationServiceImpl service = createService(Set.of("AT"));
@@ -161,19 +163,25 @@ public class GameSessionSnapshotTest {
         assertFalse(secondDraftCell.isPreviewValid());
     }
 
-    @Test
+        @Test
     public void sessionSnapshotIncludesSettlementAfterGameEnds() {
         GameSession session = createInProgressSession();
         GameApplicationServiceImpl service = createService(Set.of("AT"));
 
-        service.passTurn(session);
-        service.passTurn(session);
+        GameActionResult firstResult = service.passTurn(session, "ui-pass-1");
+        GameActionResult secondResult = service.passTurn(session, "ui-pass-2");
 
         GameSessionSnapshot snapshot = service.getSessionSnapshot(session);
 
+        assertNotNull(firstResult.getActionId());
+        assertNotNull(secondResult.getActionId());
+        assertFalse(firstResult.getActionId().equals(secondResult.getActionId()));
         assertTrue(snapshot.isGameEnded());
         assertEquals(SessionStatus.COMPLETED, snapshot.getSessionStatus());
         assertEquals(GameEndReason.ALL_PLAYERS_PASSED, snapshot.getGameEndReason());
+        assertNotNull(snapshot.getLatestActionResult());
+        assertEquals(secondResult.getActionId(), snapshot.getLatestActionResult().getActionId());
+        assertEquals("ui-pass-2", snapshot.getLatestActionResult().getClientActionId());
         assertNotNull(snapshot.getSettlementResult());
         assertNull(snapshot.getAiRuntimeSnapshot());
         assertEquals(GameEndReason.ALL_PLAYERS_PASSED, snapshot.getSettlementResult().getEndReason());
@@ -184,13 +192,13 @@ public class GameSessionSnapshotTest {
         Player second = new Player("p2", "Bob", PlayerType.LOCAL);
         GameState gameState = new GameState(List.of(first, second));
         GameConfig config =
-                new GameConfig(
-                        GameMode.HOT_SEAT,
-                        List.of(
-                                new PlayerConfig("Alice", PlayerType.LOCAL),
-                                new PlayerConfig("Bob", PlayerType.LOCAL)),
-                        DictionaryType.AM,
-                        null);
+        new GameConfig(
+            GameMode.HOT_SEAT,
+            List.of(
+            new PlayerConfig("Alice", PlayerType.LOCAL),
+            new PlayerConfig("Bob", PlayerType.LOCAL)),
+            DictionaryType.AM,
+            null);
         GameSession session = new GameSession("session-1", config, gameState);
         session.setSessionStatus(SessionStatus.IN_PROGRESS);
         return session;
@@ -212,9 +220,9 @@ public class GameSessionSnapshotTest {
 
     private BoardCellRenderSnapshot findBoardCell(GameSessionSnapshot snapshot, int row, int col) {
         return snapshot.getBoardCells().stream()
-                .filter(cell -> cell.getRow() == row && cell.getCol() == col)
-                .findFirst()
-                .orElseThrow();
+            .filter(cell -> cell.getRow() == row && cell.getCol() == col)
+            .findFirst()
+            .orElseThrow();
     }
 
     private static class StubDictionaryRepository extends DictionaryRepository {
@@ -224,21 +232,21 @@ public class GameSessionSnapshotTest {
             this.acceptedWords = acceptedWords;
         }
 
-        @Override
+            @Override
         public void loadDictionary(DictionaryType dictionaryType) {
         }
 
-        @Override
+            @Override
         public Set<String> getDictionary() {
             return acceptedWords;
         }
 
-        @Override
+            @Override
         public DictionaryType getLoadedDictionaryType() {
             return DictionaryType.AM;
         }
 
-        @Override
+            @Override
         public boolean isAccepted(String word) {
             return acceptedWords.contains(word.toUpperCase());
         }

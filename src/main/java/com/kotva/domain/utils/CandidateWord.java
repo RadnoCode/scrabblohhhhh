@@ -26,7 +26,7 @@ public class CandidateWord {
         return endPosition;
     }
 
-    @Override
+        @Override
     public boolean equals(Object other) {
         if (this == other) {
             return true;
@@ -40,20 +40,20 @@ public class CandidateWord {
         boolean isWordSame = Objects.equals(this.word, that.word);
 
         boolean isStartSame = (this.startPosition.getRow() == that.startPosition.getRow())
-                && (this.startPosition.getCol() == that.startPosition.getCol());
+        && (this.startPosition.getCol() == that.startPosition.getCol());
 
         boolean isEndSame = (this.endPosition.getRow() == that.endPosition.getRow())
-                && (this.endPosition.getCol() == that.endPosition.getCol());
+        && (this.endPosition.getCol() == that.endPosition.getCol());
 
         return isWordSame && isStartSame && isEndSame;
     }
 
-    @Override
+        @Override
     public int hashCode() {
         return Objects.hash(
-                word,
-                startPosition.getRow(), startPosition.getCol(),
-                endPosition.getRow(), endPosition.getCol()
+            word,
+            startPosition.getRow(), startPosition.getCol(),
+            endPosition.getRow(), endPosition.getCol()
         );
     }
 }

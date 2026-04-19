@@ -1,6 +1,6 @@
 package com.kotva.launcher;
 
-import com.kotva.infrastructure.logging.AppLog;
+import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.fx.SceneNavigator;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -9,9 +9,11 @@ public class AppLauncher extends Application {
     private static final double MIN_WIDTH = 1100;
     private static final double MIN_HEIGHT = 720;
 
-    @Override
+        @Override
     public void start(Stage stage) {
         AppContext appContext = new AppContext();
+        CommonButton.setAudioManager(appContext.getAudioManager());
+        appContext.getAudioManager().warmUpSoundEffects();
         SceneNavigator navigator = new SceneNavigator(stage, appContext);
         navigator.showHome();
         stage.setMinWidth(MIN_WIDTH);
@@ -19,14 +21,6 @@ public class AppLauncher extends Application {
     }
 
     public static void main(String[] args) {
-        AppLog.initialize();
-        AppLog.installUncaughtExceptionLogging();
-
-        try {
-            Application.launch(AppLauncher.class, args);
-        } catch (Throwable throwable) {
-            AppLog.logException(AppLauncher.class, "Application launch failed.", throwable);
-            throw throwable;
-        }
+        Application.launch(AppLauncher.class, args);
     }
 }

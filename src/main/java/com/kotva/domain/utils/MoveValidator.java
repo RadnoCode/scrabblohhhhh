@@ -7,6 +7,7 @@ import com.kotva.domain.model.Cell;
 import com.kotva.domain.model.Position;
 
 public final class MoveValidator {
+
     private MoveValidator() {
     }
 
@@ -51,8 +52,6 @@ public final class MoveValidator {
         return true;
     }
 
-    // A legal Scrabble move must form one continuous span after combining new tiles
-    // with any pre-existing tiles already on the board.
     public static boolean isContiguous(List<Position> placements, Board board) {
         if (placements == null || placements.size() <= 1) {
             return true;
@@ -89,7 +88,7 @@ public final class MoveValidator {
             int row = first.getRow();
             for (int col = minCol; col <= maxCol; col++) {
                 if (!hasPlacementAt(placements, row, col)
-                        && board.getCell(new Position(row, col)).isEmpty()) {
+                    && board.getCell(new Position(row, col)).isEmpty()) {
                     return false;
                 }
             }
@@ -99,7 +98,7 @@ public final class MoveValidator {
         int col = first.getCol();
         for (int row = minRow; row <= maxRow; row++) {
             if (!hasPlacementAt(placements, row, col)
-                    && board.getCell(new Position(row, col)).isEmpty()) {
+                && board.getCell(new Position(row, col)).isEmpty()) {
                 return false;
             }
         }

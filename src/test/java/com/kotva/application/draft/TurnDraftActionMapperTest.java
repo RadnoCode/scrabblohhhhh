@@ -8,7 +8,8 @@ import com.kotva.domain.model.Position;
 import org.junit.Test;
 
 public class TurnDraftActionMapperTest {
-    @Test
+
+        @Test
     public void mapsTurnDraftPlacementsIntoDomainPlaceAction() {
         TurnDraft turnDraft = new TurnDraft();
         turnDraft.getPlacements().add(new DraftPlacement("tile-1", new Position(7, 7)));
@@ -25,7 +26,7 @@ public class TurnDraftActionMapperTest {
         assertEquals(8, action.placements().get(1).position().getCol());
     }
 
-    @Test
+        @Test
     public void passAndLoseActionsCarryNoPlacements() {
         assertTrue(PlayerAction.pass("p1").placements().isEmpty());
         assertTrue(PlayerAction.lose("p1").placements().isEmpty());

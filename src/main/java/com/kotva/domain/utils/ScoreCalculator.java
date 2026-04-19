@@ -13,6 +13,7 @@ import com.kotva.domain.model.TileBag;
 import com.kotva.policy.BonusType;
 
 public final class ScoreCalculator {
+
     private ScoreCalculator() {
     }
 
@@ -25,7 +26,7 @@ public final class ScoreCalculator {
     }
 
     public static int calculateWordScore(
-            CandidateWord candidate, GameState state, PlayerAction action) {
+        CandidateWord candidate, GameState state, PlayerAction action) {
         Board board = state.getBoard();
         TileBag tileBag = state.getTileBag();
         int wordScore = 0;
@@ -45,7 +46,7 @@ public final class ScoreCalculator {
                 if (action != null) {
                     for (ActionPlacement placement : action.placements()) {
                         if (placement.position().getRow() == row
-                                && placement.position().getCol() == col) {
+                            && placement.position().getCol() == col) {
                             isNew = true;
                             newTileId = placement.tileId();
                             break;

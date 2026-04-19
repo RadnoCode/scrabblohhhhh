@@ -24,13 +24,8 @@ import com.kotva.domain.utils.MoveValidator;
 import com.kotva.domain.utils.ScoreCalculator;
 import com.kotva.domain.utils.WordExtractor;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
-import com.kotva.policy.DictionaryType;
 import com.kotva.policy.WordType;
 
-/**
- * MovePreviewServiceImpl is responsible for providing a preview of the player's move based on the current turn draft.
- * It uses the RuleEngine to validate the move and calculate the estimated score, and formulates user-friendly messages for any rule violations.
- */
 public class MovePreviewServiceImpl implements MovePreviewService
 {
     private final DictionaryRepository dictionaryRepository;
@@ -38,47 +33,32 @@ public class MovePreviewServiceImpl implements MovePreviewService
 
     public MovePreviewServiceImpl(DictionaryRepository dictionaryRepository) {
         this.dictionaryRepository =
-                Objects.requireNonNull(
-                        dictionaryRepository, "dictionaryRepository cannot be null.");
+        Objects.requireNonNull(
+            dictionaryRepository, "dictionaryRepository cannot be null.");
         this.ruleEngine = new RuleEngine(this.dictionaryRepository);
     }
 
-    @Override
+        @Override
     public PreviewResult preview(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
+        ensureDictionaryLoaded(session);
         GameState gameState = session.getGameState();
         Player currentPlayer = gameState.requireCurrentActivePlayer();
-        return preview(
-                gameState,
-                session.getConfig().getDictionaryType(),
-                currentPlayer.getPlayerId(),
-                session.getTurnDraft());
-    }
+        TurnDraft turnDraft = session.getTurnDraft();
 
-    @Override
-    public PreviewResult preview(
-            GameState gameState,
-            DictionaryType dictionaryType,
-            String playerId,
-            TurnDraft turnDraft) {
-        Objects.requireNonNull(gameState, "gameState cannot be null.");
-        Objects.requireNonNull(dictionaryType, "dictionaryType cannot be null.");
-        Objects.requireNonNull(playerId, "playerId cannot be null.");
-        Objects.requireNonNull(turnDraft, "turnDraft cannot be null.");
-        ensureDictionaryLoaded(dictionaryType);
         PlayerAction action =
-            TurnDraftActionMapper.toPlaceAction(playerId, turnDraft);
+        TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), turnDraft);
+
         String validationMessage = validateSafely(gameState, action);
 
-        // according to the RuleEngine contract, validationMessage is null when the move is valid; if not valid, it contains a user-friendly message describing why
         boolean valid = validationMessage == null;
 
         List<CandidateWord> candidateWords = extractCandidateWords(gameState, action);
         int estimatedScore = valid ? ScoreCalculator.calculate(candidateWords, gameState, action) : 0;
 
         List<String> messages = valid
-                ? List.of()
-                : List.of(mapToUserFriendlyMessage(validationMessage));
+        ? List.of()
+        : List.of(mapToUserFriendlyMessage(validationMessage));
 
         List<PreviewWord> words = buildPreviewWords(gameState, action, candidateWords);
         List<BoardHighlight> highlights = buildHighlights(turnDraft, valid);
@@ -86,9 +66,9 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return new PreviewResult(valid, estimatedScore, words, highlights, messages);
     }
 
-    private void ensureDictionaryLoaded(DictionaryType dictionaryType) {
-        if (dictionaryRepository.getLoadedDictionaryType() != dictionaryType) {
-            dictionaryRepository.loadDictionary(dictionaryType);
+    private void ensureDictionaryLoaded(GameSession session) {
+        if (dictionaryRepository.getLoadedDictionaryType() != session.getConfig().getDictionaryType()) {
+            dictionaryRepository.loadDictionary(session.getConfig().getDictionaryType());
         }
     }
 
@@ -108,7 +88,7 @@ public class MovePreviewServiceImpl implements MovePreviewService
     }
 
     private List<PreviewWord> buildPreviewWords(
-            GameState gameState, PlayerAction action, List<CandidateWord> candidateWords) {
+        GameState gameState, PlayerAction action, List<CandidateWord> candidateWords) {
         if (!canBuildPreviewWords(gameState, action) || candidateWords.isEmpty()) {
             return List.of();
         }
@@ -140,8 +120,8 @@ public class MovePreviewServiceImpl implements MovePreviewService
 
         Board board = gameState.getBoard();
         return MoveValidator.isStraightLine(placements)
-                && MoveValidator.isNotOverlapping(placements, board)
-                && MoveValidator.isContiguous(placements, board);
+        && MoveValidator.isNotOverlapping(placements, board)
+        && MoveValidator.isContiguous(placements, board);
     }
 
     private CandidateWord resolveMainWord(List<CandidateWord> candidateWords, PlayerAction action) {
@@ -173,20 +153,20 @@ public class MovePreviewServiceImpl implements MovePreviewService
         for (CandidateWord candidateWord : candidateWords) {
             if (horizontal) {
                 if (candidateWord.getStartPosition().getRow() != firstPlacement.position().getRow()
-                        || candidateWord.getEndPosition().getRow() != firstPlacement.position().getRow()) {
+                    || candidateWord.getEndPosition().getRow() != firstPlacement.position().getRow()) {
                     continue;
                 }
                 if (candidateWord.getStartPosition().getCol() > minCol
-                        || candidateWord.getEndPosition().getCol() < maxCol) {
+                    || candidateWord.getEndPosition().getCol() < maxCol) {
                     continue;
                 }
             } else {
                 if (candidateWord.getStartPosition().getCol() != firstPlacement.position().getCol()
-                        || candidateWord.getEndPosition().getCol() != firstPlacement.position().getCol()) {
+                    || candidateWord.getEndPosition().getCol() != firstPlacement.position().getCol()) {
                     continue;
                 }
                 if (candidateWord.getStartPosition().getRow() > minRow
-                        || candidateWord.getEndPosition().getRow() < maxRow) {
+                    || candidateWord.getEndPosition().getRow() < maxRow) {
                     continue;
                 }
             }
@@ -211,7 +191,7 @@ public class MovePreviewServiceImpl implements MovePreviewService
                     horizontalWord = candidateWord;
                 }
             } else if (candidateWord.getStartPosition().getCol()
-                    == candidateWord.getEndPosition().getCol()) {
+                == candidateWord.getEndPosition().getCol()) {
                 if (verticalWord == null || wordLength(candidateWord) > wordLength(verticalWord)) {
                     verticalWord = candidateWord;
                 }
@@ -228,19 +208,19 @@ public class MovePreviewServiceImpl implements MovePreviewService
     }
 
     private PreviewWord buildPreviewWord(
-            CandidateWord candidateWord,
-            WordType wordType,
-            GameState gameState,
-            PlayerAction action) {
+        CandidateWord candidateWord,
+        WordType wordType,
+        GameState gameState,
+        PlayerAction action) {
         String word = candidateWord.getWord();
         boolean valid = word.length() < 2 || dictionaryRepository.isAccepted(word);
         int scoreContribution = ScoreCalculator.calculateWordScore(candidateWord, gameState, action);
         return new PreviewWord(
-                word,
-                valid,
-                scoreContribution,
-                buildCoveredPositions(candidateWord),
-                wordType);
+            word,
+            valid,
+            scoreContribution,
+            buildCoveredPositions(candidateWord),
+            wordType);
     }
 
     private List<Position> buildCoveredPositions(CandidateWord candidateWord) {
@@ -269,12 +249,11 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return candidateWord.getEndPosition().getRow() - candidateWord.getStartPosition().getRow() + 1;
     }
 
-
     private String mapToUserFriendlyMessage(String rawMessage) {
         if (rawMessage == null || rawMessage.isBlank()) {
             return "Invalid placement.";
         }
-        
+
         if (rawMessage.startsWith("Invalid word:")) {
             String word = rawMessage.substring("Invalid word:".length()).trim();
             return word + " is not a valid word.";
@@ -284,13 +263,12 @@ public class MovePreviewServiceImpl implements MovePreviewService
     }
 
     private List<BoardHighlight> buildHighlights(
-            TurnDraft turnDraft, 
-            boolean valid
-        ) {
+        TurnDraft turnDraft,
+        boolean valid
+    ) {
 
         List<BoardHighlight> highlights = new java.util.ArrayList<>();
-    
-        // if turnDraft or placements are null, return empty highlights (but this should not happen in normal flow, as the UI should always provide a TurnDraft with placements when calling preview)
+
         if (turnDraft == null || turnDraft.getPlacements() == null) {
             return highlights;
         }
@@ -301,21 +279,21 @@ public class MovePreviewServiceImpl implements MovePreviewService
             }
 
             highlights.add(new BoardHighlight(
-                    placement.getPosition(),
-                    HighlightType.NEW_TILE));
-    
+                placement.getPosition(),
+                HighlightType.NEW_TILE));
+
             if (valid) {
                 highlights.add(new BoardHighlight(
-                        placement.getPosition(),
-                        HighlightType.VALID_TILE));
+                    placement.getPosition(),
+                    HighlightType.VALID_TILE));
             } else {
                 highlights.add(new BoardHighlight(
-                        placement.getPosition(),
-                        HighlightType.INVALID_TILE
-                        ));
+                    placement.getPosition(),
+                    HighlightType.INVALID_TILE
+                ));
             }
         }
-    
+
         return highlights;
     }
 

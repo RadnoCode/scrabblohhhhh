@@ -1,10 +1,9 @@
 package com.kotva.application.result;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-public class BoardSnapshot implements Serializable {
+public class BoardSnapshot {
     private final List<BoardCellSnapshot> cells;
 
     public BoardSnapshot(List<BoardCellSnapshot> cells) {

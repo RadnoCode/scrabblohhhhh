@@ -4,9 +4,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 
-/**
- * SettingsGearIconView draws a simple gear-like icon for the settings page.
- */
 public class SettingsGearIconView extends Pane {
     private final Rectangle panelFrame;
     private final Circle outerCircle;
@@ -39,7 +36,7 @@ public class SettingsGearIconView extends Pane {
         }
     }
 
-    @Override
+        @Override
     protected void layoutChildren() {
         double width = getWidth();
         double height = getHeight();

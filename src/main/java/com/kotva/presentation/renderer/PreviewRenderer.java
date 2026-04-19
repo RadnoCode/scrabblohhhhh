@@ -1,6 +1,7 @@
 package com.kotva.presentation.renderer;
 
 import com.kotva.presentation.component.BoardView;
+import com.kotva.presentation.component.RackView;
 import com.kotva.presentation.component.TileView;
 import com.kotva.presentation.viewmodel.BoardCoordinate;
 import com.kotva.presentation.viewmodel.GameViewModel;
@@ -8,12 +9,9 @@ import java.util.Objects;
 import javafx.geometry.Point2D;
 import javafx.scene.layout.Pane;
 
-/**
- * PreviewRenderer 专门负责“假的视觉层”。
- * 包括拖拽跟手 Tile、棋盘 hover 白边、以及源位置的临时隐藏信息。
- */
 public class PreviewRenderer {
     private final BoardView boardView;
+    private final RackView rackView;
     private final Pane overlayPane;
 
     private TileView floatingTile;
@@ -22,9 +20,11 @@ public class PreviewRenderer {
     private Integer suppressedRackIndex;
     private BoardCoordinate suppressedBoardCoordinate;
     private BoardCoordinate hoveredCoordinate;
+    private Integer hoveredRackIndex;
 
-    public PreviewRenderer(BoardView boardView, Pane overlayPane) {
+    public PreviewRenderer(BoardView boardView, RackView rackView, Pane overlayPane) {
         this.boardView = Objects.requireNonNull(boardView, "boardView cannot be null.");
+        this.rackView = Objects.requireNonNull(rackView, "rackView cannot be null.");
         this.overlayPane = Objects.requireNonNull(overlayPane, "overlayPane cannot be null.");
     }
 
@@ -41,22 +41,22 @@ public class PreviewRenderer {
             return;
         }
 
-        // 每次拖动时重新探测当前鼠标落在哪个棋盘格上。
         hoveredCoordinate = boardView.resolveCoordinate(sceneX, sceneY);
-        // 同步刷新棋盘高亮边框。
+        hoveredRackIndex = rackView.resolveRackIndex(sceneX, sceneY);
         boardView.setHoveredCell(hoveredCoordinate);
-        // 再把跟手 Tile 挪到最新鼠标位置。
+        rackView.setHoveredSlot(dragSource == DragSource.BOARD ? hoveredRackIndex : null);
         moveFloatingTile(sceneX, sceneY);
     }
 
     public void clear() {
-        // 清掉所有临时状态，回到没有拖拽中的状态。
         hoveredCoordinate = null;
+        hoveredRackIndex = null;
         suppressedRackIndex = null;
         suppressedBoardCoordinate = null;
         draggedTile = null;
         dragSource = null;
         boardView.setHoveredCell(null);
+        rackView.setHoveredSlot(null);
         if (floatingTile != null) {
             overlayPane.getChildren().remove(floatingTile);
             floatingTile = null;
@@ -95,21 +95,22 @@ public class PreviewRenderer {
         return hoveredCoordinate;
     }
 
+    public Integer getHoveredRackIndex() {
+        return hoveredRackIndex;
+    }
+
     private void startDrag(
-            GameViewModel.TileModel tileModel,
-            DragSource dragSource,
-            Integer rackIndex,
-            BoardCoordinate boardCoordinate,
-            double sceneX,
-            double sceneY) {
-        // 先清旧状态，避免连续拖拽时残留旧浮层。
+        GameViewModel.TileModel tileModel,
+        DragSource dragSource,
+        Integer rackIndex,
+        BoardCoordinate boardCoordinate,
+        double sceneX,
+        double sceneY) {
         clear();
         this.draggedTile = Objects.requireNonNull(tileModel, "tileModel cannot be null.");
         this.dragSource = Objects.requireNonNull(dragSource, "dragSource cannot be null.");
-        // 记录原始来源，方便 renderer 临时隐藏对应位置。
         this.suppressedRackIndex = rackIndex;
         this.suppressedBoardCoordinate = boardCoordinate;
-        // 创建一个和棋盘格同尺寸的小 Tile 作为“假”的跟手效果。
         this.floatingTile = new TileView(boardView.getCellSize());
         this.floatingTile.setTile(tileModel);
         this.floatingTile.getStyleClass().add("game-drag-floating-tile");
@@ -123,9 +124,7 @@ public class PreviewRenderer {
             return;
         }
 
-        // 把 scene 坐标换算成 overlayPane 自己的局部坐标。
         Point2D localPoint = overlayPane.sceneToLocal(sceneX, sceneY);
-        // 让浮动 Tile 的中心对齐到鼠标，而不是左上角对齐。
         double halfSize = floatingTile.getTileSize() / 2.0;
         floatingTile.relocate(localPoint.getX() - halfSize, localPoint.getY() - halfSize);
     }

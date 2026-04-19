@@ -10,10 +10,10 @@ public class PlayerClock {
     private ClockPhase phase;
 
     public PlayerClock(
-            long mainTimeRemainingMillis,
-            long byoYomiPerTurnMillis,
-            long byoYomiRemainingMillis,
-            ClockPhase phase) {
+        long mainTimeRemainingMillis,
+        long byoYomiPerTurnMillis,
+        long byoYomiRemainingMillis,
+        ClockPhase phase) {
         if (mainTimeRemainingMillis < 0) {
             throw new IllegalArgumentException("mainTimeRemainingMillis cannot be negative.");
         }
@@ -35,10 +35,10 @@ public class PlayerClock {
 
     public static PlayerClock timed(long mainTimeMillis, long byoYomiMillisPerTurn) {
         return new PlayerClock(
-                mainTimeMillis,
-                byoYomiMillisPerTurn,
-                byoYomiMillisPerTurn,
-                ClockPhase.MAIN_TIME);
+            mainTimeMillis,
+            byoYomiMillisPerTurn,
+            byoYomiMillisPerTurn,
+            ClockPhase.MAIN_TIME);
     }
 
     public long getMainTimeRemainingMillis() {

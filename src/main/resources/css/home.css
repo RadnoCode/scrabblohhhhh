@@ -9,3 +9,26 @@
 .home-button-column {
     -fx-padding: 10 0 0 0;
 }
+
+.home-tutorial-overlay {
+    -fx-background-color: rgba(22, 26, 36, 0.30);
+}
+
+.home-tutorial-card {
+    -fx-background-color: rgba(245, 242, 233, 0.98);
+    -fx-background-radius: 24;
+    -fx-border-color: rgba(63, 75, 99, 0.18);
+    -fx-border-radius: 24;
+    -fx-border-width: 1;
+}
+
+.home-tutorial-title {
+    -fx-text-fill: #3f4b63;
+    -fx-font-size: 24px;
+    -fx-font-weight: 700;
+}
+
+.home-tutorial-body {
+    -fx-text-fill: #4c566a;
+    -fx-font-size: 16px;
+}

@@ -1,10 +1,9 @@
 package com.kotva.application.session;
 
 import com.kotva.application.preview.HighlightType;
-import java.io.Serializable;
 import java.util.Objects;
 
-public class PreviewHighlightSnapshot implements Serializable {
+public class PreviewHighlightSnapshot {
     private final int row;
     private final int col;
     private final HighlightType highlightType;
@@ -13,7 +12,7 @@ public class PreviewHighlightSnapshot implements Serializable {
         this.row = row;
         this.col = col;
         this.highlightType =
-                Objects.requireNonNull(highlightType, "highlightType cannot be null.");
+        Objects.requireNonNull(highlightType, "highlightType cannot be null.");
     }
 
     public int getRow() {

@@ -32,16 +32,16 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
     private int consecutiveIllegalMoveCount;
 
     LocalAiGameRuntime(
-            GameSetupService gameSetupService,
-            GameApplicationService gameApplicationService,
-            Supplier<AiRuntimeBootstrapper> aiRuntimeBootstrapperSupplier) {
+        GameSetupService gameSetupService,
+        GameApplicationService gameApplicationService,
+        Supplier<AiRuntimeBootstrapper> aiRuntimeBootstrapperSupplier) {
         super(gameSetupService, gameApplicationService);
         this.aiRuntimeBootstrapperSupplier = Objects.requireNonNull(
-                aiRuntimeBootstrapperSupplier,
-                "aiRuntimeBootstrapperSupplier cannot be null.");
+            aiRuntimeBootstrapperSupplier,
+            "aiRuntimeBootstrapperSupplier cannot be null.");
     }
 
-    @Override
+        @Override
     protected void afterSessionStarted() {
         clearAiState();
 
@@ -52,19 +52,19 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
             lastBootstrapper = requireBootstrapper();
             try {
                 aiTurnRuntime = Objects.requireNonNull(
-                        lastBootstrapper.create(requireSession().getConfig()),
-                        "AI bootstrapper returned null runtime.");
+                    lastBootstrapper.create(requireSession().getConfig()),
+                    "AI bootstrapper returned null runtime.");
                 return;
             } catch (RuntimeException exception) {
                 lastFailure = exception;
                 shutdownAiTurnRuntime();
                 String attemptMessage =
-                        "AI initialization attempt "
-                                + attempt
-                                + "/"
-                                + MAX_INIT_ATTEMPTS
-                                + " failed: "
-                                + exception.getMessage();
+                "AI initialization attempt "
+                + attempt
+                + "/"
+                + MAX_INIT_ATTEMPTS
+                + " failed: "
+                + exception.getMessage();
                 attemptMessages.add(attemptMessage);
                 System.err.println(attemptMessage);
                 exception.printStackTrace(System.err);
@@ -72,27 +72,27 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
         }
 
         markFatalFailure(
-                AiRuntimeFailureKind.INIT_RETRY_EXHAUSTED,
-                "AI initialization failed after retry.",
-                buildInitializationFailureDetails(lastBootstrapper, attemptMessages),
-                lastFailure,
-                0,
-                0);
+            AiRuntimeFailureKind.INIT_RETRY_EXHAUSTED,
+            "AI initialization failed after retry.",
+            buildInitializationFailureDetails(lastBootstrapper, attemptMessages),
+            lastFailure,
+            0,
+            0);
     }
 
-    @Override
+        @Override
     protected GameSessionSnapshot decorateSnapshot(GameSessionSnapshot snapshot) {
         return com.kotva.application.session.GameSessionSnapshotFactory.fromSession(
-                requireSession(),
-                aiRuntimeSnapshot);
+            requireSession(),
+            aiRuntimeSnapshot);
     }
 
-    @Override
+        @Override
     public boolean hasAutomatedTurnSupport() {
         return aiTurnRuntime != null;
     }
 
-    @Override
+        @Override
     public boolean isCurrentTurnAutomated() {
         if (!hasAutomatedTurnSupport() || !isSessionInProgress()) {
             return false;
@@ -100,19 +100,19 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
         return requireCurrentPlayerController().supportsAutomatedTurn();
     }
 
-    @Override
+        @Override
     public void requestAutomatedTurnIfIdle(
-            Consumer<AiSessionRuntime.TurnCompletion> completionConsumer) {
+        Consumer<AiSessionRuntime.TurnCompletion> completionConsumer) {
         if (!isCurrentTurnAutomated()) {
             return;
         }
         aiTurnRuntime.requestTurnIfIdle(
-                requireSession(),
-                requireCurrentPlayerController(),
-                Objects.requireNonNull(completionConsumer, "completionConsumer cannot be null."));
+            requireSession(),
+            requireCurrentPlayerController(),
+            Objects.requireNonNull(completionConsumer, "completionConsumer cannot be null."));
     }
 
-    @Override
+        @Override
     public boolean matchesAutomatedTurn(AiSessionRuntime.TurnCompletion completion) {
         if (!isCurrentTurnAutomated()) {
             return false;
@@ -120,23 +120,23 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
 
         Player currentPlayer = requireSession().getGameState().requireCurrentActivePlayer();
         return aiTurnRuntime.matchesCurrentTurn(
-                Objects.requireNonNull(completion, "completion cannot be null."),
-                requireSession(),
-                currentPlayer,
-                requireCurrentPlayerController());
+            Objects.requireNonNull(completion, "completion cannot be null."),
+            requireSession(),
+            currentPlayer,
+            requireCurrentPlayerController());
     }
 
-    @Override
+        @Override
     public void applyAutomatedTurn(AiSessionRuntime.TurnCompletion completion) {
         Objects.requireNonNull(completion, "completion cannot be null.");
         if (completion.error() != null) {
             markFatalFailure(
-                    AiRuntimeFailureKind.MOVE_REQUEST_FAILURE,
-                    "AI move request failed.",
-                    buildMoveRequestFailureDetails(completion.error()),
-                    completion.error(),
-                    0,
-                    0);
+                AiRuntimeFailureKind.MOVE_REQUEST_FAILURE,
+                "AI move request failed.",
+                buildMoveRequestFailureDetails(completion.error()),
+                completion.error(),
+                0,
+                0);
             return;
         }
         if (aiTurnRuntime == null) {
@@ -144,12 +144,12 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
         }
         if (completion.moveOptions() == null || completion.moveOptions().isEmpty()) {
             markFatalFailure(
-                    AiRuntimeFailureKind.MOVE_REQUEST_FAILURE,
-                    "AI returned no move candidates.",
-                    "The AI response contained an empty candidate set.",
-                    null,
-                    0,
-                    0);
+                AiRuntimeFailureKind.MOVE_REQUEST_FAILURE,
+                "AI returned no move candidates.",
+                "The AI response contained an empty candidate set.",
+                null,
+                0,
+                0);
             return;
         }
 
@@ -162,11 +162,11 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
         for (AiMove candidate : completion.moveOptions().moves()) {
             attemptedCandidateCount++;
             AiTurnAttemptResult result =
-                    aiTurnRuntime.applyMove(
-                            controller,
-                            gameApplicationService,
-                            session,
-                            candidate);
+            aiTurnRuntime.applyMove(
+                controller,
+                gameApplicationService,
+                session,
+                candidate);
             if (result.accepted()) {
                 consecutiveIllegalMoveCount = 0;
                 aiRuntimeSnapshot = null;
@@ -179,42 +179,42 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
             logRejectedMove(result, details);
             if (consecutiveIllegalMoveCount >= INVALID_MOVE_FUSE_THRESHOLD) {
                 markFatalFailure(
-                        AiRuntimeFailureKind.INVALID_MOVE_CIRCUIT_BROKEN,
-                        "AI move circuit breaker opened after repeated invalid candidates.",
-                        details,
-                        result.error(),
-                        candidateCount,
-                        attemptedCandidateCount);
+                    AiRuntimeFailureKind.INVALID_MOVE_CIRCUIT_BROKEN,
+                    "AI move circuit breaker opened after repeated invalid candidates.",
+                    details,
+                    result.error(),
+                    candidateCount,
+                    attemptedCandidateCount);
                 return;
             }
         }
 
         aiRuntimeSnapshot = new AiRuntimeSnapshot(
-                false,
-                false,
-                AiRuntimeFailureKind.INVALID_MOVE_REJECTED,
-                summarize(
-                        AiRuntimeFailureKind.INVALID_MOVE_REJECTED,
-                        "AI move candidate was rejected. Waiting for another AI attempt."),
-                buildRetryingDetails(lastRejectedDetails, candidateCount, attemptedCandidateCount),
-                consecutiveIllegalMoveCount,
-                candidateCount,
-                attemptedCandidateCount);
+            false,
+            false,
+            AiRuntimeFailureKind.INVALID_MOVE_REJECTED,
+            summarize(
+            AiRuntimeFailureKind.INVALID_MOVE_REJECTED,
+            "AI move candidate was rejected. Waiting for another AI attempt."),
+            buildRetryingDetails(lastRejectedDetails, candidateCount, attemptedCandidateCount),
+            consecutiveIllegalMoveCount,
+            candidateCount,
+            attemptedCandidateCount);
     }
 
-    @Override
+        @Override
     public void cancelPendingAutomatedTurn() {
         if (aiTurnRuntime != null) {
             aiTurnRuntime.cancelPending();
         }
     }
 
-    @Override
+        @Override
     public void disableAutomatedTurnSupport() {
         shutdownAiTurnRuntime();
     }
 
-    @Override
+        @Override
     public void shutdown() {
         super.shutdown();
         clearAiState();
@@ -241,25 +241,25 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
     }
 
     private void markFatalFailure(
-            AiRuntimeFailureKind failureKind,
-            String summary,
-            String details,
-            Throwable error,
-            int candidateCount,
-            int attemptedCandidateCount) {
+        AiRuntimeFailureKind failureKind,
+        String summary,
+        String details,
+        Throwable error,
+        int candidateCount,
+        int attemptedCandidateCount) {
         shutdownAiTurnRuntime();
         requireSession().resetTurnDraft();
         requireSession().getGameState().markGameOver(GameEndReason.AI_RUNTIME_FAILURE);
         requireSession().setSessionStatus(SessionStatus.COMPLETED);
         aiRuntimeSnapshot = new AiRuntimeSnapshot(
-                true,
-                true,
-                failureKind,
-                summarize(failureKind, summary),
-                details,
-                consecutiveIllegalMoveCount,
-                candidateCount,
-                attemptedCandidateCount);
+            true,
+            true,
+            failureKind,
+            summarize(failureKind, summary),
+            details,
+            consecutiveIllegalMoveCount,
+            candidateCount,
+            attemptedCandidateCount);
 
         System.err.println(aiRuntimeSnapshot.summary());
         System.err.println(details);
@@ -273,15 +273,15 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
     }
 
     private String buildInitializationFailureDetails(
-            AiRuntimeBootstrapper bootstrapper, List<String> attemptMessages) {
+        AiRuntimeBootstrapper bootstrapper, List<String> attemptMessages) {
         StringBuilder builder = new StringBuilder();
         if (bootstrapper != null) {
             builder.append("platform=")
-                    .append(bootstrapper.getPlatform())
-                    .append(", libraryPath=")
-                    .append(bootstrapper.getLibraryPath())
-                    .append(", dataDirectory=")
-                    .append(bootstrapper.getDataDirectory());
+                .append(bootstrapper.getPlatform())
+                .append(", libraryPath=")
+                .append(bootstrapper.getLibraryPath())
+                .append(", dataDirectory=")
+                .append(bootstrapper.getDataDirectory());
         }
         if (!attemptMessages.isEmpty()) {
             if (builder.length() > 0) {
@@ -300,18 +300,18 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
     }
 
     private String buildInvalidMoveDetails(
-            AiTurnAttemptResult result, int candidateCount, int attemptedCandidateCount) {
+        AiTurnAttemptResult result, int candidateCount, int attemptedCandidateCount) {
         StringBuilder builder = new StringBuilder();
         builder.append("candidate ")
-                .append(attemptedCandidateCount)
-                .append("/")
-                .append(candidateCount)
-                .append(" rejected with code=")
-                .append(result.rejectionCode())
-                .append(", reason=")
-                .append(result.rejectionReason())
-                .append(", consecutiveIllegalMoveCount=")
-                .append(consecutiveIllegalMoveCount);
+            .append(attemptedCandidateCount)
+            .append("/")
+            .append(candidateCount)
+            .append(" rejected with code=")
+            .append(result.rejectionCode())
+            .append(", reason=")
+            .append(result.rejectionReason())
+            .append(", consecutiveIllegalMoveCount=")
+            .append(consecutiveIllegalMoveCount);
         if (result.error() != null && result.error().getMessage() != null) {
             builder.append(", exception=").append(result.error().getMessage());
         }
@@ -319,17 +319,17 @@ final class LocalAiGameRuntime extends AbstractLocalGameRuntime {
     }
 
     private String buildRetryingDetails(
-            String lastRejectedDetails, int candidateCount, int attemptedCandidateCount) {
+        String lastRejectedDetails, int candidateCount, int attemptedCandidateCount) {
         StringBuilder builder = new StringBuilder();
         if (lastRejectedDetails != null && !lastRejectedDetails.isBlank()) {
             builder.append(lastRejectedDetails).append(System.lineSeparator());
         }
         builder.append("candidateCount=")
-                .append(candidateCount)
-                .append(", attemptedCandidateCount=")
-                .append(attemptedCandidateCount)
-                .append(", consecutiveIllegalMoveCount=")
-                .append(consecutiveIllegalMoveCount);
+            .append(candidateCount)
+            .append(", attemptedCandidateCount=")
+            .append(attemptedCandidateCount)
+            .append(", consecutiveIllegalMoveCount=")
+            .append(consecutiveIllegalMoveCount);
         return builder.toString();
     }
 

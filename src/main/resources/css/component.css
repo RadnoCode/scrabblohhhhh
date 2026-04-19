@@ -274,6 +274,18 @@
     -fx-border-width: 1.5;
 }
 
+.game-rack-hover {
+    -fx-background-color: rgba(242, 233, 196, 0.62);
+    -fx-border-color: rgba(171, 145, 72, 0.90);
+    -fx-effect: dropshadow(gaussian, rgba(171, 145, 72, 0.14), 14, 0.12, 0, 2);
+}
+
+.game-rack-slot-hover {
+    -fx-border-color: rgba(171, 145, 72, 0.96);
+    -fx-border-width: 2.2;
+    -fx-effect: dropshadow(gaussian, rgba(171, 145, 72, 0.18), 10, 0.12, 0, 2);
+}
+
 .game-timer {
     -fx-background-color: rgba(226, 219, 206, 0.82);
     -fx-background-radius: 28;
@@ -341,6 +353,18 @@
     -fx-font-weight: 700;
 }
 
+.game-player-step-mark-title {
+    -fx-text-fill: rgba(61, 73, 96, 0.72);
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.game-player-step-mark-value {
+    -fx-text-fill: #3d4960;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+}
+
 .game-player-lead-placeholder {
     -fx-background-color: rgba(255, 255, 255, 0.58);
     -fx-background-radius: 999;
@@ -358,4 +382,25 @@
 
 .action-panel-button:hover {
     -fx-effect: dropshadow(gaussian, -app-shadow, 12, 0.16, 0, 4);
+}
+
+.transient-message {
+    -fx-background-color: rgba(127, 38, 38, 0.94);
+    -fx-background-radius: 8;
+    -fx-border-color: rgba(233, 195, 195, 0.56);
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-min-width: 560;
+    -fx-max-width: 560;
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+    -fx-max-height: 36;
+    -fx-padding: 0 16 0 16;
+}
+
+.transient-message-label {
+    -fx-text-fill: #fff6f6;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-text-alignment: center;
 }

@@ -6,8 +6,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-
-//Load dict and provide a method to check a wor whether it is accepctable.
 public class DictionaryRepository {
     private DictionaryType loadedDictionaryType;
     private Set<String> dictionary = Collections.emptySet();

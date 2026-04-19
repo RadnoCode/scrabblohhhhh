@@ -1,4 +1,5 @@
 package com.kotva.application.service;
+
 import com.kotva.application.session.GameConfig;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.PlayerConfig;
@@ -28,16 +29,16 @@ public class GameSetupServiceImpl implements GameSetupService {
     private final Random random;
 
     public GameSetupServiceImpl(
-            DictionaryRepository dictionaryRepository,
-            ClockService clockService,
-            Random random) {
+        DictionaryRepository dictionaryRepository,
+        ClockService clockService,
+        Random random) {
         this.dictionaryRepository =
-                Objects.requireNonNull(dictionaryRepository, "dictionaryRepository cannot be null.");
+        Objects.requireNonNull(dictionaryRepository, "dictionaryRepository cannot be null.");
         this.clockService = Objects.requireNonNull(clockService, "clockService cannot be null.");
         this.random = Objects.requireNonNull(random, "random cannot be null.");
     }
 
-    @Override
+        @Override
     public GameConfig buildConfig(NewGameRequest request) {
         Objects.requireNonNull(request, "request cannot be null.");
 
@@ -79,17 +80,17 @@ public class GameSetupServiceImpl implements GameSetupService {
         }
 
         return new GameConfig(
-                gameMode,
-                players,
-                request.getDictionaryType(),
-                request.getTimeControlConfig(),
-                request.getAiDifficulty());
+            gameMode,
+            players,
+            request.getDictionaryType(),
+            request.getTimeControlConfig(),
+            request.getAiDifficulty());
     }
 
-    @Override
+        @Override
     public GameSession startNewGame(NewGameRequest request) {
         GameConfig config = buildConfig(request);
-        return startNewGame(config);
+        return createSession(config);
     }
 
     @Override
@@ -123,7 +124,7 @@ public class GameSetupServiceImpl implements GameSetupService {
             PlayerConfig playerConfig = config.getPlayers().get(index);
             String playerId = "player-" + (index + 1);
             Player player =
-                    new Player(playerId, playerConfig.getPlayerName(), playerConfig.getPlayerType());
+            new Player(playerId, playerConfig.getPlayerName(), playerConfig.getPlayerType());
             player.setController(PlayerController.create(playerId, playerConfig.getPlayerType()));
             player.setClock(createPlayerClock(timeControlConfig));
             players.add(player);
@@ -137,8 +138,8 @@ public class GameSetupServiceImpl implements GameSetupService {
             return PlayerClock.disabled();
         }
         return PlayerClock.timed(
-                timeControlConfig.getMainTimeMillis(),
-                timeControlConfig.getByoYomiMillisPerTurn());
+            timeControlConfig.getMainTimeMillis(),
+            timeControlConfig.getByoYomiMillisPerTurn());
     }
 
     private String normalizePlayerName(String rawName) {
@@ -155,9 +156,9 @@ public class GameSetupServiceImpl implements GameSetupService {
 
     private PlayerType resolvePlayerType(GameMode gameMode, int playerIndex) {
         return switch (gameMode) {
-            case HOT_SEAT -> PlayerType.LOCAL;
-            case HUMAN_VS_AI -> playerIndex == 0 ? PlayerType.LOCAL : PlayerType.AI;
-            case LAN_MULTIPLAYER -> playerIndex == 0 ? PlayerType.LOCAL : PlayerType.LAN;
+        case HOT_SEAT -> PlayerType.LOCAL;
+        case HUMAN_VS_AI -> playerIndex == 0 ? PlayerType.LOCAL : PlayerType.AI;
+        case LAN_MULTIPLAYER -> playerIndex == 0 ? PlayerType.LOCAL : PlayerType.LAN;
         };
     }
 }

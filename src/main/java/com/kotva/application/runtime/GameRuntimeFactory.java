@@ -15,25 +15,25 @@ public final class GameRuntimeFactory {
     private final Supplier<AiRuntimeBootstrapper> aiRuntimeBootstrapperSupplier;
 
     public GameRuntimeFactory(
-            GameSetupService gameSetupService,
-            GameApplicationService gameApplicationService) {
+        GameSetupService gameSetupService,
+        GameApplicationService gameApplicationService) {
         this(
-                gameSetupService,
-                gameApplicationService,
-                () -> new AiSessionRuntimeFactory(new QuackleNativeBridge()));
+            gameSetupService,
+            gameApplicationService,
+            () -> new AiSessionRuntimeFactory(new QuackleNativeBridge()));
     }
 
     GameRuntimeFactory(
-            GameSetupService gameSetupService,
-            GameApplicationService gameApplicationService,
-            Supplier<AiRuntimeBootstrapper> aiRuntimeBootstrapperSupplier) {
+        GameSetupService gameSetupService,
+        GameApplicationService gameApplicationService,
+        Supplier<AiRuntimeBootstrapper> aiRuntimeBootstrapperSupplier) {
         this.gameSetupService =
-                Objects.requireNonNull(gameSetupService, "gameSetupService cannot be null.");
+        Objects.requireNonNull(gameSetupService, "gameSetupService cannot be null.");
         this.gameApplicationService = Objects.requireNonNull(
-                gameApplicationService, "gameApplicationService cannot be null.");
+            gameApplicationService, "gameApplicationService cannot be null.");
         this.aiRuntimeBootstrapperSupplier = Objects.requireNonNull(
-                aiRuntimeBootstrapperSupplier,
-                "aiRuntimeBootstrapperSupplier cannot be null.");
+            aiRuntimeBootstrapperSupplier,
+            "aiRuntimeBootstrapperSupplier cannot be null.");
     }
 
     public GameRuntime create(NewGameRequest request) {

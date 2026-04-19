@@ -3,6 +3,7 @@ package com.kotva.presentation.interaction;
 import com.kotva.domain.model.Position;
 
 public interface GameActionPort {
+
     boolean isInteractionLocked();
 
     void onDraftTilePlaced(String tileId, Position position);
@@ -20,4 +21,10 @@ public interface GameActionPort {
     void onRearrangeRequested();
 
     void onResignRequested();
+
+    void onTutorialAdvanceRequested();
+
+    void onTutorialExitRequested();
+
+    void onTutorialReturnHomeRequested();
 }

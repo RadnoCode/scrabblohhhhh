@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 
 public final class AiTurnMapper {
+
     private AiTurnMapper() {
     }
 
@@ -35,10 +36,10 @@ public final class AiTurnMapper {
             Tile selectedTile = selectTile(availableTiles, placement);
             availableTiles.remove(selectedTile);
             resolvedPlacements.add(
-                    new ResolvedPlacement(
-                            selectedTile,
-                            new Position(placement.row(), placement.col()),
-                            placement.blank() ? placement.assignedLetter() : null));
+                new ResolvedPlacement(
+                selectedTile,
+                new Position(placement.row(), placement.col()),
+                placement.blank() ? placement.assignedLetter() : null));
         }
 
         return new ResolvedMove(AiMove.Action.PLACE, resolvedPlacements);
@@ -59,13 +60,14 @@ public final class AiTurnMapper {
         }
 
         throw new IllegalStateException(
-                "No rack tile matched AI placement letter="
-                        + placement.letter()
-                        + " blank="
-                        + placement.blank());
+            "No rack tile matched AI placement letter="
+            + placement.letter()
+            + " blank="
+            + placement.blank());
     }
 
     public record ResolvedMove(AiMove.Action action, List<ResolvedPlacement> placements) {
+
         public ResolvedMove {
             action = Objects.requireNonNull(action, "action cannot be null.");
             placements = List.copyOf(Objects.requireNonNull(placements, "placements cannot be null."));
@@ -73,6 +75,7 @@ public final class AiTurnMapper {
     }
 
     public record ResolvedPlacement(Tile tile, Position position, Character assignedLetter) {
+
         public ResolvedPlacement {
             tile = Objects.requireNonNull(tile, "tile cannot be null.");
             position = Objects.requireNonNull(position, "position cannot be null.");
