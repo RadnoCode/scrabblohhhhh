@@ -1,10 +1,11 @@
 package com.kotva.application.result;
 
 import com.kotva.domain.endgame.GameEndReason;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-public class SettlementResult {
+public class SettlementResult implements Serializable {
     private final GameEndReason endReason;
     private final List<PlayerSettlement> rankings;
     private final List<String> summaryMessages;

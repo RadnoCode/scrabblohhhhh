@@ -3,10 +3,11 @@ package com.kotva.application.session;
 import com.kotva.mode.GameMode;
 import com.kotva.policy.AiDifficulty;
 import com.kotva.policy.DictionaryType;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-public class GameConfig {
+public class GameConfig implements Serializable {
     private final GameMode gameMode;
     private final List<PlayerConfig> players;
     private final DictionaryType dictionaryType;

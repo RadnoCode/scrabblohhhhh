@@ -2,7 +2,9 @@ package com.kotva.application.session;
 
 import java.util.Objects;
 
-public final class TutorialGhostTileSnapshot {
+import java.io.Serializable;
+
+public final class TutorialGhostTileSnapshot implements Serializable {
     private final int row;
     private final int col;
     private final String letter;

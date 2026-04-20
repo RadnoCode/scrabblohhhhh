@@ -2,15 +2,19 @@ package com.kotva.presentation.scene;
 
 import com.kotva.presentation.component.BackButton;
 import com.kotva.presentation.component.CardStackIconView;
+import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.RoomPanelView;
 import com.kotva.presentation.component.SearchIconView;
 import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.controller.RoomSearchController;
 import com.kotva.presentation.viewmodel.RoomViewModel;
+import com.kotva.lan.udp.DiscoveredRoom;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -18,6 +22,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+/**
+ * RoomSearchScene builds the online room search page.
+ */
 public class RoomSearchScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
@@ -51,9 +58,24 @@ public class RoomSearchScene extends Scene {
         searchBox.setAlignment(Pos.CENTER_LEFT);
 
         RoomPanelView roomPanelView = RoomPanelView.createSearchPanel();
-        controller.bindRoomPanelAction(roomPanelView);
+        ListView<DiscoveredRoom> roomListView = new ListView<>();
+        roomListView.getStyleClass().add("room-list-view");
+        roomListView.setPrefSize(420, 178);
+        controller.bindRoomList(roomListView);
 
-        VBox rightColumn = new VBox(18, searchBox, roomPanelView);
+        StackPane roomListBox = new StackPane(roomPanelView, roomListView);
+        roomListBox.setAlignment(Pos.CENTER);
+
+        Label statusLabel = new Label(viewModel.getStatusText());
+        statusLabel.getStyleClass().add("room-status-label");
+        controller.bindStatusLabel(statusLabel);
+
+        CommonButton joinButton = new CommonButton("Join Selected");
+        CommonButton refreshButton = new CommonButton("Refresh");
+        controller.bindJoinAction(joinButton);
+        controller.bindRefreshAction(refreshButton);
+
+        VBox rightColumn = new VBox(18, searchBox, roomListBox, statusLabel, joinButton, refreshButton);
         rightColumn.setAlignment(Pos.TOP_CENTER);
 
         Region spacer = new Region();
@@ -70,6 +92,7 @@ public class RoomSearchScene extends Scene {
         StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
 
         sceneRoot.getChildren().addAll(root, backButton);
+        controller.startScanning();
         return sceneRoot;
     }
 

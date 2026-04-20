@@ -51,11 +51,7 @@ public final class JavaPrettyFormatter {
                 JCCompilationUnit compilationUnit = (JCCompilationUnit) parsedUnit;
                 StringWriter writer = new StringWriter();
                 Pretty pretty = new Pretty(writer, true);
-<<<<<<< ours
-                pretty.printUnit(compilationUnit, null);
-=======
                 pretty.printUnit(compilationUnit, compilationUnit.sourcefile);
->>>>>>> theirs
                 String formatted = normalizeLineEndings(writer.toString()).trim() + System.lineSeparator();
                 Path sourcePath = Path.of(compilationUnit.getSourceFile().toUri());
                 Files.writeString(sourcePath, formatted, StandardCharsets.UTF_8);

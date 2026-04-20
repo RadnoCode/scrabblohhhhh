@@ -1,5 +1,8 @@
 package com.kotva.presentation.viewmodel;
 
+import com.kotva.application.runtime.GameRuntime;
+import com.kotva.application.runtime.LanLaunchConfig;
+import com.kotva.application.runtime.RuntimeLaunchSpec;
 import com.kotva.application.session.TimeControlConfig;
 import com.kotva.application.setup.NewGameRequest;
 import com.kotva.mode.GameMode;
@@ -14,6 +17,8 @@ public class GameLaunchContext {
     private static final long DEFAULT_STEP_TIME_MILLIS = 30_000L;
 
     private final LaunchKind launchKind;
+    private final RuntimeLaunchSpec launchSpec;
+    private final GameRuntime providedRuntime;
     private final NewGameRequest request;
     private final TutorialScriptId tutorialScriptId;
     private final String modeLabel;
@@ -25,6 +30,8 @@ public class GameLaunchContext {
 
     public GameLaunchContext(
         LaunchKind launchKind,
+        RuntimeLaunchSpec launchSpec,
+        GameRuntime providedRuntime,
         NewGameRequest request,
         TutorialScriptId tutorialScriptId,
         String modeLabel,
@@ -34,13 +41,19 @@ public class GameLaunchContext {
         String difficultyLabel,
         AiDifficulty aiDifficulty) {
         this.launchKind = Objects.requireNonNull(launchKind, "launchKind cannot be null.");
-        if (launchKind == LaunchKind.STANDARD_GAME && request == null) {
-            throw new IllegalArgumentException("request cannot be null for standard game launches.");
+        if (launchKind == LaunchKind.STANDARD_GAME
+            && request == null
+            && launchSpec == null
+            && providedRuntime == null) {
+            throw new IllegalArgumentException(
+                "Standard game launches require a request, launchSpec, or providedRuntime.");
         }
         if (launchKind == LaunchKind.TUTORIAL && tutorialScriptId == null) {
             throw new IllegalArgumentException(
                 "tutorialScriptId cannot be null for tutorial launches.");
         }
+        this.launchSpec = launchSpec;
+        this.providedRuntime = providedRuntime;
         this.request = request;
         this.tutorialScriptId = tutorialScriptId;
         this.modeLabel = Objects.requireNonNull(modeLabel, "modeLabel cannot be null.");
@@ -59,14 +72,17 @@ public class GameLaunchContext {
         String gameTimeLabel, String languageLabel, String playerCountLabel) {
         int playerCount = Integer.parseInt(playerCountLabel);
         List<String> playerNames = buildSequentialNames("Player ", playerCount);
-        return new GameLaunchContext(
-            LaunchKind.STANDARD_GAME,
-            new NewGameRequest(
+        NewGameRequest request = new NewGameRequest(
             GameMode.HOT_SEAT,
             playerCount,
             playerNames,
             mapDictionaryType(languageLabel),
-            mapTimeControl(gameTimeLabel)),
+            mapTimeControl(gameTimeLabel));
+        return new GameLaunchContext(
+            LaunchKind.STANDARD_GAME,
+            RuntimeLaunchSpec.forLocal(request),
+            null,
+            request,
             null,
             "Local Multiplayer",
             gameTimeLabel,
@@ -80,15 +96,18 @@ public class GameLaunchContext {
         String gameTimeLabel, String languageLabel, String difficultyLabel) {
         AiDifficulty aiDifficulty = AiDifficulty.fromSetupLabel(difficultyLabel);
         List<String> playerNames = List.of("Player", difficultyLabel + " Bot");
-        return new GameLaunchContext(
-            LaunchKind.STANDARD_GAME,
-            new NewGameRequest(
+        NewGameRequest request = new NewGameRequest(
             GameMode.HUMAN_VS_AI,
             2,
             playerNames,
             mapDictionaryType(languageLabel),
             mapTimeControl(gameTimeLabel),
-            aiDifficulty),
+            aiDifficulty);
+        return new GameLaunchContext(
+            LaunchKind.STANDARD_GAME,
+            RuntimeLaunchSpec.forLocal(request),
+            null,
+            request,
             null,
             "Local AI",
             gameTimeLabel,
@@ -106,17 +125,61 @@ public class GameLaunchContext {
         for (int index = 1; index < playerCount; index++) {
             playerNames.add("Guest " + index);
         }
-
-        return new GameLaunchContext(
-            LaunchKind.STANDARD_GAME,
-            new NewGameRequest(
+        NewGameRequest request = new NewGameRequest(
             GameMode.LAN_MULTIPLAYER,
             playerCount,
             playerNames,
             mapDictionaryType(languageLabel),
-            mapTimeControl(gameTimeLabel)),
+            mapTimeControl(gameTimeLabel));
+
+        return new GameLaunchContext(
+            LaunchKind.STANDARD_GAME,
+            RuntimeLaunchSpec.forLanHost(request),
+            null,
+            request,
             null,
             "Create Room",
+            gameTimeLabel,
+            languageLabel,
+            playerCountLabel,
+            "--",
+            null);
+    }
+
+    public static GameLaunchContext forLanClient(
+        LanLaunchConfig lanLaunchConfig,
+        String modeLabel,
+        String gameTimeLabel,
+        String languageLabel,
+        String playerCountLabel) {
+        Objects.requireNonNull(lanLaunchConfig, "lanLaunchConfig cannot be null.");
+        return new GameLaunchContext(
+            LaunchKind.STANDARD_GAME,
+            RuntimeLaunchSpec.forLanClient(lanLaunchConfig),
+            null,
+            null,
+            null,
+            modeLabel,
+            gameTimeLabel,
+            languageLabel,
+            playerCountLabel,
+            "--",
+            null);
+    }
+
+    public static GameLaunchContext forProvidedRuntime(
+        GameRuntime providedRuntime,
+        String modeLabel,
+        String gameTimeLabel,
+        String languageLabel,
+        String playerCountLabel) {
+        return new GameLaunchContext(
+            LaunchKind.STANDARD_GAME,
+            null,
+            Objects.requireNonNull(providedRuntime, "providedRuntime cannot be null."),
+            null,
+            null,
+            modeLabel,
             gameTimeLabel,
             languageLabel,
             playerCountLabel,
@@ -127,6 +190,8 @@ public class GameLaunchContext {
     public static GameLaunchContext forTutorial(TutorialScriptId tutorialScriptId) {
         return new GameLaunchContext(
             LaunchKind.TUTORIAL,
+            null,
+            null,
             null,
             Objects.requireNonNull(tutorialScriptId, "tutorialScriptId cannot be null."),
             "Tutorial",
@@ -139,6 +204,18 @@ public class GameLaunchContext {
 
     public LaunchKind getLaunchKind() {
         return launchKind;
+    }
+
+    public RuntimeLaunchSpec getLaunchSpec() {
+        return launchSpec;
+    }
+
+    public boolean hasProvidedRuntime() {
+        return providedRuntime != null;
+    }
+
+    public GameRuntime requireProvidedRuntime() {
+        return Objects.requireNonNull(providedRuntime, "providedRuntime cannot be null.");
     }
 
     public NewGameRequest getRequest() {
