@@ -2,10 +2,12 @@ package com.kotva.presentation.scene;
 
 import com.kotva.presentation.component.ActionPanelView;
 import com.kotva.presentation.component.AiStatusBannerView;
+import com.kotva.presentation.component.BlankTilePickerView;
 import com.kotva.presentation.component.BoardView;
 import com.kotva.presentation.component.PlayerInfoCardView;
 import com.kotva.presentation.component.PreviewPanelView;
 import com.kotva.presentation.component.RackView;
+import com.kotva.presentation.component.RackHandoffOverlayView;
 import com.kotva.presentation.component.TimerView;
 import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.component.TransientMessageView;
@@ -40,23 +42,28 @@ public class GameScene extends Scene {
 
         StackPane root = new StackPane();
         root.getStyleClass().add("game-root");
+        root.setAlignment(Pos.TOP_CENTER);
 
         BorderPane contentRoot = new BorderPane();
+        Pane blankTilePickerLayer = new Pane();
+        blankTilePickerLayer.setPickOnBounds(false);
         Pane dragOverlay = new Pane();
         dragOverlay.setMouseTransparent(true);
         dragOverlay.setPickOnBounds(false);
+        Pane rackHandoffLayer = new Pane();
+        rackHandoffLayer.setPickOnBounds(false);
 
         TitleBanner titleBanner = new TitleBanner(viewModel.getTitleText());
         TransientMessageView messageView = new TransientMessageView();
-        VBox topBox = new VBox(12, titleBanner, messageView);
+        VBox topBox = new VBox(6, titleBanner, messageView);
         topBox.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(topBox, new Insets(34, 210, 18, 210));
+        BorderPane.setMargin(topBox, new Insets(18, 180, 8, 180));
         contentRoot.setTop(topBox);
 
         AiStatusBannerView aiStatusBannerView = new AiStatusBannerView();
         BoardView boardView = new BoardView();
         RackView rackView = new RackView();
-        VBox boardColumn = new VBox(18, aiStatusBannerView, boardView, rackView);
+        VBox boardColumn = new VBox(12, aiStatusBannerView, boardView, rackView);
         boardColumn.setAlignment(Pos.CENTER);
         boardColumn.getStyleClass().add("game-board-column");
 
@@ -64,27 +71,31 @@ public class GameScene extends Scene {
         PlayerInfoCardView leftBottomCard = new PlayerInfoCardView();
         TimerView stepTimerView = new TimerView("Step Time");
         TimerView totalTimerView = new TimerView("Total Time");
-        HBox timerRow = new HBox(18, stepTimerView, totalTimerView);
+        PreviewPanelView previewPanelView = new PreviewPanelView();
+        HBox timerRow = new HBox(8, stepTimerView, totalTimerView);
         timerRow.setAlignment(Pos.CENTER);
         timerRow.getStyleClass().add("game-timer-row");
 
-        VBox leftColumn = new VBox(34, leftTopCard, leftBottomCard, timerRow);
+        VBox leftColumn = new VBox(10, leftTopCard, leftBottomCard, timerRow, previewPanelView);
         leftColumn.setAlignment(Pos.TOP_CENTER);
         leftColumn.getStyleClass().add("game-side-column");
 
         PlayerInfoCardView rightTopCard = new PlayerInfoCardView();
         PlayerInfoCardView rightBottomCard = new PlayerInfoCardView();
-        PreviewPanelView previewPanelView = new PreviewPanelView();
         ActionPanelView actionPanel = new ActionPanelView();
+        BlankTilePickerView blankTilePickerView = new BlankTilePickerView();
+        RackHandoffOverlayView rackHandoffOverlayView = new RackHandoffOverlayView(rackView);
+        blankTilePickerLayer.getChildren().add(blankTilePickerView);
+        rackHandoffLayer.getChildren().add(rackHandoffOverlayView);
 
-        VBox rightColumn = new VBox(24, rightTopCard, rightBottomCard, previewPanelView, actionPanel);
+        VBox rightColumn = new VBox(12, rightTopCard, rightBottomCard, actionPanel);
         rightColumn.setAlignment(Pos.TOP_CENTER);
         rightColumn.getStyleClass().add("game-side-column");
 
-        HBox contentBox = new HBox(42, leftColumn, boardColumn, rightColumn);
-        contentBox.setAlignment(Pos.CENTER);
+        HBox contentBox = new HBox(22, leftColumn, boardColumn, rightColumn);
+        contentBox.setAlignment(Pos.TOP_CENTER);
         contentBox.getStyleClass().add("game-content-box");
-        BorderPane.setMargin(contentBox, new Insets(6, 44, 48, 44));
+        BorderPane.setMargin(contentBox, new Insets(0, 20, 8, 20));
         contentRoot.setCenter(contentBox);
 
         TutorialOverlayView tutorialOverlayView = new TutorialOverlayView();
@@ -102,6 +113,7 @@ public class GameScene extends Scene {
             messageView,
             stepTimerView,
             totalTimerView,
+            rackHandoffOverlayView,
             tutorialOverlayView,
             List.of(leftTopCard, rightTopCard, leftBottomCard, rightBottomCard),
             controller.getDraftState(),
@@ -110,13 +122,20 @@ public class GameScene extends Scene {
             boardView,
             rackView,
             actionPanel,
+            blankTilePickerView,
+            blankTilePickerLayer,
             controller.getDraftState(),
             previewRenderer,
             renderer,
             controller);
         controller.bind(renderer, interactionCoordinator);
 
-        root.getChildren().addAll(contentRoot, dragOverlay, tutorialOverlayView);
+        root.getChildren().addAll(
+            contentRoot,
+            blankTilePickerLayer,
+            dragOverlay,
+            rackHandoffLayer,
+            tutorialOverlayView);
 
         return root;
     }

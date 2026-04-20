@@ -143,13 +143,13 @@
 
 .game-preview-title {
     -fx-text-fill: #3f4b63;
-    -fx-font-size: 18px;
+    -fx-font-size: 16px;
     -fx-font-weight: 700;
 }
 
 .game-preview-status {
     -fx-text-fill: #3f4b63;
-    -fx-font-size: 16px;
+    -fx-font-size: 14px;
     -fx-font-weight: 700;
 }
 
@@ -157,7 +157,7 @@
 .game-preview-score,
 .game-preview-messages {
     -fx-text-fill: #4b556a;
-    -fx-font-size: 14px;
+    -fx-font-size: 13px;
 }
 
 .tutorial-overlay-blocker {

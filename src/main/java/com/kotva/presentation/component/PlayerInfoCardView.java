@@ -30,16 +30,16 @@ public class PlayerInfoCardView extends StackPane {
 
     private void initializeCard() {
         getStyleClass().add("game-player-card");
-        setPrefSize(236, 140);
-        setMinSize(236, 140);
-        setMaxSize(236, 140);
-        setPadding(new Insets(14, 18, 14, 18));
+        setPrefSize(220, 108);
+        setMinSize(220, 108);
+        setMaxSize(220, 108);
+        setPadding(new Insets(10, 14, 10, 14));
 
         StackPane avatarPane = new StackPane(avatarLabel);
         avatarPane.getStyleClass().add("game-player-avatar");
-        avatarPane.setPrefSize(62, 62);
-        avatarPane.setMinSize(62, 62);
-        avatarPane.setMaxSize(62, 62);
+        avatarPane.setPrefSize(48, 48);
+        avatarPane.setMinSize(48, 48);
+        avatarPane.setMaxSize(48, 48);
 
         avatarLabel.getStyleClass().add("game-player-avatar-text");
 
@@ -58,16 +58,16 @@ public class PlayerInfoCardView extends StackPane {
         leaderPlaceholder.setMinSize(22, 14);
         leaderPlaceholder.setMaxSize(22, 14);
 
-        HBox scoreRow = new HBox(10, playerScoreLabel, scoreSpacer, leaderPlaceholder);
+        HBox scoreRow = new HBox(6, playerScoreLabel, scoreSpacer, leaderPlaceholder);
         scoreRow.setAlignment(Pos.CENTER_LEFT);
 
-        HBox stepMarkRow = new HBox(6, stepMarkTitleLabel, stepMarkValueLabel);
+        HBox stepMarkRow = new HBox(4, stepMarkTitleLabel, stepMarkValueLabel);
         stepMarkRow.setAlignment(Pos.CENTER_LEFT);
 
-        VBox textColumn = new VBox(6, playerNameLabel, playerIdLabel, scoreRow, stepMarkRow);
+        VBox textColumn = new VBox(2, playerNameLabel, playerIdLabel, scoreRow, stepMarkRow);
         textColumn.setAlignment(Pos.CENTER_LEFT);
 
-        HBox content = new HBox(16, avatarPane, textColumn);
+        HBox content = new HBox(12, avatarPane, textColumn);
         content.setAlignment(Pos.CENTER_LEFT);
         getChildren().add(content);
     }

@@ -65,11 +65,23 @@ public class GameLaunchContext {
     }
 
     public static GameLaunchContext defaultContext() {
-        return forLocalMultiplayer("15min", "North American", "4");
+        return forLocalMultiplayer("15", "30", "North American", "4");
     }
 
     public static GameLaunchContext forLocalMultiplayer(
         String gameTimeLabel, String languageLabel, String playerCountLabel) {
+        return forLocalMultiplayer(
+            gameTimeLabel,
+            Long.toString(DEFAULT_STEP_TIME_MILLIS / 1000L),
+            languageLabel,
+            playerCountLabel);
+    }
+
+    public static GameLaunchContext forLocalMultiplayer(
+        String gameTimeLabel,
+        String stepTimeSecondsLabel,
+        String languageLabel,
+        String playerCountLabel) {
         int playerCount = Integer.parseInt(playerCountLabel);
         List<String> playerNames = buildSequentialNames("Player ", playerCount);
         NewGameRequest request = new NewGameRequest(
@@ -77,7 +89,7 @@ public class GameLaunchContext {
             playerCount,
             playerNames,
             mapDictionaryType(languageLabel),
-            mapTimeControl(gameTimeLabel));
+            mapTimeControl(gameTimeLabel, stepTimeSecondsLabel));
         return new GameLaunchContext(
             LaunchKind.STANDARD_GAME,
             RuntimeLaunchSpec.forLocal(request),
@@ -94,6 +106,18 @@ public class GameLaunchContext {
 
     public static GameLaunchContext forLocalAi(
         String gameTimeLabel, String languageLabel, String difficultyLabel) {
+        return forLocalAi(
+            gameTimeLabel,
+            Long.toString(DEFAULT_STEP_TIME_MILLIS / 1000L),
+            languageLabel,
+            difficultyLabel);
+    }
+
+    public static GameLaunchContext forLocalAi(
+        String gameTimeLabel,
+        String stepTimeSecondsLabel,
+        String languageLabel,
+        String difficultyLabel) {
         AiDifficulty aiDifficulty = AiDifficulty.fromSetupLabel(difficultyLabel);
         List<String> playerNames = List.of("Player", difficultyLabel + " Bot");
         NewGameRequest request = new NewGameRequest(
@@ -101,7 +125,7 @@ public class GameLaunchContext {
             2,
             playerNames,
             mapDictionaryType(languageLabel),
-            mapTimeControl(gameTimeLabel),
+            mapTimeControl(gameTimeLabel, stepTimeSecondsLabel),
             aiDifficulty);
         return new GameLaunchContext(
             LaunchKind.STANDARD_GAME,
@@ -119,6 +143,18 @@ public class GameLaunchContext {
 
     public static GameLaunchContext forRoomCreate(
         String gameTimeLabel, String languageLabel, String playerCountLabel) {
+        return forRoomCreate(
+            gameTimeLabel,
+            Long.toString(DEFAULT_STEP_TIME_MILLIS / 1000L),
+            languageLabel,
+            playerCountLabel);
+    }
+
+    public static GameLaunchContext forRoomCreate(
+        String gameTimeLabel,
+        String stepTimeSecondsLabel,
+        String languageLabel,
+        String playerCountLabel) {
         int playerCount = Integer.parseInt(playerCountLabel);
         List<String> playerNames = new ArrayList<>();
         playerNames.add("Host");
@@ -130,7 +166,7 @@ public class GameLaunchContext {
             playerCount,
             playerNames,
             mapDictionaryType(languageLabel),
-            mapTimeControl(gameTimeLabel));
+            mapTimeControl(gameTimeLabel, stepTimeSecondsLabel));
 
         return new GameLaunchContext(
             LaunchKind.STANDARD_GAME,
@@ -254,9 +290,12 @@ public class GameLaunchContext {
         return "British".equalsIgnoreCase(languageLabel) ? DictionaryType.BR : DictionaryType.AM;
     }
 
-    private static TimeControlConfig mapTimeControl(String gameTimeLabel) {
+    private static TimeControlConfig mapTimeControl(
+        String gameTimeLabel,
+        String stepTimeSecondsLabel) {
         int minutes = parseGameTimeMinutes(gameTimeLabel);
-        return new TimeControlConfig(minutes * 60L * 1000L, DEFAULT_STEP_TIME_MILLIS);
+        int stepTimeSeconds = parseStepTimeSeconds(stepTimeSecondsLabel);
+        return new TimeControlConfig(minutes * 60L * 1000L, stepTimeSeconds * 1000L);
     }
 
     private static int parseGameTimeMinutes(String gameTimeLabel) {
@@ -274,6 +313,24 @@ public class GameLaunchContext {
             return minutes > 0 ? minutes : 15;
         } catch (NumberFormatException exception) {
             return 15;
+        }
+    }
+
+    private static int parseStepTimeSeconds(String stepTimeSecondsLabel) {
+        if (stepTimeSecondsLabel == null) {
+            return (int) (DEFAULT_STEP_TIME_MILLIS / 1000L);
+        }
+
+        String digitsOnly = stepTimeSecondsLabel.replaceAll("[^0-9]", "");
+        if (digitsOnly.isEmpty()) {
+            return (int) (DEFAULT_STEP_TIME_MILLIS / 1000L);
+        }
+
+        try {
+            int seconds = Integer.parseInt(digitsOnly);
+            return seconds >= 0 ? seconds : (int) (DEFAULT_STEP_TIME_MILLIS / 1000L);
+        } catch (NumberFormatException exception) {
+            return (int) (DEFAULT_STEP_TIME_MILLIS / 1000L);
         }
     }
 

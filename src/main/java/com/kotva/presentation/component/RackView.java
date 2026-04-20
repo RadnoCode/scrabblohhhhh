@@ -4,9 +4,11 @@ import com.kotva.presentation.viewmodel.GameViewModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 
@@ -73,6 +75,15 @@ public class RackView extends StackPane {
         return tileSlots.get(index);
     }
 
+    public Bounds getTileBoundsInScene(int index) {
+        TileView tileView = tileSlots.get(index);
+        return tileView.localToScene(tileView.getBoundsInLocal());
+    }
+
+    public Bounds getRackBoundsInScene() {
+        return localToScene(getBoundsInLocal());
+    }
+
     public GameViewModel.TileModel getTileModel(int index) {
         return currentTiles.get(index);
     }
@@ -94,6 +105,22 @@ public class RackView extends StackPane {
 
     public int getSlotCount() {
         return tileSlots.size();
+    }
+
+    public void setOnSlotEntered(BiConsumer<Integer, MouseEvent> handler) {
+        Objects.requireNonNull(handler, "handler cannot be null.");
+        for (int index = 0; index < tileSlots.size(); index++) {
+            final int slotIndex = index;
+            tileSlots.get(index).setOnMouseEntered(event -> handler.accept(slotIndex, event));
+        }
+    }
+
+    public void setOnSlotExited(BiConsumer<Integer, MouseEvent> handler) {
+        Objects.requireNonNull(handler, "handler cannot be null.");
+        for (int index = 0; index < tileSlots.size(); index++) {
+            final int slotIndex = index;
+            tileSlots.get(index).setOnMouseExited(event -> handler.accept(slotIndex, event));
+        }
     }
 
     private void updateHoverStyles() {

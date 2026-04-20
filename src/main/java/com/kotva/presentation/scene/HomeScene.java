@@ -34,11 +34,11 @@ public class HomeScene extends Scene {
 
         TitleBanner titleBanner = new TitleBanner(viewModel.getTitleText());
         BorderPane.setAlignment(titleBanner, Pos.CENTER);
-        BorderPane.setMargin(titleBanner, new Insets(60, 110, 30, 110));
+        BorderPane.setMargin(titleBanner, new Insets(42, 100, 18, 100));
         root.setTop(titleBanner);
 
         EnvelopeIconView envelopeIconView = new EnvelopeIconView();
-        envelopeIconView.setPrefSize(380, 270);
+        envelopeIconView.setPrefSize(330, 235);
 
         CommonButton playButton = new CommonButton(viewModel.getPlayText());
         CommonButton tutorialButton = new CommonButton(viewModel.getTutorialText());
@@ -47,20 +47,20 @@ public class HomeScene extends Scene {
 
         controller.bindActions(playButton, tutorialButton, settingsButton, helpButton, envelopeIconView);
 
-        VBox buttonColumn = new VBox(26);
+        VBox buttonColumn = new VBox(18);
         buttonColumn.setAlignment(Pos.CENTER_LEFT);
         buttonColumn.getStyleClass().add("home-button-column");
         buttonColumn.getChildren().addAll(playButton, tutorialButton, settingsButton, helpButton);
 
         Region contentSpacer = new Region();
-        contentSpacer.setMinWidth(70);
+        contentSpacer.setMinWidth(56);
 
         HBox contentBox = new HBox();
         contentBox.setAlignment(Pos.CENTER);
         contentBox.getStyleClass().add("home-content-box");
         contentBox.getChildren().addAll(envelopeIconView, contentSpacer, buttonColumn);
 
-        BorderPane.setMargin(contentBox, new Insets(20, 110, 90, 110));
+        BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);
 
         sceneRoot.getChildren().add(root);

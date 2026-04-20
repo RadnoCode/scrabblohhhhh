@@ -20,9 +20,9 @@ public class TimerView extends StackPane {
 
     private void initializeTimer() {
         getStyleClass().add("game-timer");
-        setPrefSize(120, 156);
-        setMinSize(120, 156);
-        setMaxSize(120, 156);
+        setPrefSize(98, 96);
+        setMinSize(98, 96);
+        setMaxSize(98, 96);
 
         titleLabel.getStyleClass().add("game-timer-title");
         titleLabel.setWrapText(true);
@@ -30,7 +30,7 @@ public class TimerView extends StackPane {
 
         valueLabel.getStyleClass().add("game-timer-value");
 
-        VBox content = new VBox(14, titleLabel, valueLabel);
+        VBox content = new VBox(6, titleLabel, valueLabel);
         content.setAlignment(Pos.CENTER);
         getChildren().add(content);
     }

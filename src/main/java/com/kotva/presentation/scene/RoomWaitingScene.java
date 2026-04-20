@@ -39,11 +39,11 @@ public class RoomWaitingScene extends Scene {
         root.getStyleClass().add("room-root");
 
         TitleBanner titleBanner = new TitleBanner(viewModel.getTitleText());
-        BorderPane.setMargin(titleBanner, new Insets(60, 110, 30, 110));
+        BorderPane.setMargin(titleBanner, new Insets(42, 100, 18, 100));
         root.setTop(titleBanner);
 
         CardStackIconView cardStackIconView = new CardStackIconView();
-        cardStackIconView.setPrefSize(420, 320);
+        cardStackIconView.setPrefSize(360, 270);
 
         RoomPanelView roomPanelView = RoomPanelView.createWaitingPanel();
         Label roomSummaryLabel = new Label();
@@ -56,7 +56,7 @@ public class RoomWaitingScene extends Scene {
 
         ListView<String> playerListView = new ListView<>();
         playerListView.getStyleClass().add("room-list-view");
-        playerListView.setPrefSize(420, 180);
+        playerListView.setPrefSize(420, 160);
         controller.bindPlayerList(playerListView);
 
         StackPane waitingPanelBox = new StackPane(roomPanelView, playerListView);
@@ -70,7 +70,7 @@ public class RoomWaitingScene extends Scene {
         controller.bindPrimaryAction(primaryActionButton);
 
         VBox rightColumn = new VBox(
-                18,
+                14,
                 roomSummaryLabel,
                 joinAddressLabel,
                 waitingPanelBox,
@@ -79,11 +79,11 @@ public class RoomWaitingScene extends Scene {
         rightColumn.setAlignment(Pos.TOP_CENTER);
 
         Region spacer = new Region();
-        spacer.setMinWidth(80);
+        spacer.setMinWidth(56);
 
         HBox contentBox = new HBox(cardStackIconView, spacer, rightColumn);
         contentBox.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(contentBox, new Insets(40, 110, 100, 110));
+        BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);
 
         BackButton backButton = new BackButton();

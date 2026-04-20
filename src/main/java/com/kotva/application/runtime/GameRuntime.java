@@ -33,6 +33,9 @@ public interface GameRuntime {
 
     void removeDraftTile(String tileId);
 
+    default void assignBlankTileLetter(String tileId, char assignedLetter) {
+    }
+
     void recallAllDraftTiles();
 
     void submitDraft();

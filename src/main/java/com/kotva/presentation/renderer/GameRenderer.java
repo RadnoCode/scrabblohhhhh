@@ -6,6 +6,7 @@ import com.kotva.presentation.component.BoardView;
 import com.kotva.presentation.component.PlayerInfoCardView;
 import com.kotva.presentation.component.PreviewPanelView;
 import com.kotva.presentation.component.RackView;
+import com.kotva.presentation.component.RackHandoffOverlayView;
 import com.kotva.presentation.component.TimerView;
 import com.kotva.presentation.component.TransientMessageView;
 import com.kotva.presentation.component.TutorialOverlayView;
@@ -23,6 +24,7 @@ public class GameRenderer {
     private final TransientMessageView transientMessageView;
     private final TimerView stepTimerView;
     private final TimerView totalTimerView;
+    private final RackHandoffOverlayView rackHandoffOverlayView;
     private final TutorialOverlayView tutorialOverlayView;
     private final List<PlayerInfoCardView> playerCards;
     private final BoardRenderer boardRenderer;
@@ -39,6 +41,7 @@ public class GameRenderer {
         TransientMessageView transientMessageView,
         TimerView stepTimerView,
         TimerView totalTimerView,
+        RackHandoffOverlayView rackHandoffOverlayView,
         TutorialOverlayView tutorialOverlayView,
         List<PlayerInfoCardView> playerCards,
         GameDraftState draftState,
@@ -55,6 +58,9 @@ public class GameRenderer {
         Objects.requireNonNull(transientMessageView, "transientMessageView cannot be null.");
         this.stepTimerView = Objects.requireNonNull(stepTimerView, "stepTimerView cannot be null.");
         this.totalTimerView = Objects.requireNonNull(totalTimerView, "totalTimerView cannot be null.");
+        this.rackHandoffOverlayView = Objects.requireNonNull(
+            rackHandoffOverlayView,
+            "rackHandoffOverlayView cannot be null.");
         this.tutorialOverlayView = Objects.requireNonNull(
             tutorialOverlayView,
             "tutorialOverlayView cannot be null.");
@@ -72,6 +78,14 @@ public class GameRenderer {
         if (lastViewModel != null) {
             applyRender(lastViewModel);
         }
+    }
+
+    public void showRackHandoffOverlay() {
+        rackHandoffOverlayView.showOverlay();
+    }
+
+    public void hideRackHandoffOverlay() {
+        rackHandoffOverlayView.hideOverlay();
     }
 
     private void applyRender(GameViewModel viewModel) {
