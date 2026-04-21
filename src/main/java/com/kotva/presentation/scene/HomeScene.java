@@ -1,7 +1,9 @@
 package com.kotva.presentation.scene;
 
-import com.kotva.presentation.component.EnvelopeIconView;
 import com.kotva.presentation.component.CommonButton;
+import com.kotva.presentation.component.HelpEnvelope;
+import com.kotva.presentation.component.PlayEnvelope;
+import com.kotva.presentation.component.SettingEnvelope;
 import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.controller.HomeController;
 import com.kotva.presentation.viewmodel.HomeViewModel;
@@ -37,15 +39,26 @@ public class HomeScene extends Scene {
         BorderPane.setMargin(titleBanner, new Insets(42, 100, 18, 100));
         root.setTop(titleBanner);
 
-        EnvelopeIconView envelopeIconView = new EnvelopeIconView();
-        envelopeIconView.setPrefSize(330, 235);
+        PlayEnvelope playEnvelope = new PlayEnvelope();
+        SettingEnvelope settingEnvelope = new SettingEnvelope();
+        HelpEnvelope helpEnvelope = new HelpEnvelope();
+        StackPane envelopeStack = new StackPane(playEnvelope, settingEnvelope, helpEnvelope);
+        envelopeStack.getStyleClass().add("home-envelope-stack");
+        playEnvelope.activate();
 
         CommonButton playButton = new CommonButton(viewModel.getPlayText());
         CommonButton tutorialButton = new CommonButton(viewModel.getTutorialText());
         CommonButton settingsButton = new CommonButton(viewModel.getSettingsText());
         CommonButton helpButton = new CommonButton(viewModel.getHelpText());
 
-        controller.bindActions(playButton, tutorialButton, settingsButton, helpButton, envelopeIconView);
+        controller.bindActions(
+            playButton,
+            tutorialButton,
+            settingsButton,
+            helpButton,
+            playEnvelope,
+            settingEnvelope,
+            helpEnvelope);
 
         VBox buttonColumn = new VBox(18);
         buttonColumn.setAlignment(Pos.CENTER_LEFT);
@@ -58,7 +71,7 @@ public class HomeScene extends Scene {
         HBox contentBox = new HBox();
         contentBox.setAlignment(Pos.CENTER);
         contentBox.getStyleClass().add("home-content-box");
-        contentBox.getChildren().addAll(envelopeIconView, contentSpacer, buttonColumn);
+        contentBox.getChildren().addAll(envelopeStack, contentSpacer, buttonColumn);
 
         BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);

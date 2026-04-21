@@ -3,8 +3,10 @@ package com.kotva.presentation.controller;
 import com.kotva.infrastructure.AudioManager;
 import com.kotva.infrastructure.settings.AppSettings;
 import com.kotva.infrastructure.settings.SettingsRepository;
-import com.kotva.presentation.component.EnvelopeIconView;
 import com.kotva.presentation.component.CommonButton;
+import com.kotva.presentation.component.HelpEnvelope;
+import com.kotva.presentation.component.PlayEnvelope;
+import com.kotva.presentation.component.SettingEnvelope;
 import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.HomeViewModel;
 import javafx.event.ActionEvent;
@@ -34,13 +36,19 @@ public class HomeController {
         CommonButton tutorialButton,
         CommonButton settingsButton,
         CommonButton helpButton,
-        EnvelopeIconView envelopeIconView)
+        PlayEnvelope playEnvelope,
+        SettingEnvelope settingEnvelope,
+        HelpEnvelope helpEnvelope)
     {
         playButton.setOnAction(createPlayHandler());
         tutorialButton.setOnAction(createTutorialHandler());
         settingsButton.setOnAction(createSettingsHandler());
         helpButton.setOnAction(createHelpHandler());
-        envelopeIconView.setOnMouseClicked(event -> handleEnvelopeClick());
+
+        playButton.setOnMouseEntered(event -> playEnvelope.activate());
+        tutorialButton.setOnMouseEntered(event -> helpEnvelope.activate());
+        settingsButton.setOnMouseEntered(event -> settingEnvelope.activate());
+        helpButton.setOnMouseEntered(event -> helpEnvelope.activate());
     }
 
     public EventHandler<ActionEvent> createPlayHandler() {
@@ -89,12 +97,6 @@ public class HomeController {
     private void handleHelpClick() {
         navigator.showHelp();
     }
-
-    private void handleEnvelopeClick() {
-        audioManager.playUIClick();
-        System.out.println("Home page: Envelope icon clicked.");
-    }
-
     private void acknowledgeTutorialPrompt() {
         AppSettings settings = settingsRepository.load();
         settingsRepository.save(

@@ -63,31 +63,8 @@
     -fx-border-radius: 16;
 }
 
-.envelope-icon {
-    -fx-cursor: hand;
-}
-
-.envelope-body {
-    -fx-fill: rgba(255, 255, 255, 0.30);
-    -fx-stroke: -app-line;
-    -fx-stroke-width: 3;
-}
-
-.envelope-flap {
-    -fx-fill: rgba(255, 255, 255, 0.14);
-    -fx-stroke: -app-line;
-    -fx-stroke-width: 3;
-}
-
-.envelope-fold-line {
-    -fx-stroke: -app-line;
-    -fx-stroke-width: 3;
-}
-
-.envelope-seal {
-    -fx-fill: -app-line;
-    -fx-stroke: -app-line;
-    -fx-stroke-width: 1;
+.home-envelope-gif {
+    -fx-alignment: center;
 }
 
 .setting-item-button {
