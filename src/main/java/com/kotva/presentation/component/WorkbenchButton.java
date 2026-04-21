@@ -13,9 +13,9 @@ public class WorkbenchButton extends CommonButton {
     private void initializeWorkbenchButton() {
         getStyleClass().add("workbench-button");
         setAlignment(Pos.CENTER);
-        setPrefSize(180, 44);
-        setMinSize(180, 44);
-        setMaxSize(180, 44);
+        setPrefSize(172, 38);
+        setMinSize(172, 38);
+        setMaxSize(172, 38);
         setPadding(new Insets(0));
     }
 }

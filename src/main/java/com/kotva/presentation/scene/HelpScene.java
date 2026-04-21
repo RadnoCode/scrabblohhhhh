@@ -34,11 +34,11 @@ public class HelpScene extends Scene {
         root.getStyleClass().add("help-root");
 
         TitleBanner titleBanner = new TitleBanner(viewModel.getTitleText());
-        BorderPane.setMargin(titleBanner, new Insets(60, 110, 30, 110));
+        BorderPane.setMargin(titleBanner, new Insets(42, 100, 18, 100));
         root.setTop(titleBanner);
 
         HelpIconView helpIconView = new HelpIconView();
-        helpIconView.setPrefSize(310, 310);
+        helpIconView.setPrefSize(280, 280);
 
         Label helpTextLabel = new Label(viewModel.getHelpText());
         helpTextLabel.setWrapText(true);
@@ -52,14 +52,14 @@ public class HelpScene extends Scene {
 
         StackPane helpPanel = new StackPane(helpScrollPane);
         helpPanel.getStyleClass().add("help-panel");
-        helpPanel.setPrefSize(620, 380);
+        helpPanel.setPrefSize(590, 330);
 
         Region spacer = new Region();
-        spacer.setMinWidth(70);
+        spacer.setMinWidth(56);
 
         HBox contentBox = new HBox(helpIconView, spacer, helpPanel);
         contentBox.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(contentBox, new Insets(20, 110, 90, 110));
+        BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);
 
         BackButton backButton = new BackButton();
