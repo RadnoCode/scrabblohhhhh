@@ -10,7 +10,7 @@ import com.kotva.lan.discovery.LanDiscoveryHostService;
 import com.kotva.lan.discovery.UdpLanDiscoveryHostService;
 import com.kotva.lan.udp.DiscoveredRoom;
 import com.kotva.presentation.component.CommonButton;
-import com.kotva.presentation.component.PlayerNameCardView;
+import com.kotva.presentation.component.InputButton;
 import com.kotva.presentation.component.TransientMessageView;
 import com.kotva.presentation.fx.PlayerNameSetupContext;
 import com.kotva.presentation.fx.RoomWaitingContext;
@@ -47,10 +47,10 @@ public class PlayerNameSetupController {
 
     public void bindPrimaryAction(
             CommonButton primaryButton,
-            List<PlayerNameCardView> playerCards,
+            List<InputButton> playerNameButtons,
             TransientMessageView messageView) {
         primaryButton.setText(context.getConfirmButtonText());
-        primaryButton.setOnAction(event -> handlePrimaryAction(primaryButton, playerCards, messageView));
+        primaryButton.setOnAction(event -> handlePrimaryAction(primaryButton, playerNameButtons, messageView));
     }
 
     public void bindBackAction(CommonButton backButton) {
@@ -59,9 +59,9 @@ public class PlayerNameSetupController {
 
     private void handlePrimaryAction(
             CommonButton primaryButton,
-            List<PlayerNameCardView> playerCards,
+            List<InputButton> playerNameButtons,
             TransientMessageView messageView) {
-        List<String> validatedNames = validateNames(playerCards, messageView);
+        List<String> validatedNames = validateNames(playerNameButtons, messageView);
         if (validatedNames == null) {
             return;
         }
@@ -74,15 +74,17 @@ public class PlayerNameSetupController {
     }
 
     private List<String> validateNames(
-            List<PlayerNameCardView> playerCards,
+            List<InputButton> playerNameButtons,
             TransientMessageView messageView) {
-        if (playerCards == null || playerCards.isEmpty()) {
+        if (playerNameButtons == null || playerNameButtons.isEmpty()) {
             messageView.showMessage(BLANK_NAME_MESSAGE);
             return null;
         }
 
-        List<String> names = playerCards.stream()
-                .map(PlayerNameCardView::getPlayerName)
+        int requiredPlayerCount = resolveRequiredPlayerCount(playerNameButtons.size());
+        List<String> names = playerNameButtons.stream()
+                .limit(requiredPlayerCount)
+                .map(inputButton -> inputButton.getTextField().getText())
                 .map(name -> name == null ? "" : name.trim())
                 .toList();
 
@@ -97,6 +99,13 @@ public class PlayerNameSetupController {
         }
 
         return names;
+    }
+
+    private int resolveRequiredPlayerCount(int availableButtonCount) {
+        if (context.getFlow() != PlayerNameSetupContext.Flow.HOT_SEAT) {
+            return Math.min(availableButtonCount, context.getCardTitles().size());
+        }
+        return Math.max(1, Math.min(availableButtonCount, context.getActivePlayerCount()));
     }
 
     private boolean hasDuplicates(List<String> names) {

@@ -180,6 +180,19 @@ public final class PlayerNameSetupContext {
         return playerCountLabel;
     }
 
+    public int getActivePlayerCount() {
+        if (flow != Flow.HOT_SEAT) {
+            return cardTitles.size();
+        }
+
+        try {
+            int count = Integer.parseInt(playerCountLabel.trim());
+            return Math.max(1, Math.min(4, count));
+        } catch (NumberFormatException exception) {
+            return Math.max(1, Math.min(4, cardTitles.size()));
+        }
+    }
+
     public String getEndpoint() {
         return endpoint;
     }
