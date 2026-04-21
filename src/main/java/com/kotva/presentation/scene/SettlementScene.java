@@ -23,6 +23,7 @@ public class SettlementScene extends Scene {
         root.getChildren().add(SceneBackgroundLayer.createFor(root));
 
         CommonButton goBackButton = new CommonButton(GO_BACK_TEXT);
+        goBackButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
         controller.bindActions(goBackButton);
         root.getChildren().add(goBackButton);
         return root;

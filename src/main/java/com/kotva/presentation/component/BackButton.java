@@ -8,9 +8,8 @@ public class BackButton extends CommonButton {
     }
 
     private void initializeBackButton() {
+        setTemplateEnabled(false);
         getStyleClass().add("back-button");
-        setPrefSize(100, 30);
-        setMinSize(100, 30);
-        setMaxSize(100, 30);
+        applyFixedSize(100, 30);
     }
 }

@@ -67,6 +67,7 @@ public class RoomWaitingScene extends Scene {
         controller.bindStatusLabel(statusLabel);
 
         CommonButton primaryActionButton = new CommonButton("Start Game");
+        primaryActionButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
         controller.bindPrimaryAction(primaryActionButton);
 
         VBox rightColumn = new VBox(

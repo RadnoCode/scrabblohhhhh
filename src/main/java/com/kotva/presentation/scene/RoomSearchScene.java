@@ -72,6 +72,8 @@ public class RoomSearchScene extends Scene {
 
         CommonButton joinButton = new CommonButton("Join Selected");
         CommonButton refreshButton = new CommonButton("Refresh");
+        joinButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        refreshButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
         controller.bindJoinAction(joinButton);
         controller.bindRefreshAction(refreshButton);
 

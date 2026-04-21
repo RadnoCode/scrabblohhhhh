@@ -67,6 +67,11 @@ public class LocalAiSetupScene extends Scene {
         SwitchButton secondButton = new SwitchButton(viewModel.getSecondOptionText());
         SwitchButton thirdButton = new SwitchButton(viewModel.getThirdOptionText());
         CommonButton goButton = new CommonButton("Go!");
+        firstButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        stepTimeButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
+        secondButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        thirdButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        goButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
         controller.bindActions(
             firstButton,
             stepTimeButton,

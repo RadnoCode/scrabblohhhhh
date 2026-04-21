@@ -43,6 +43,9 @@ public class ModeSelectScene extends Scene {
         CommonButton withFriendsButton = new CommonButton(viewModel.getWithFriendsText());
         CommonButton withRobotButton = new CommonButton(viewModel.getWithRobotText());
         CommonButton byLanButton = new CommonButton(viewModel.getByLanText());
+        withFriendsButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        withRobotButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        byLanButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
         controller.bindActions(withFriendsButton, withRobotButton, byLanButton);
 
         VBox buttonColumn = new VBox(18);

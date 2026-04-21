@@ -39,6 +39,6 @@ public class LockedButton extends CommonButton {
         BorderPane.setAlignment(leftLabel, Pos.CENTER_LEFT);
         BorderPane.setAlignment(rightBox, Pos.CENTER_RIGHT);
 
-        setGraphic(content);
+        setButtonContent(content);
     }
 }

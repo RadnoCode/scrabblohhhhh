@@ -1,6 +1,7 @@
 package com.kotva.presentation.scene;
 
 import com.kotva.presentation.component.BackButton;
+import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.InputButton;
 import com.kotva.presentation.component.LockedButton;
 import com.kotva.presentation.component.SettingsGearIconView;
@@ -45,6 +46,9 @@ public class SettingsScene extends Scene {
         InputButton nameButton = new InputButton("Name");
         SliderButton musicButton = new SliderButton("Music");
         LockedButton lockedButton = new LockedButton("ID", viewModel.getUserId());
+        nameButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        musicButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        lockedButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
 
         controller.bindControls(nameButton, musicButton);
 

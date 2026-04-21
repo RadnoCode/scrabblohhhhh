@@ -50,6 +50,10 @@ public class HomeScene extends Scene {
         CommonButton tutorialButton = new CommonButton(viewModel.getTutorialText());
         CommonButton settingsButton = new CommonButton(viewModel.getSettingsText());
         CommonButton helpButton = new CommonButton(viewModel.getHelpText());
+        playButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        tutorialButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
+        settingsButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        helpButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
 
         controller.bindActions(
             playButton,
@@ -103,8 +107,10 @@ public class HomeScene extends Scene {
 
         CommonButton startButton = new CommonButton("开始教程");
         CommonButton skipButton = new CommonButton("暂时跳过");
-        startButton.setPrefWidth(280);
-        skipButton.setPrefWidth(280);
+        startButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        skipButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
+        startButton.applyTemplateSize(280);
+        skipButton.applyTemplateSize(280);
         startButton.setOnAction(event -> controller.startTutorialFromPrompt());
         skipButton.setOnAction(event -> {
             controller.dismissTutorialPrompt();

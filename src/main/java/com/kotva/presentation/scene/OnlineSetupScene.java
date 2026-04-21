@@ -60,6 +60,8 @@ public class OnlineSetupScene extends Scene {
 
         CommonButton firstButton = new CommonButton(viewModel.getFirstOptionText());
         CommonButton secondButton = new CommonButton(viewModel.getSecondOptionText());
+        firstButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        secondButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
         controller.bindActions(firstButton, secondButton);
 
         VBox buttonColumn = new VBox(18);

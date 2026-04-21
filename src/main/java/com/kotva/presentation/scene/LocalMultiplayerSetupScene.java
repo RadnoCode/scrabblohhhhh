@@ -68,6 +68,11 @@ public class LocalMultiplayerSetupScene extends Scene {
         SwitchButton thirdButton = new SwitchButton(viewModel.getThirdOptionText());
         thirdButton.getStyleClass().add("compact-setting-label");
         CommonButton goButton = new CommonButton("Go!");
+        firstButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        stepTimeButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        secondButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
+        thirdButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        goButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
         controller.bindActions(
             firstButton,
             stepTimeButton,

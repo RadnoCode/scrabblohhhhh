@@ -47,7 +47,7 @@ public class SwitchButton extends CommonButton {
         BorderPane.setAlignment(leftLabel, Pos.CENTER_LEFT);
         BorderPane.setAlignment(switchTrigger, Pos.CENTER_RIGHT);
 
-        setGraphic(content);
+        setButtonContent(content);
     }
 
     public void setCurrentValue(String value) {
