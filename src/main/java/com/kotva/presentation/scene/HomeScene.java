@@ -5,6 +5,7 @@ import com.kotva.presentation.component.HelpEnvelope;
 import com.kotva.presentation.component.PlayEnvelope;
 import com.kotva.presentation.component.SettingEnvelope;
 import com.kotva.presentation.component.TitleBanner;
+import com.kotva.presentation.component.TutorialEnvelope;
 import com.kotva.presentation.controller.HomeController;
 import com.kotva.presentation.viewmodel.HomeViewModel;
 import javafx.geometry.Insets;
@@ -40,9 +41,10 @@ public class HomeScene extends Scene {
         root.setTop(titleBanner);
 
         PlayEnvelope playEnvelope = new PlayEnvelope();
+        TutorialEnvelope tutorialEnvelope = new TutorialEnvelope();
         SettingEnvelope settingEnvelope = new SettingEnvelope();
         HelpEnvelope helpEnvelope = new HelpEnvelope();
-        StackPane envelopeStack = new StackPane(playEnvelope, settingEnvelope, helpEnvelope);
+        StackPane envelopeStack = new StackPane(playEnvelope, tutorialEnvelope, settingEnvelope, helpEnvelope);
         envelopeStack.getStyleClass().add("home-envelope-stack");
         playEnvelope.activate();
 
@@ -61,6 +63,7 @@ public class HomeScene extends Scene {
             settingsButton,
             helpButton,
             playEnvelope,
+            tutorialEnvelope,
             settingEnvelope,
             helpEnvelope);
 

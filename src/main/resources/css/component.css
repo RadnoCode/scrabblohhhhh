@@ -36,12 +36,12 @@
     -fx-cursor: hand;
 }
 
-.common-button:hover {
-    -fx-effect: dropshadow(gaussian, -app-shadow, 24, 0.25, 0, 8);
-}
-
 .common-button:focused {
     -fx-effect: dropshadow(gaussian, rgba(255, 245, 210, 0.95), 22, 0.30, 0, 0);
+}
+
+.common-button:hover {
+    -fx-effect: dropshadow(gaussian, -app-shadow, 24, 0.25, 0, 8);
 }
 
 .common-button:pressed {

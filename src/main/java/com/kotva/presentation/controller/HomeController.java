@@ -7,6 +7,7 @@ import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.HelpEnvelope;
 import com.kotva.presentation.component.PlayEnvelope;
 import com.kotva.presentation.component.SettingEnvelope;
+import com.kotva.presentation.component.TutorialEnvelope;
 import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.HomeViewModel;
 import javafx.event.ActionEvent;
@@ -37,6 +38,7 @@ public class HomeController {
         CommonButton settingsButton,
         CommonButton helpButton,
         PlayEnvelope playEnvelope,
+        TutorialEnvelope tutorialEnvelope,
         SettingEnvelope settingEnvelope,
         HelpEnvelope helpEnvelope)
     {
@@ -45,10 +47,22 @@ public class HomeController {
         settingsButton.setOnAction(createSettingsHandler());
         helpButton.setOnAction(createHelpHandler());
 
-        playButton.setOnMouseEntered(event -> playEnvelope.activate());
-        tutorialButton.setOnMouseEntered(event -> helpEnvelope.activate());
-        settingsButton.setOnMouseEntered(event -> settingEnvelope.activate());
-        helpButton.setOnMouseEntered(event -> helpEnvelope.activate());
+        HomeButtonSequenceManager sequenceManager = new HomeButtonSequenceManager(
+            HomeButtonSequenceManager.ButtonKey.PLAY,
+            playEnvelope,
+            tutorialEnvelope,
+            settingEnvelope,
+            helpEnvelope);
+
+        playButton.setOnMouseEntered(event -> sequenceManager.onButtonEntered(HomeButtonSequenceManager.ButtonKey.PLAY));
+        tutorialButton.setOnMouseEntered(event -> sequenceManager.onButtonEntered(HomeButtonSequenceManager.ButtonKey.TUTORIAL));
+        settingsButton.setOnMouseEntered(event -> sequenceManager.onButtonEntered(HomeButtonSequenceManager.ButtonKey.SETTINGS));
+        helpButton.setOnMouseEntered(event -> sequenceManager.onButtonEntered(HomeButtonSequenceManager.ButtonKey.HELP));
+
+        playButton.setOnMouseExited(event -> sequenceManager.onButtonExited(HomeButtonSequenceManager.ButtonKey.PLAY));
+        tutorialButton.setOnMouseExited(event -> sequenceManager.onButtonExited(HomeButtonSequenceManager.ButtonKey.TUTORIAL));
+        settingsButton.setOnMouseExited(event -> sequenceManager.onButtonExited(HomeButtonSequenceManager.ButtonKey.SETTINGS));
+        helpButton.setOnMouseExited(event -> sequenceManager.onButtonExited(HomeButtonSequenceManager.ButtonKey.HELP));
     }
 
     public EventHandler<ActionEvent> createPlayHandler() {
