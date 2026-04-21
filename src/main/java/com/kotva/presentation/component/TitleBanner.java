@@ -1,44 +1,51 @@
 package com.kotva.presentation.component;
 
 import javafx.geometry.Pos;
-import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 
+import java.util.Objects;
+
 public class TitleBanner extends StackPane {
-    private final Label titleLabel;
+    private static final String TITLE_IMAGE_PATH = "/images/home/title.png";
+    private static final double PREF_HEIGHT = 120;
+
+    private final ImageView titleImageView;
+    private String titleText;
 
     public TitleBanner(String titleText) {
-        this.titleLabel = new Label(addLetterSpacing(titleText));
-
-        getStyleClass().add("title-banner");
-        titleLabel.getStyleClass().add("title-banner-label");
+        this.titleText = titleText == null ? "" : titleText.trim();
+        this.titleImageView = new ImageView(loadTitleImage());
 
         setAlignment(Pos.CENTER);
         setMaxWidth(Double.MAX_VALUE);
-        setPrefHeight(120);
+        setPrefHeight(PREF_HEIGHT);
+        setMinHeight(PREF_HEIGHT);
 
-        getChildren().add(titleLabel);
+        titleImageView.setPreserveRatio(true);
+        titleImageView.setSmooth(true);
+        titleImageView.fitWidthProperty().bind(widthProperty());
+        titleImageView.fitHeightProperty().bind(heightProperty());
+        setAccessibleText(this.titleText);
+
+        getChildren().add(titleImageView);
     }
 
     public void setTitleText(String titleText) {
-        titleLabel.setText(addLetterSpacing(titleText));
+        this.titleText = titleText == null ? "" : titleText.trim();
+        setAccessibleText(this.titleText);
     }
 
     public String getTitleText() {
-        return titleLabel.getText().replace(" ", "");
+        return titleText;
     }
 
-    private String addLetterSpacing(String titleText) {
-        String cleanText = titleText == null ? "" : titleText.trim().toUpperCase();
-        StringBuilder builder = new StringBuilder();
-
-        for (int i = 0; i < cleanText.length(); i++) {
-            builder.append(cleanText.charAt(i));
-            if (i < cleanText.length() - 1) {
-                builder.append(' ');
-            }
-        }
-
-        return builder.toString();
+    private Image loadTitleImage() {
+        return new Image(
+            Objects.requireNonNull(
+                TitleBanner.class.getResource(TITLE_IMAGE_PATH),
+                "Missing title banner image: " + TITLE_IMAGE_PATH)
+                .toExternalForm());
     }
 }
