@@ -12,6 +12,7 @@ import com.kotva.application.service.SettlementService;
 import com.kotva.application.service.SettlementServiceImpl;
 import com.kotva.infrastructure.AudioManager;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
+import com.kotva.infrastructure.dictionary.TutorialDictionaryRepository;
 import com.kotva.infrastructure.settings.SettingsRepository;
 import java.util.Objects;
 import java.util.Random;
@@ -57,7 +58,10 @@ public class AppContext {
         this.gameRuntimeFactory = new GameRuntimeFactory(
             this.gameSetupService,
             this.gameApplicationService);
-        this.tutorialRuntimeFactory = new TutorialRuntimeFactory(this.gameApplicationService);
+        this.tutorialRuntimeFactory = new TutorialRuntimeFactory(
+            new GameApplicationServiceImpl(
+                this.clockService,
+                new TutorialDictionaryRepository()));
     }
 
     public ClockService getClockService() {

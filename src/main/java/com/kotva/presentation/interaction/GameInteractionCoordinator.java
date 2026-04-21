@@ -203,7 +203,7 @@ public class GameInteractionCoordinator {
         BoardCoordinate targetCoordinate = previewRenderer.getHoveredCoordinate();
         String tileId = previewRenderer.getDraggedTileId();
         Integer targetRackIndex = previewRenderer.getHoveredRackIndex();
-        if (previewRenderer.isDraggingFromBoard() && targetRackIndex != null) {
+        if (previewRenderer.isDraggingFromBoard() && isRackDropTarget(targetRackIndex, event)) {
             actionPort.onDraftTileRemoved(tileId);
             previewRenderer.clear();
             gameRenderer.refresh();
@@ -226,6 +226,11 @@ public class GameInteractionCoordinator {
         previewRenderer.clear();
         gameRenderer.refresh();
         event.consume();
+    }
+
+    private boolean isRackDropTarget(Integer targetRackIndex, MouseEvent event) {
+        return targetRackIndex != null
+            || rackView.getRackBoundsInScene().contains(event.getSceneX(), event.getSceneY());
     }
 
     private void handleSceneKeyPressed(KeyEvent event) {

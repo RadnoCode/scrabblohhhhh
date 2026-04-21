@@ -3,7 +3,6 @@ package com.kotva.presentation.scene;
 import com.kotva.presentation.component.BackButton;
 import com.kotva.presentation.component.CardStackIconView;
 import com.kotva.presentation.component.CommonButton;
-import com.kotva.presentation.component.RoomPanelView;
 import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.controller.RoomWaitingController;
 import com.kotva.presentation.viewmodel.RoomViewModel;
@@ -46,7 +45,6 @@ public class RoomWaitingScene extends Scene {
         cardStackIconView.setPrefSize(360, 270);
         cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
-        RoomPanelView roomPanelView = RoomPanelView.createWaitingPanel();
         Label roomSummaryLabel = new Label();
         roomSummaryLabel.getStyleClass().add("room-summary-label");
         controller.bindRoomSummaryLabel(roomSummaryLabel);
@@ -60,7 +58,7 @@ public class RoomWaitingScene extends Scene {
         playerListView.setPrefSize(420, 160);
         controller.bindPlayerList(playerListView);
 
-        StackPane waitingPanelBox = new StackPane(roomPanelView, playerListView);
+        StackPane waitingPanelBox = new StackPane(playerListView);
         waitingPanelBox.setAlignment(Pos.CENTER);
 
         Label statusLabel = new Label(viewModel.getWaitingHintText());
@@ -85,6 +83,7 @@ public class RoomWaitingScene extends Scene {
 
         HBox contentBox = new HBox(cardStackIconView, spacer, rightColumn);
         contentBox.setAlignment(Pos.CENTER);
+        HBox.setMargin(rightColumn, new Insets(64, 0, 0, 0));
         BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);
 
