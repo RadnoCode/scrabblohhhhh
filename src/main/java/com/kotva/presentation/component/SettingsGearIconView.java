@@ -1,78 +1,40 @@
 package com.kotva.presentation.component;
 
-import javafx.scene.layout.Pane;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
+import java.util.Objects;
+import javafx.geometry.Pos;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
 
-public class SettingsGearIconView extends Pane {
-    private final Rectangle panelFrame;
-    private final Circle outerCircle;
-    private final Circle innerCircle;
-    private final Rectangle[] teeth;
+public class SettingsGearIconView extends StackPane {
+    private static final String GEAR_IMAGE_PATH = "/images/settings/gear.png";
+
+    private final ImageView imageView;
 
     public SettingsGearIconView() {
-        panelFrame = new Rectangle();
-        outerCircle = new Circle();
-        innerCircle = new Circle();
-        teeth = new Rectangle[8];
-
-        initializeShapes();
-        getChildren().add(panelFrame);
-        for (Rectangle tooth : teeth) {
-            getChildren().add(tooth);
-        }
-        getChildren().addAll(outerCircle, innerCircle);
+        this.imageView = new ImageView(loadGearImage());
+        initialize();
     }
 
-    private void initializeShapes() {
+    private void initialize() {
         getStyleClass().add("settings-icon");
-        panelFrame.getStyleClass().add("settings-panel-frame");
-        outerCircle.getStyleClass().add("gear-outer-circle");
-        innerCircle.getStyleClass().add("gear-inner-circle");
+        setAlignment(Pos.CENTER);
+        setMouseTransparent(true);
 
-        for (int i = 0; i < teeth.length; i++) {
-            teeth[i] = new Rectangle();
-            teeth[i].getStyleClass().add("gear-tooth");
-        }
+        imageView.setPreserveRatio(true);
+        imageView.setSmooth(true);
+        imageView.setMouseTransparent(true);
+        imageView.fitWidthProperty().bind(widthProperty());
+        imageView.fitHeightProperty().bind(heightProperty());
+
+        getChildren().add(imageView);
     }
 
-        @Override
-    protected void layoutChildren() {
-        double width = getWidth();
-        double height = getHeight();
-
-        panelFrame.setX(width * 0.08);
-        panelFrame.setY(height * 0.08);
-        panelFrame.setWidth(width * 0.84);
-        panelFrame.setHeight(height * 0.84);
-
-        double centerX = width / 2.0;
-        double centerY = height / 2.0;
-        double outerRadius = Math.min(width, height) * 0.22;
-        double innerRadius = outerRadius * 0.44;
-        double toothWidth = outerRadius * 0.22;
-        double toothHeight = outerRadius * 0.52;
-        double toothDistance = outerRadius * 1.08;
-
-        outerCircle.setCenterX(centerX);
-        outerCircle.setCenterY(centerY);
-        outerCircle.setRadius(outerRadius);
-
-        innerCircle.setCenterX(centerX);
-        innerCircle.setCenterY(centerY);
-        innerCircle.setRadius(innerRadius);
-
-        for (int i = 0; i < teeth.length; i++) {
-            double angle = i * 45.0;
-            Rectangle tooth = teeth[i];
-            tooth.setWidth(toothWidth);
-            tooth.setHeight(toothHeight);
-            double radians = Math.toRadians(angle);
-            double toothCenterX = centerX + Math.sin(radians) * toothDistance;
-            double toothCenterY = centerY - Math.cos(radians) * toothDistance;
-            tooth.setX(toothCenterX - toothWidth / 2.0);
-            tooth.setY(toothCenterY - toothHeight / 2.0);
-            tooth.setRotate(angle);
-        }
+    private Image loadGearImage() {
+        return new Image(
+            Objects.requireNonNull(
+                getClass().getResource(GEAR_IMAGE_PATH),
+                "Missing settings gear image: " + GEAR_IMAGE_PATH)
+                .toExternalForm());
     }
 }

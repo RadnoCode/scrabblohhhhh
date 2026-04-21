@@ -45,7 +45,7 @@ public class SwitchButton extends CommonButton {
         setSwitchTriggerSize(DEFAULT_SWITCH_TRIGGER_WIDTH, DEFAULT_SWITCH_TRIGGER_HEIGHT);
         applySwitchTriggerTone();
 
-        switchTrigger.setOnMouseClicked(event -> {
+        switchTrigger.setOnMousePressed(event -> {
             triggerSwitch();
             event.consume();
         });

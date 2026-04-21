@@ -11,6 +11,7 @@ import com.kotva.presentation.component.ViceTitleBanner;
 import com.kotva.presentation.controller.RoomCreateController;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
 import java.util.List;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -33,6 +34,7 @@ public class RoomCreateScene extends Scene {
     private static final double VICE_TITLE_HEIGHT = 90;
     private static final double DICTIONARY_TRIGGER_WIDTH = 232;
     private static final double DICTIONARY_TRIGGER_HEIGHT = 40;
+    private static final double BUTTON_PANEL_OFFSET_X = 100;
 
     public RoomCreateScene(RoomCreateController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -54,7 +56,7 @@ public class RoomCreateScene extends Scene {
         root.setTop(topBox);
 
         CardStackIconView cardStackIconView = new CardStackIconView();
-        cardStackIconView.setPrefSize(360, 270);
+        cardStackIconView.setPrefSize(270, 202.5);
         cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText(), VICE_TITLE_IMAGE_PATH);
@@ -95,6 +97,7 @@ public class RoomCreateScene extends Scene {
         VBox buttonColumn = new VBox(10);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
+        buttonColumn.setTranslateX(BUTTON_PANEL_OFFSET_X);
         buttonColumn.getChildren().addAll(
             viceTitleBox,
             roomNameButton,
@@ -139,6 +142,11 @@ public class RoomCreateScene extends Scene {
 
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
+        var backAction = backButton.getOnAction();
+        if (backAction != null) {
+            backButton.setOnAction(event ->
+                exitAnimationManager.play(null, () -> backAction.handle(new ActionEvent(backButton, backButton))));
+        }
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
         StackPane.setMargin(backButton, new Insets(50, 0, 0, 20));
 

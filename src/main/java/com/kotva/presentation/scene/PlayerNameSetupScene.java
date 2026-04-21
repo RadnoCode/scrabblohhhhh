@@ -12,6 +12,7 @@ import com.kotva.presentation.controller.PlayerNameSetupController;
 import com.kotva.presentation.fx.PlayerNameSetupContext;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -43,6 +44,7 @@ public class PlayerNameSetupScene extends Scene {
     private static final double STANDARD_INPUT_FIELD_WIDTH = 236 * BUTTON_SCALE;
     private static final double STANDARD_INPUT_FIELD_HEIGHT = 40 * BUTTON_SCALE;
     private static final double GO_BUTTON_WIDTH = STANDARD_INPUT_BUTTON_HEIGHT * 591.0 / 238.0;
+    private static final double BUTTON_PANEL_OFFSET_X = 100;
     private static final double COLUMN_OFFSET_Y = 50;
     private static final Insets CONTENT_MARGIN = new Insets(8, 100, 48, 100);
     private static final Insets MESSAGE_MARGIN = new Insets(172, 0, 0, 0);
@@ -65,7 +67,7 @@ public class PlayerNameSetupScene extends Scene {
         root.setTop(titleBanner);
 
         CardStackIconView cardStackIconView = new CardStackIconView();
-        cardStackIconView.setPrefSize(360, 270);
+        cardStackIconView.setPrefSize(270, 202.5);
         cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         ViceTitleBanner viceTitleBanner = new ViceTitleBanner(
@@ -135,6 +137,7 @@ public class PlayerNameSetupScene extends Scene {
         VBox rightColumn = new VBox(5, viceTitleBox, roomTitleLabel, cardsBox, primaryButtonBox);
         rightColumn.setAlignment(Pos.TOP_CENTER);
         rightColumn.setPrefWidth(440);
+        rightColumn.setTranslateX(BUTTON_PANEL_OFFSET_X);
         rightColumn.setTranslateY(COLUMN_OFFSET_Y);
 
         Region spacer = new Region();
@@ -151,9 +154,19 @@ public class PlayerNameSetupScene extends Scene {
                 cardStackIconView,
                 List.of(viceTitleBox, roomTitleLabel, cardsBox, primaryButtonBox))
                 .install();
+        OptionSceneExitAnimationManager exitAnimationManager = new OptionSceneExitAnimationManager(
+                sceneRoot,
+                titleBanner,
+                cardStackIconView,
+                List.of(viceTitleBox, roomTitleLabel, cardsBox, primaryButtonBox));
 
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
+        var backAction = backButton.getOnAction();
+        if (backAction != null) {
+            backButton.setOnAction(event ->
+                exitAnimationManager.play(null, () -> backAction.handle(new ActionEvent(backButton, backButton))));
+        }
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
         StackPane.setMargin(backButton, new Insets(50, 0, 0, 20));
 

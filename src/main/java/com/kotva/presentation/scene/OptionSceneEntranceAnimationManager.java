@@ -7,17 +7,19 @@ import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.SequentialTransition;
 import javafx.animation.TranslateTransition;
-import javafx.application.Platform;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.util.Duration;
 
 final class OptionSceneEntranceAnimationManager {
+    static final String OPTION_ENTRANCE_INSTALLED_KEY = "option-entrance-installed";
     private static final Duration FEATURED_DURATION = Duration.seconds(0.7);
     private static final Duration OPTION_DURATION = Duration.seconds(0.4);
-    private static final Duration OPTION_STAGGER = Duration.seconds(0.1);
+    private static final Duration OPTION_STAGGER = Duration.seconds(0.05);
     private static final Duration TITLE_DURATION = Duration.seconds(0.3);
-    private static final double APPROACH_PORTION = 0.84;
+    private static final Duration TITLE_START_DELAY = Duration.seconds(0.05);
+    private static final double ENTRY_APPROACH_PORTION = 0.72;
+    private static final double PAUSE_PORTION = 0.10;
     private static final double FEATURED_ENTRY_OFFSET_Y = 420;
     private static final double OPTION_ENTRY_OFFSET_X = 420;
     private static final double TITLE_ENTRY_OFFSET_Y = 180;
@@ -26,6 +28,7 @@ final class OptionSceneEntranceAnimationManager {
     private static final double TITLE_ENTRY_SAFE_MARGIN = 32;
     private static final double FEATURED_OVERSHOOT_Y = 18;
     private static final double OPTION_OVERSHOOT_X = 16;
+    private static final double TITLE_OVERSHOOT_Y = 20;
 
     private final Node triggerNode;
     private final Node titleNode;
@@ -57,11 +60,15 @@ final class OptionSceneEntranceAnimationManager {
     }
 
     void install() {
+        triggerNode.getProperties().put(OPTION_ENTRANCE_INSTALLED_KEY, Boolean.TRUE);
         triggerNode.sceneProperty().addListener((observable, previousScene, currentScene) -> {
             if (currentScene != null) {
-                Platform.runLater(this::playIfNeeded);
+                playIfNeeded();
             }
         });
+        if (triggerNode.getScene() != null) {
+            playIfNeeded();
+        }
     }
 
     private void playIfNeeded() {
@@ -78,9 +85,13 @@ final class OptionSceneEntranceAnimationManager {
             featuredAndOptions.getChildren().add(createOptionTransition(optionIndex));
         }
 
-        SequentialTransition entranceSequence = new SequentialTransition(
-            featuredAndOptions,
+        SequentialTransition delayedTitleEntrance = new SequentialTransition(
+            new PauseTransition(TITLE_START_DELAY),
             createTitleTransition());
+
+        ParallelTransition entranceSequence = new ParallelTransition(
+            featuredAndOptions,
+            delayedTitleEntrance);
         entranceSequence.playFromStart();
     }
 
@@ -119,12 +130,13 @@ final class OptionSceneEntranceAnimationManager {
         return new SequentialTransition(delay, entrance);
     }
 
-    private TranslateTransition createTitleTransition() {
-        TranslateTransition transition = new TranslateTransition(TITLE_DURATION, titleNode);
-        transition.setFromY(titleEntryStartTranslateY);
-        transition.setToY(titleRestingTranslateY);
-        transition.setInterpolator(Interpolator.EASE_BOTH);
-        return transition;
+    private SequentialTransition createTitleTransition() {
+        return createVerticalEntranceWithOvershoot(
+            titleNode,
+            TITLE_DURATION,
+            titleEntryStartTranslateY,
+            titleRestingTranslateY + TITLE_OVERSHOOT_Y,
+            titleRestingTranslateY);
     }
 
     private double resolveTitleEntryStartTranslateY() {
@@ -177,16 +189,20 @@ final class OptionSceneEntranceAnimationManager {
         double startY,
         double overshootY,
         double endY) {
-        TranslateTransition approach = new TranslateTransition(totalDuration.multiply(APPROACH_PORTION), node);
+        TranslateTransition approach = new TranslateTransition(totalDuration.multiply(ENTRY_APPROACH_PORTION), node);
         approach.setFromY(startY);
         approach.setToY(overshootY);
-        approach.setInterpolator(Interpolator.SPLINE(0.18, 0.82, 0.22, 1.0));
+        approach.setInterpolator(Interpolator.SPLINE(0.35, 0.0, 0.75, 1.0));
 
-        TranslateTransition settle = new TranslateTransition(totalDuration.multiply(1.0 - APPROACH_PORTION), node);
+        PauseTransition pause = new PauseTransition(totalDuration.multiply(PAUSE_PORTION));
+
+        TranslateTransition settle = new TranslateTransition(
+            totalDuration.multiply(1.0 - ENTRY_APPROACH_PORTION - PAUSE_PORTION),
+            node);
         settle.setFromY(overshootY);
         settle.setToY(endY);
-        settle.setInterpolator(Interpolator.SPLINE(0.20, 0.0, 0.20, 1.0));
-        return new SequentialTransition(approach, settle);
+        settle.setInterpolator(Interpolator.SPLINE(0.30, 0.0, 0.45, 1.0));
+        return new SequentialTransition(approach, pause, settle);
     }
 
     private SequentialTransition createHorizontalEntranceWithOvershoot(
@@ -195,15 +211,19 @@ final class OptionSceneEntranceAnimationManager {
         double startX,
         double overshootX,
         double endX) {
-        TranslateTransition approach = new TranslateTransition(totalDuration.multiply(APPROACH_PORTION), node);
+        TranslateTransition approach = new TranslateTransition(totalDuration.multiply(ENTRY_APPROACH_PORTION), node);
         approach.setFromX(startX);
         approach.setToX(overshootX);
-        approach.setInterpolator(Interpolator.SPLINE(0.18, 0.82, 0.22, 1.0));
+        approach.setInterpolator(Interpolator.SPLINE(0.35, 0.0, 0.75, 1.0));
 
-        TranslateTransition settle = new TranslateTransition(totalDuration.multiply(1.0 - APPROACH_PORTION), node);
+        PauseTransition pause = new PauseTransition(totalDuration.multiply(PAUSE_PORTION));
+
+        TranslateTransition settle = new TranslateTransition(
+            totalDuration.multiply(1.0 - ENTRY_APPROACH_PORTION - PAUSE_PORTION),
+            node);
         settle.setFromX(overshootX);
         settle.setToX(endX);
-        settle.setInterpolator(Interpolator.SPLINE(0.20, 0.0, 0.20, 1.0));
-        return new SequentialTransition(approach, settle);
+        settle.setInterpolator(Interpolator.SPLINE(0.30, 0.0, 0.45, 1.0));
+        return new SequentialTransition(approach, pause, settle);
     }
 }

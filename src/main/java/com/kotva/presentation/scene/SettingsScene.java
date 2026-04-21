@@ -2,13 +2,9 @@ package com.kotva.presentation.scene;
 
 import com.kotva.presentation.component.BackButton;
 import com.kotva.presentation.component.CommonButton;
-import com.kotva.presentation.component.InputButton;
-import com.kotva.presentation.component.LockedButton;
 import com.kotva.presentation.component.SettingsGearIconView;
-import com.kotva.presentation.component.SliderButton;
 import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.controller.SettingsController;
-import com.kotva.presentation.viewmodel.SettingsViewModel;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -22,6 +18,11 @@ import javafx.scene.layout.VBox;
 public class SettingsScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
+    private static final double FEATURED_ICON_WIDTH = 270;
+    private static final double FEATURED_ICON_HEIGHT = 202.5;
+    private static final double SETTINGS_BUTTON_WIDTH = 420;
+    private static final String MUSIC_BUTTON_IMAGE_PATH = "/images/settings/buttons/music.png";
+    private static final String ID_BUTTON_IMAGE_PATH = "/images/settings/buttons/id.png";
 
     public SettingsScene(SettingsController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -31,8 +32,6 @@ public class SettingsScene extends Scene {
     private static Parent createRoot(SettingsController controller) {
         StackPane sceneRoot = new StackPane();
 
-        SettingsViewModel viewModel = controller.getViewModel();
-
         BorderPane root = new BorderPane();
         root.getStyleClass().add("settings-root");
 
@@ -41,20 +40,18 @@ public class SettingsScene extends Scene {
         root.setTop(titleBanner);
 
         SettingsGearIconView settingsGearIconView = new SettingsGearIconView();
-        settingsGearIconView.setPrefSize(300, 300);
+        settingsGearIconView.setPrefSize(FEATURED_ICON_WIDTH, FEATURED_ICON_HEIGHT);
+        settingsGearIconView.setMinSize(FEATURED_ICON_WIDTH, FEATURED_ICON_HEIGHT);
+        settingsGearIconView.setMaxSize(FEATURED_ICON_WIDTH, FEATURED_ICON_HEIGHT);
 
-        InputButton nameButton = new InputButton("Name");
-        SliderButton musicButton = new SliderButton("Music");
-        LockedButton lockedButton = new LockedButton("ID", viewModel.getUserId());
-        nameButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
-        musicButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
-        lockedButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
-
-        controller.bindControls(nameButton, musicButton);
+        CommonButton musicButton = new CommonButton();
+        CommonButton idButton = new CommonButton();
+        configureSettingsButton(musicButton, MUSIC_BUTTON_IMAGE_PATH);
+        configureSettingsButton(idButton, ID_BUTTON_IMAGE_PATH);
 
         VBox settingColumn = new VBox(20);
         settingColumn.setAlignment(Pos.CENTER_LEFT);
-        settingColumn.getChildren().addAll(nameButton, musicButton, lockedButton);
+        settingColumn.getChildren().addAll(musicButton, idButton);
 
         Region spacer = new Region();
         spacer.setMinWidth(60);
@@ -71,6 +68,12 @@ public class SettingsScene extends Scene {
 
         sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, backButton);
         return sceneRoot;
+    }
+
+    private static void configureSettingsButton(CommonButton button, String imagePath) {
+        button.setText(null);
+        button.setCustomBackgroundImage(imagePath);
+        button.applyTemplateSize(SETTINGS_BUTTON_WIDTH);
     }
 
     private void loadStyleSheets() {

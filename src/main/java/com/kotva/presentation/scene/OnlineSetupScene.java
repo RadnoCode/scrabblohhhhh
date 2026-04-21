@@ -8,6 +8,7 @@ import com.kotva.presentation.component.ViceTitleBanner;
 import com.kotva.presentation.controller.OnlineSetupController;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
 import java.util.List;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -27,6 +28,7 @@ public class OnlineSetupScene extends Scene {
     private static final String VICE_TITLE_IMAGE_PATH = "/images/vice-title/play-by-lan.png";
     private static final double VICE_TITLE_WIDTH = 180;
     private static final double VICE_TITLE_HEIGHT = 90;
+    private static final double BUTTON_PANEL_OFFSET_X = 130;
     private static final Insets CONTENT_MARGIN = new Insets(2, 100, 48, 100);
 
     public OnlineSetupScene(OnlineSetupController controller) {
@@ -46,7 +48,7 @@ public class OnlineSetupScene extends Scene {
         root.setTop(titleBanner);
 
         CardStackIconView cardStackIconView = new CardStackIconView();
-        cardStackIconView.setPrefSize(360, 270);
+        cardStackIconView.setPrefSize(270, 202.5);
         cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText(), VICE_TITLE_IMAGE_PATH);
@@ -69,7 +71,7 @@ public class OnlineSetupScene extends Scene {
         VBox buttonColumn = new VBox(10);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
-        buttonColumn.setTranslateX(30);
+        buttonColumn.setTranslateX(BUTTON_PANEL_OFFSET_X);
         buttonColumn.setTranslateY(-10);
         buttonColumn.getChildren().addAll(viceTitleBox, firstButton, secondButton);
 
@@ -100,6 +102,11 @@ public class OnlineSetupScene extends Scene {
 
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
+        var backAction = backButton.getOnAction();
+        if (backAction != null) {
+            backButton.setOnAction(event ->
+                exitAnimationManager.play(null, () -> backAction.handle(new ActionEvent(backButton, backButton))));
+        }
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
         StackPane.setMargin(backButton, new Insets(50, 0, 0, 20));
 

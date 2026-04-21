@@ -19,6 +19,7 @@ import javafx.scene.control.ButtonBase;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
 import javax.imageio.ImageIO;
@@ -47,7 +48,7 @@ public class CardStackIconView extends StackPane {
 
     private void initialize() {
         setPrefSize(PREF_WIDTH, PREF_HEIGHT);
-        setMinSize(PREF_WIDTH, PREF_HEIGHT);
+        setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         setMouseTransparent(true);
 
         imageView.setPreserveRatio(true);
@@ -107,6 +108,9 @@ public class CardStackIconView extends StackPane {
             if (!(event.getTarget() instanceof ButtonBase button)) {
                 return;
             }
+            if (button instanceof SwitchButton) {
+                return;
+            }
             if (replayingButtonAction) {
                 return;
             }
@@ -126,7 +130,7 @@ public class CardStackIconView extends StackPane {
             });
         });
 
-        eventSource.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+        eventSource.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
             if (!(event.getTarget() instanceof Node targetNode)) {
                 return;
             }

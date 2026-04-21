@@ -21,6 +21,9 @@ public final class SceneTitleEntranceAnimationManager {
         if (root == null) {
             return;
         }
+        if (Boolean.TRUE.equals(root.getProperties().get(OptionSceneEntranceAnimationManager.OPTION_ENTRANCE_INSTALLED_KEY))) {
+            return;
+        }
 
         TitleBanner titleBanner = findTitleBanner(root);
         if (titleBanner == null) {

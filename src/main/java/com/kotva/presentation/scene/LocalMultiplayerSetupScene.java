@@ -11,6 +11,7 @@ import com.kotva.presentation.component.ViceTitleBanner;
 import com.kotva.presentation.controller.LocalMultiplayerSetupController;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
 import java.util.List;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -35,14 +36,19 @@ public class LocalMultiplayerSetupScene extends Scene {
         "/images/local-multiplayer/buttons/bottom-number-of-player.png";
     private static final String CONTINUE_BUTTON_IMAGE_PATH =
         "/images/local-multiplayer/buttons/bottom-continue.png";
+    private static final double BUTTON_SCALE = 0.8;
     private static final double VICE_TITLE_WIDTH = 180;
     private static final double VICE_TITLE_HEIGHT = 90;
-    private static final double SETUP_INPUT_WIDTH = 176;
-    private static final double SETUP_INPUT_HEIGHT = 40;
-    private static final double DICTIONARY_TRIGGER_WIDTH = 232;
-    private static final double DICTIONARY_TRIGGER_HEIGHT = 40;
+    private static final double DEFAULT_SETUP_BUTTON_WIDTH = 420.0;
     private static final double DEFAULT_SETUP_BUTTON_HEIGHT = 420.0 / (1301.0 / 262.0);
-    private static final double CONTINUE_BUTTON_WIDTH = DEFAULT_SETUP_BUTTON_HEIGHT * 591.0 / 238.0;
+    private static final double SETUP_BUTTON_WIDTH = DEFAULT_SETUP_BUTTON_WIDTH * BUTTON_SCALE;
+    private static final double SETUP_BUTTON_HEIGHT = DEFAULT_SETUP_BUTTON_HEIGHT * BUTTON_SCALE;
+    private static final double SETUP_INPUT_WIDTH = 176 * BUTTON_SCALE;
+    private static final double SETUP_INPUT_HEIGHT = 40 * BUTTON_SCALE;
+    private static final double DICTIONARY_TRIGGER_WIDTH = 232 * BUTTON_SCALE;
+    private static final double DICTIONARY_TRIGGER_HEIGHT = 40 * BUTTON_SCALE;
+    private static final double CONTINUE_BUTTON_WIDTH = (DEFAULT_SETUP_BUTTON_HEIGHT * 591.0 / 238.0) * BUTTON_SCALE;
+    private static final double BUTTON_PANEL_OFFSET_X = 130;
     private static final Insets CONTENT_MARGIN = new Insets(2, 100, 48, 100);
     private static final Insets MESSAGE_MARGIN = new Insets(172, 0, 0, 0);
 
@@ -64,7 +70,7 @@ public class LocalMultiplayerSetupScene extends Scene {
         root.setTop(titleBanner);
 
         CardStackIconView cardStackIconView = new CardStackIconView();
-        cardStackIconView.setPrefSize(360, 270);
+        cardStackIconView.setPrefSize(270, 202.5);
         cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText(), VICE_TITLE_IMAGE_PATH);
@@ -92,7 +98,7 @@ public class LocalMultiplayerSetupScene extends Scene {
         secondButton.setSwitchTriggerSize(DICTIONARY_TRIGGER_WIDTH, DICTIONARY_TRIGGER_HEIGHT);
         configureSetupButton(thirdButton, PLAYER_COUNT_BUTTON_IMAGE_PATH);
         configureSetupButton(goButton, CONTINUE_BUTTON_IMAGE_PATH);
-        goButton.applyButtonSize(CONTINUE_BUTTON_WIDTH, DEFAULT_SETUP_BUTTON_HEIGHT);
+        goButton.applyButtonSize(CONTINUE_BUTTON_WIDTH, SETUP_BUTTON_HEIGHT);
         controller.bindActions(
             firstButton,
             stepTimeButton,
@@ -104,7 +110,7 @@ public class LocalMultiplayerSetupScene extends Scene {
         VBox buttonColumn = new VBox(10);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
-        buttonColumn.setTranslateX(30);
+        buttonColumn.setTranslateX(BUTTON_PANEL_OFFSET_X);
         buttonColumn.setTranslateY(-10);
         buttonColumn.getChildren().addAll(
             viceTitleBox,
@@ -144,6 +150,11 @@ public class LocalMultiplayerSetupScene extends Scene {
 
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
+        var backAction = backButton.getOnAction();
+        if (backAction != null) {
+            backButton.setOnAction(event ->
+                exitAnimationManager.play(null, () -> backAction.handle(new ActionEvent(backButton, backButton))));
+        }
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
         StackPane.setMargin(backButton, new Insets(50, 0, 0, 20));
 
@@ -164,6 +175,7 @@ public class LocalMultiplayerSetupScene extends Scene {
     private static void configureSetupButton(CommonButton button, String imagePath) {
         button.getStyleClass().add("local-setup-button");
         button.setCustomBackgroundImage(imagePath);
+        button.applyButtonSize(SETUP_BUTTON_WIDTH, SETUP_BUTTON_HEIGHT);
         if (button instanceof InputButton inputButton) {
             inputButton.setInputFieldTone(InputButton.InputFieldTone.DARK_SURFACE);
             inputButton.setInputFieldSize(SETUP_INPUT_WIDTH, SETUP_INPUT_HEIGHT);

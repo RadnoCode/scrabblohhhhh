@@ -25,7 +25,7 @@ final class HomeSelectionAnimationManager {
     private static final Duration TITLE_EXIT_DURATION = Duration.seconds(0.3);
     private static final Duration ENVELOPE_EXIT_DURATION = Duration.seconds(0.7);
     private static final Duration BUTTON_EXIT_DURATION = Duration.seconds(0.4);
-    private static final Duration BUTTON_STAGGER = Duration.seconds(0.1);
+    private static final Duration BUTTON_STAGGER = Duration.seconds(0.05);
     private static final double ANTICIPATION_PORTION = 0.18;
     private static final double PAUSE_PORTION = 0.10;
     private static final double TITLE_EXIT_OFFSET_Y = 180;
@@ -78,7 +78,7 @@ final class HomeSelectionAnimationManager {
             envelopeAndButtons.getChildren().add(createButtonExitTransition(orderedExitButtons.get(buttonIndex), buttonIndex));
         }
 
-        SequentialTransition transition = new SequentialTransition(
+        ParallelTransition transition = new ParallelTransition(
             createTitleExitTransition(),
             envelopeAndButtons);
         transition.setOnFinished(event -> {

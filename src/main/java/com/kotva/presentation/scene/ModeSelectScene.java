@@ -7,6 +7,7 @@ import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.controller.ModeSelectController;
 import com.kotva.presentation.viewmodel.SetupViewModel;
 import java.util.List;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -20,6 +21,7 @@ import javafx.scene.layout.VBox;
 public class ModeSelectScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
+    private static final double BUTTON_PANEL_OFFSET_X = 100;
 
     public ModeSelectScene(ModeSelectController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -39,7 +41,7 @@ public class ModeSelectScene extends Scene {
         root.setTop(titleBanner);
 
         CardStackIconView cardStackIconView = new CardStackIconView();
-        cardStackIconView.setPrefSize(360, 270);
+        cardStackIconView.setPrefSize(270, 202.5);
         cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         CommonButton withFriendsButton = new CommonButton(viewModel.getWithFriendsText());
@@ -62,6 +64,7 @@ public class ModeSelectScene extends Scene {
         VBox buttonColumn = new VBox(20);
         buttonColumn.setAlignment(Pos.CENTER_LEFT);
         buttonColumn.getStyleClass().add("mode-button-column");
+        buttonColumn.setTranslateX(BUTTON_PANEL_OFFSET_X);
         buttonColumn.getChildren().addAll(withFriendsButton, withRobotButton, byLanButton);
 
         Region spacer = new Region();
@@ -93,6 +96,11 @@ public class ModeSelectScene extends Scene {
 
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
+        var backAction = backButton.getOnAction();
+        if (backAction != null) {
+            backButton.setOnAction(event ->
+                exitAnimationManager.play(null, () -> backAction.handle(new ActionEvent(backButton, backButton))));
+        }
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
         StackPane.setMargin(backButton, new Insets(50, 0, 0, 20));
 

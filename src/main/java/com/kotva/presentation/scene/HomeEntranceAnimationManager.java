@@ -7,7 +7,6 @@ import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.SequentialTransition;
 import javafx.animation.TranslateTransition;
-import javafx.application.Platform;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.util.Duration;
@@ -58,9 +57,12 @@ final class HomeEntranceAnimationManager {
     void install() {
         triggerNode.sceneProperty().addListener((observable, previousScene, currentScene) -> {
             if (currentScene != null) {
-                Platform.runLater(this::playIfNeeded);
+                playIfNeeded();
             }
         });
+        if (triggerNode.getScene() != null) {
+            playIfNeeded();
+        }
     }
 
     private void playIfNeeded() {
