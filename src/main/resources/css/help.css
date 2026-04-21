@@ -1,5 +1,5 @@
 .help-root {
-    -fx-background-color: -app-background;
+    -fx-background-color: transparent;
 }
 
 .help-panel {

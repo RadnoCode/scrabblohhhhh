@@ -1,5 +1,5 @@
 .room-root {
-    -fx-background-color: -app-background;
+    -fx-background-color: transparent;
 }
 
 .room-search-box {
@@ -49,7 +49,7 @@
 
 .room-panel-cutout,
 .room-panel-divider-dot {
-    -fx-fill: -app-background;
+    -fx-fill: transparent;
     -fx-stroke: #9fb0cf;
     -fx-stroke-width: 2;
 }

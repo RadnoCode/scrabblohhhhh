@@ -76,7 +76,7 @@ public class HomeScene extends Scene {
         BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);
 
-        sceneRoot.getChildren().add(root);
+        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root);
         if (controller.isTutorialPromptVisible()) {
             sceneRoot.getChildren().add(createTutorialPrompt(controller));
         }
