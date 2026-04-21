@@ -73,6 +73,62 @@ public class RoomCreateController {
         backButton.setOnAction(event -> navigator.goBack());
     }
 
+    public RoomWaitingContext prepareRoomWaitingContext(
+        InputButton gameTimeButton,
+        InputButton stepTimeButton,
+        TransientMessageView messageView) {
+        String gameTimeInput = gameTimeButton.getTextField().getText();
+        String stepTimeInput = stepTimeButton.getTextField().getText();
+        if (!isValidIntegerInRange(gameTimeInput, 15, 90)) {
+            messageView.showMessage(INVALID_GAME_TIME_MESSAGE);
+            return null;
+        }
+        if (!isValidIntegerInRange(stepTimeInput, 0, 180)) {
+            messageView.showMessage(INVALID_STEP_TIME_MESSAGE);
+            return null;
+        }
+
+        try {
+            GameSessionBroker broker = new GameSessionBroker(GameSessionBroker.DEFAULT_PORT);
+            LanLobbySettings settings = new LanLobbySettings(
+                "British".equalsIgnoreCase(languages[languageIndex])
+                    ? com.kotva.policy.DictionaryType.BR
+                    : com.kotva.policy.DictionaryType.AM,
+                com.kotva.presentation.viewmodel.GameLaunchContext
+                    .forRoomCreate(
+                        gameTimeInput,
+                        stepTimeInput,
+                        languages[languageIndex],
+                        playerCounts[playerCountIndex])
+                    .getRequest()
+                    .getTimeControlConfig(),
+                Integer.parseInt(playerCounts[playerCountIndex]));
+            broker.createLobby(settings, HOST_PLAYER_ID, HOST_PLAYER_NAME);
+
+            LanDiscoveryHostService discoveryHostService = new UdpLanDiscoveryHostService();
+            String gameTimeDisplay = gameTimeInput + "min";
+            discoveryHostService.startHosting(
+                () -> buildDiscoveredRoom(broker, settings, gameTimeDisplay));
+
+            return RoomWaitingContext.forHost(
+                "Create Room",
+                gameTimeDisplay,
+                languages[languageIndex],
+                playerCounts[playerCountIndex],
+                broker,
+                discoveryHostService);
+        } catch (Exception exception) {
+            AppLog.logException(RoomCreateController.class, "Failed to create LAN room.", exception);
+            showError("Failed to create LAN room", exception.getMessage());
+            return null;
+        }
+    }
+
+    public void navigateToPreparedRoom(RoomWaitingContext roomWaitingContext) {
+        navigator.requestNextSceneTitleEntranceAnimation();
+        navigator.showRoomWaiting(roomWaitingContext);
+    }
+
     private String rotateLanguage() {
         languageIndex = (languageIndex + 1) % languages.length;
         return languages[languageIndex];
@@ -87,50 +143,12 @@ public class RoomCreateController {
             InputButton gameTimeButton,
             InputButton stepTimeButton,
             TransientMessageView messageView) {
-        String gameTimeInput = gameTimeButton.getTextField().getText();
-        String stepTimeInput = stepTimeButton.getTextField().getText();
-        if (!isValidIntegerInRange(gameTimeInput, 15, 90)) {
-            messageView.showMessage(INVALID_GAME_TIME_MESSAGE);
-            return;
-        }
-        if (!isValidIntegerInRange(stepTimeInput, 0, 180)) {
-            messageView.showMessage(INVALID_STEP_TIME_MESSAGE);
-            return;
-        }
-
-        try {
-            GameSessionBroker broker = new GameSessionBroker(GameSessionBroker.DEFAULT_PORT);
-            LanLobbySettings settings = new LanLobbySettings(
-                    "British".equalsIgnoreCase(languages[languageIndex])
-                            ? com.kotva.policy.DictionaryType.BR
-                            : com.kotva.policy.DictionaryType.AM,
-                    com.kotva.presentation.viewmodel.GameLaunchContext
-                            .forRoomCreate(
-                                    gameTimeInput,
-                                    stepTimeInput,
-                                    languages[languageIndex],
-                                    playerCounts[playerCountIndex])
-                            .getRequest()
-                            .getTimeControlConfig(),
-                    Integer.parseInt(playerCounts[playerCountIndex]));
-            broker.createLobby(settings, HOST_PLAYER_ID, HOST_PLAYER_NAME);
-
-            LanDiscoveryHostService discoveryHostService = new UdpLanDiscoveryHostService();
-            String gameTimeDisplay = gameTimeInput + "min";
-            discoveryHostService.startHosting(
-                () -> buildDiscoveredRoom(broker, settings, gameTimeDisplay));
-
-            navigator.showRoomWaiting(
-                    RoomWaitingContext.forHost(
-                            "Create Room",
-                            gameTimeDisplay,
-                            languages[languageIndex],
-                            playerCounts[playerCountIndex],
-                            broker,
-                            discoveryHostService));
-        } catch (Exception exception) {
-            AppLog.logException(RoomCreateController.class, "Failed to create LAN room.", exception);
-            showError("Failed to create LAN room", exception.getMessage());
+        RoomWaitingContext roomWaitingContext = prepareRoomWaitingContext(
+            gameTimeButton,
+            stepTimeButton,
+            messageView);
+        if (roomWaitingContext != null) {
+            navigateToPreparedRoom(roomWaitingContext);
         }
     }
 

@@ -66,6 +66,13 @@ abstract class AbstractEnvelopeGifView extends StackPane implements HomeEnvelope
     }
 
     @Override
+    public void showForwardStartState() {
+        stopPlayback();
+        toFront();
+        imageView.setImage(forwardSequence.getFirstFrame());
+    }
+
+    @Override
     public void showForwardEndState() {
         stopPlayback();
         toFront();

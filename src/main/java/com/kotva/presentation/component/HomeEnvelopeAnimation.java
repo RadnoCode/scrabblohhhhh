@@ -5,5 +5,7 @@ public interface HomeEnvelopeAnimation {
 
     void playBackward(Runnable onFinished);
 
+    void showForwardStartState();
+
     void showForwardEndState();
 }

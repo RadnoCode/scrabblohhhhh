@@ -3,8 +3,6 @@ package com.kotva.presentation.controller;
 import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.SetupViewModel;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 
 public class ModeSelectController {
     private final SceneNavigator navigator;
@@ -20,36 +18,24 @@ public class ModeSelectController {
     }
 
     public void bindActions(CommonButton withFriendsButton, CommonButton withRobotButton, CommonButton byLanButton) {
-        withFriendsButton.setOnAction(createWithFriendsHandler());
-        withRobotButton.setOnAction(createWithRobotHandler());
-        byLanButton.setOnAction(createByLanHandler());
+        withFriendsButton.setOnAction(event -> navigateToWithFriends());
+        withRobotButton.setOnAction(event -> navigateToWithRobot());
+        byLanButton.setOnAction(event -> navigateToByLan());
     }
 
     public void bindBackAction(CommonButton backButton) {
         backButton.setOnAction(event -> navigator.goBack());
     }
 
-    public EventHandler<ActionEvent> createWithFriendsHandler() {
-        return event -> handleWithFriendsClick();
-    }
-
-    public EventHandler<ActionEvent> createWithRobotHandler() {
-        return event -> handleWithRobotClick();
-    }
-
-    public EventHandler<ActionEvent> createByLanHandler() {
-        return event -> handleByLanClick();
-    }
-
-    private void handleWithFriendsClick() {
+    public void navigateToWithFriends() {
         navigator.showLocalMultiplayerSetup();
     }
 
-    private void handleWithRobotClick() {
+    public void navigateToWithRobot() {
         navigator.showLocalAiSetup();
     }
 
-    private void handleByLanClick() {
+    public void navigateToByLan() {
         navigator.showOnlineSetup();
     }
 }

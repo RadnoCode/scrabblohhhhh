@@ -10,6 +10,7 @@ import java.util.Objects;
 public class TitleBanner extends StackPane {
     private static final String TITLE_IMAGE_PATH = "/images/home/title.png";
     private static final double PREF_HEIGHT = 120;
+    private static final double TITLE_OFFSET_Y = 30;
 
     private final ImageView titleImageView;
     private String titleText;
@@ -22,6 +23,7 @@ public class TitleBanner extends StackPane {
         setMaxWidth(Double.MAX_VALUE);
         setPrefHeight(PREF_HEIGHT);
         setMinHeight(PREF_HEIGHT);
+        setTranslateY(TITLE_OFFSET_Y);
 
         titleImageView.setPreserveRatio(true);
         titleImageView.setSmooth(true);

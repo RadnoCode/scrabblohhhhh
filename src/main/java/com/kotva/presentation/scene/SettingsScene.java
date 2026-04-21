@@ -52,7 +52,7 @@ public class SettingsScene extends Scene {
 
         controller.bindControls(nameButton, musicButton);
 
-        VBox settingColumn = new VBox(18);
+        VBox settingColumn = new VBox(20);
         settingColumn.setAlignment(Pos.CENTER_LEFT);
         settingColumn.getChildren().addAll(nameButton, musicButton, lockedButton);
 

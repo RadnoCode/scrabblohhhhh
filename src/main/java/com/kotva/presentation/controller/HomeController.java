@@ -10,8 +10,6 @@ import com.kotva.presentation.component.SettingEnvelope;
 import com.kotva.presentation.component.TutorialEnvelope;
 import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.HomeViewModel;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 
 public class HomeController {
     private final HomeViewModel viewModel;
@@ -42,11 +40,6 @@ public class HomeController {
         SettingEnvelope settingEnvelope,
         HelpEnvelope helpEnvelope)
     {
-        playButton.setOnAction(createPlayHandler());
-        tutorialButton.setOnAction(createTutorialHandler());
-        settingsButton.setOnAction(createSettingsHandler());
-        helpButton.setOnAction(createHelpHandler());
-
         HomeButtonSequenceManager sequenceManager = new HomeButtonSequenceManager(
             HomeButtonSequenceManager.ButtonKey.PLAY,
             playEnvelope,
@@ -65,20 +58,24 @@ public class HomeController {
         helpButton.setOnMouseExited(event -> sequenceManager.onButtonExited(HomeButtonSequenceManager.ButtonKey.HELP));
     }
 
-    public EventHandler<ActionEvent> createPlayHandler() {
-        return event -> handlePlayClick();
+    public void navigateToPlay() {
+        navigator.showGameSetting();
     }
 
-    public EventHandler<ActionEvent> createSettingsHandler() {
-        return event -> handleSettingsClick();
+    public void navigateToSettings() {
+        navigator.requestNextSceneTitleEntranceAnimation();
+        navigator.showSettings();
     }
 
-    public EventHandler<ActionEvent> createTutorialHandler() {
-        return event -> handleTutorialClick();
+    public void navigateToTutorial() {
+        acknowledgeTutorialPrompt();
+        navigator.requestNextSceneTitleEntranceAnimation();
+        navigator.showTutorial();
     }
 
-    public EventHandler<ActionEvent> createHelpHandler() {
-        return event -> handleHelpClick();
+    public void navigateToHelp() {
+        navigator.requestNextSceneTitleEntranceAnimation();
+        navigator.showHelp();
     }
 
     public boolean isTutorialPromptVisible() {
@@ -95,22 +92,6 @@ public class HomeController {
         tutorialPromptVisible = false;
     }
 
-    private void handlePlayClick() {
-        navigator.showGameSetting();
-    }
-
-    private void handleTutorialClick() {
-        acknowledgeTutorialPrompt();
-        navigator.showTutorial();
-    }
-
-    private void handleSettingsClick() {
-        navigator.showSettings();
-    }
-
-    private void handleHelpClick() {
-        navigator.showHelp();
-    }
     private void acknowledgeTutorialPrompt() {
         AppSettings settings = settingsRepository.load();
         settingsRepository.save(

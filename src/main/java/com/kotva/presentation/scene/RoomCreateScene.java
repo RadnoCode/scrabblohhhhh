@@ -10,6 +10,7 @@ import com.kotva.presentation.component.TransientMessageView;
 import com.kotva.presentation.component.ViceTitleBanner;
 import com.kotva.presentation.controller.RoomCreateController;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
+import java.util.List;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -79,7 +80,7 @@ public class RoomCreateScene extends Scene {
             goButton,
             messageView);
 
-        VBox buttonColumn = new VBox(16);
+        VBox buttonColumn = new VBox(20);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
         buttonColumn.getChildren().addAll(
@@ -97,6 +98,25 @@ public class RoomCreateScene extends Scene {
         contentBox.setAlignment(Pos.CENTER);
         BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);
+
+        new OptionSceneEntranceAnimationManager(
+            sceneRoot,
+            titleBanner,
+            cardStackIconView,
+            List.of(viceTitleBox, firstButton, stepTimeButton, secondButton, thirdButton, goButton))
+            .install();
+
+        OptionSceneExitAnimationManager exitAnimationManager = new OptionSceneExitAnimationManager(
+            sceneRoot,
+            titleBanner,
+            cardStackIconView,
+            List.of(viceTitleBox, firstButton, stepTimeButton, secondButton, thirdButton, goButton));
+        goButton.setOnAction(event -> {
+            var roomWaitingContext = controller.prepareRoomWaitingContext(firstButton, stepTimeButton, messageView);
+            if (roomWaitingContext != null) {
+                exitAnimationManager.play(goButton, () -> controller.navigateToPreparedRoom(roomWaitingContext));
+            }
+        });
 
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);

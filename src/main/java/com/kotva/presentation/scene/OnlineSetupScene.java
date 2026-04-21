@@ -7,6 +7,7 @@ import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.component.ViceTitleBanner;
 import com.kotva.presentation.controller.OnlineSetupController;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
+import java.util.List;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -64,7 +65,7 @@ public class OnlineSetupScene extends Scene {
         secondButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
         controller.bindActions(firstButton, secondButton);
 
-        VBox buttonColumn = new VBox(18);
+        VBox buttonColumn = new VBox(20);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
         buttonColumn.setTranslateX(30);
@@ -78,6 +79,23 @@ public class OnlineSetupScene extends Scene {
         contentBox.setAlignment(Pos.TOP_CENTER);
         BorderPane.setMargin(contentBox, CONTENT_MARGIN);
         root.setCenter(contentBox);
+
+        new OptionSceneEntranceAnimationManager(
+            sceneRoot,
+            titleBanner,
+            cardStackIconView,
+            List.of(viceTitleBox, firstButton, secondButton))
+            .install();
+
+        OptionSceneExitAnimationManager exitAnimationManager = new OptionSceneExitAnimationManager(
+            sceneRoot,
+            titleBanner,
+            cardStackIconView,
+            List.of(viceTitleBox, firstButton, secondButton));
+        firstButton.setOnAction(event ->
+            exitAnimationManager.play(firstButton, controller::navigateToSearchRoom));
+        secondButton.setOnAction(event ->
+            exitAnimationManager.play(secondButton, controller::navigateToCreateRoom));
 
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);

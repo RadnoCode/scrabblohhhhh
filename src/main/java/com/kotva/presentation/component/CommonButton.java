@@ -20,6 +20,7 @@ public class CommonButton extends Button {
     private static final double TEMPLATE_ASPECT_RATIO = 1301.0 / 262.0;
     private static final double DEFAULT_BUTTON_WIDTH = 420;
     private static final double DEFAULT_BUTTON_HEIGHT = DEFAULT_BUTTON_WIDTH / TEMPLATE_ASPECT_RATIO;
+    private static final double DEFAULT_BUTTON_SCALE = 0.8;
     private static AudioManager audioManager;
     private static final Map<TemplateState, Image> TEMPLATE_IMAGES = createTemplateImages();
 
@@ -59,6 +60,8 @@ public class CommonButton extends Button {
         getStyleClass().add("common-button");
 
         setFocusTraversable(true);
+        setScaleX(DEFAULT_BUTTON_SCALE);
+        setScaleY(DEFAULT_BUTTON_SCALE);
         initializeGraphicRoot();
         setTemplateState(TemplateState.TEMPLATE_1);
         applyTemplateSize(DEFAULT_BUTTON_WIDTH);

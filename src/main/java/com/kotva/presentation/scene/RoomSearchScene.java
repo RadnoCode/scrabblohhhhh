@@ -77,7 +77,10 @@ public class RoomSearchScene extends Scene {
         controller.bindJoinAction(joinButton);
         controller.bindRefreshAction(refreshButton);
 
-        VBox rightColumn = new VBox(14, searchBox, roomListBox, statusLabel, joinButton, refreshButton);
+        VBox buttonBox = new VBox(20, joinButton, refreshButton);
+        buttonBox.setAlignment(Pos.TOP_CENTER);
+
+        VBox rightColumn = new VBox(14, searchBox, roomListBox, statusLabel, buttonBox);
         rightColumn.setAlignment(Pos.TOP_CENTER);
 
         Region spacer = new Region();

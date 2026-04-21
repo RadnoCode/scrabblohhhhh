@@ -10,6 +10,7 @@ import com.kotva.presentation.component.TransientMessageView;
 import com.kotva.presentation.component.ViceTitleBanner;
 import com.kotva.presentation.controller.LocalMultiplayerSetupController;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
+import java.util.List;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -81,7 +82,7 @@ public class LocalMultiplayerSetupScene extends Scene {
             goButton,
             messageView);
 
-        VBox buttonColumn = new VBox(16);
+        VBox buttonColumn = new VBox(20);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
         buttonColumn.setTranslateX(30);
@@ -101,6 +102,24 @@ public class LocalMultiplayerSetupScene extends Scene {
         contentBox.setAlignment(Pos.TOP_CENTER);
         BorderPane.setMargin(contentBox, CONTENT_MARGIN);
         root.setCenter(contentBox);
+
+        new OptionSceneEntranceAnimationManager(
+            sceneRoot,
+            titleBanner,
+            cardStackIconView,
+            List.of(viceTitleBox, firstButton, stepTimeButton, secondButton, thirdButton, goButton))
+            .install();
+
+        OptionSceneExitAnimationManager exitAnimationManager = new OptionSceneExitAnimationManager(
+            sceneRoot,
+            titleBanner,
+            cardStackIconView,
+            List.of(viceTitleBox, firstButton, stepTimeButton, secondButton, thirdButton, goButton));
+        goButton.setOnAction(event -> {
+            if (controller.validateGameSetup(firstButton, stepTimeButton, messageView)) {
+                exitAnimationManager.play(goButton, () -> controller.navigateToGame(firstButton, stepTimeButton));
+            }
+        });
 
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
