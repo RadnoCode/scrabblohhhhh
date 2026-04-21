@@ -23,6 +23,10 @@ import javafx.scene.layout.VBox;
 public class OnlineSetupScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
+    private static final String VICE_TITLE_IMAGE_PATH = "/images/mode/play-by-lan.png";
+    private static final double VICE_TITLE_WIDTH = 187.5;
+    private static final double VICE_TITLE_HEIGHT = 123.75;
+    private static final Insets CONTENT_MARGIN = new Insets(2, 100, 48, 100);
 
     public OnlineSetupScene(OnlineSetupController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -43,7 +47,10 @@ public class OnlineSetupScene extends Scene {
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(360, 270);
 
-        ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText());
+        ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText(), VICE_TITLE_IMAGE_PATH);
+        viceTitleBanner.setPrefSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
+        viceTitleBanner.setMinSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
+        viceTitleBanner.setMaxSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
 
         HBox viceTitleBox = new HBox(viceTitleBanner);
         viceTitleBox.setAlignment(Pos.CENTER);
@@ -58,14 +65,16 @@ public class OnlineSetupScene extends Scene {
         VBox buttonColumn = new VBox(18);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
+        buttonColumn.setTranslateX(30);
+        buttonColumn.setTranslateY(-10);
         buttonColumn.getChildren().addAll(viceTitleBox, firstButton, secondButton);
 
         Region spacer = new Region();
         spacer.setMinWidth(56);
 
         HBox contentBox = new HBox(cardStackIconView, spacer, buttonColumn);
-        contentBox.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
+        contentBox.setAlignment(Pos.TOP_CENTER);
+        BorderPane.setMargin(contentBox, CONTENT_MARGIN);
         root.setCenter(contentBox);
 
         BackButton backButton = new BackButton();
