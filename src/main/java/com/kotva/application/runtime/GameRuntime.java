@@ -56,6 +56,14 @@ public interface GameRuntime {
         resign();
     }
 
+    default boolean supportsRackDebugEditing() {
+        return false;
+    }
+
+    default void replaceCurrentRack(String rackSpec) {
+        throw new IllegalStateException("Rack debug editing is not available.");
+    }
+
     default boolean isTutorialRuntime() {
         return false;
     }

@@ -132,4 +132,28 @@ public class TileBag {
         }
         allTilesById.put(tile.getTileID(), tile);
     }
+
+    public void returnTile(Tile tile) {
+        if (tile == null) {
+            return;
+        }
+        if (tile.isBlank()) {
+            tile.clearAssignedLetter();
+        }
+        indexTile(tile);
+        tiles.add(tile);
+    }
+
+    public boolean removeTileById(String tileId) {
+        if (tileId == null) {
+            return false;
+        }
+        for (int index = 0; index < tiles.size(); index++) {
+            if (tileId.equals(tiles.get(index).getTileID())) {
+                tiles.remove(index);
+                return true;
+            }
+        }
+        return false;
+    }
 }

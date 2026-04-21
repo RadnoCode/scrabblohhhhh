@@ -93,16 +93,16 @@ public class HomeScene extends Scene {
         card.setMaxWidth(520);
         card.setPadding(new Insets(28));
 
-        Label titleLabel = new Label("第一次游玩提醒");
+        Label titleLabel = new Label("It seems you play for the first time!");
         titleLabel.getStyleClass().add("home-tutorial-title");
 
         Label bodyLabel = new Label(
-            "推荐先完成新手教程。\n教程会固定盘面与 rack，并逐步介绍落子、合法性、提交、后续连接与 rearrange。");
+            "It is recommended to complete the tutorial first.\nThe tutorial will introduce basic actions and rules.");
         bodyLabel.getStyleClass().add("home-tutorial-body");
         bodyLabel.setWrapText(true);
 
-        CommonButton startButton = new CommonButton("开始教程");
-        CommonButton skipButton = new CommonButton("暂时跳过");
+        CommonButton startButton = new CommonButton("Start Tutorial");
+        CommonButton skipButton = new CommonButton("Skip for Now");
         startButton.setPrefWidth(280);
         skipButton.setPrefWidth(280);
         startButton.setOnAction(event -> controller.startTutorialFromPrompt());

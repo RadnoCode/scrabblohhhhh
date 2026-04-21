@@ -48,6 +48,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.TextInputDialog;
 import javafx.util.Duration;
 
 public class GameController implements GameActionPort {
@@ -734,6 +736,25 @@ public class GameController implements GameActionPort {
     }
 
     @Override
+    public void onDebugRackEditRequested() {
+        if (gameRuntime == null || !gameRuntime.supportsRackDebugEditing()) {
+            viewModel.pushTransientMessage("当前对局不支持调试 rack。");
+            return;
+        }
+        if (isInteractionLocked()) {
+            viewModel.pushTransientMessage("当前无法修改 rack。");
+            return;
+        }
+
+        TextInputDialog dialog = new TextInputDialog(buildCurrentRackDebugText());
+        dialog.setTitle("Debug Rack");
+        dialog.setHeaderText("输入新的 rack。支持 A-Z，`?` 或 `*` 表示 blank，空格会被忽略。");
+        dialog.setContentText("Rack:");
+        dialog.getEditor().setPromptText("例如：AEINRST 或 QUIZ?");
+        dialog.showAndWait().ifPresent(this::applyDebugRackEdit);
+    }
+
+    @Override
     public void onTutorialAdvanceRequested() {
         if (gameRuntime == null || !gameRuntime.isTutorialRuntime()) {
             return;
@@ -913,5 +934,34 @@ public class GameController implements GameActionPort {
         }
         return launchContext.getRequest() != null
             && launchContext.getRequest().getGameMode() == GameMode.HOT_SEAT;
+    }
+
+    private String buildCurrentRackDebugText() {
+        if (gameRuntime == null || !gameRuntime.hasSession()) {
+            return "";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (RackTileSnapshot rackTile : gameRuntime.getSessionSnapshot().getCurrentRackTiles()) {
+            if (rackTile.getTileId() == null) {
+                continue;
+            }
+            builder.append(rackTile.isBlank() ? '?' : rackTile.getDisplayLetter());
+        }
+        return builder.toString();
+    }
+
+    private void applyDebugRackEdit(String rackSpec) {
+        try {
+            gameRuntime.replaceCurrentRack(rackSpec);
+            refreshSnapshotAfterAction();
+            viewModel.pushTransientMessage("Rack 已更新。");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Debug Rack");
+            alert.setHeaderText("无法更新 rack");
+            alert.setContentText(exception.getMessage());
+            alert.showAndWait();
+        }
     }
 }

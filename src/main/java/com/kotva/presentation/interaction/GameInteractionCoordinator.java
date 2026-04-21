@@ -229,6 +229,11 @@ public class GameInteractionCoordinator {
     }
 
     private void handleSceneKeyPressed(KeyEvent event) {
+        if (event.getCode() == KeyCode.D && event.isShortcutDown() && event.isShiftDown()) {
+            actionPort.onDebugRackEditRequested();
+            event.consume();
+            return;
+        }
         if (event.getCode() != KeyCode.ENTER || !event.isShortcutDown()) {
             return;
         }

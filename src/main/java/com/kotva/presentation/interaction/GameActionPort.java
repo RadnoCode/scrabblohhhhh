@@ -24,6 +24,8 @@ public interface GameActionPort {
 
     void onResignRequested();
 
+    void onDebugRackEditRequested();
+
     void onTutorialAdvanceRequested();
 
     void onTutorialExitRequested();
