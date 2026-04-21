@@ -23,6 +23,7 @@ import com.kotva.domain.model.Position;
 import com.kotva.infrastructure.AudioManager;
 import com.kotva.infrastructure.settings.AppSettings;
 import com.kotva.infrastructure.settings.SettingsRepository;
+import com.kotva.mode.GameMode;
 import com.kotva.policy.ClockPhase;
 import com.kotva.policy.SessionStatus;
 import com.kotva.policy.WordType;
@@ -261,14 +262,24 @@ public class GameController implements GameActionPort {
                 rackTiles.set(slotIndex, GameViewModel.TileModel.empty(highlighted, dimmed));
                 continue;
             }
+            String displayLetter = resolveDisplayLetter(rackTile.getDisplayLetter());
+            String assignedLetter = resolveDisplayLetter(rackTile.getAssignedLetter());
             rackTiles.set(
                 slotIndex,
-                GameViewModel.TileModel.filled(
-                    rackTile.getTileId(),
-                    resolveDisplayLetter(rackTile.getDisplayLetter()),
-                    rackTile.getScore(),
-                    highlighted,
-                    dimmed));
+                rackTile.isBlank()
+                    ? GameViewModel.TileModel.blank(
+                        rackTile.getTileId(),
+                        displayLetter,
+                        rackTile.getScore(),
+                        assignedLetter,
+                        highlighted,
+                        dimmed)
+                    : GameViewModel.TileModel.filled(
+                        rackTile.getTileId(),
+                        displayLetter,
+                        rackTile.getScore(),
+                        highlighted,
+                        dimmed));
         }
         return rackTiles;
     }
@@ -296,12 +307,20 @@ public class GameController implements GameActionPort {
             GameViewModel.TileModel tileModel =
                 renderCell == null
                     ? GameViewModel.TileModel.empty(false, false)
-                    : GameViewModel.TileModel.filled(
-                        renderCell.getTileId(),
-                        resolveDisplayLetter(renderCell.getDisplayLetter()),
-                        renderCell.getScore(),
-                        false,
-                        false);
+                    : renderCell.isBlank()
+                        ? GameViewModel.TileModel.blank(
+                            renderCell.getTileId(),
+                            resolveDisplayLetter(renderCell.getDisplayLetter()),
+                            renderCell.getScore(),
+                            resolveDisplayLetter(renderCell.getDisplayLetter()),
+                            false,
+                            false)
+                        : GameViewModel.TileModel.filled(
+                            renderCell.getTileId(),
+                            resolveDisplayLetter(renderCell.getDisplayLetter()),
+                            renderCell.getScore(),
+                            false,
+                            false);
             GameViewModel.TileModel ghostTile =
                 renderCell == null ? ghostTiles.get(coordinate) : null;
 
@@ -461,7 +480,7 @@ public class GameController implements GameActionPort {
     }
 
     private String resolveStepTimerText(GameSessionSnapshot snapshot) {
-        if (snapshot.getCurrentPlayerClockPhase() != ClockPhase.BYO_YOMI) {
+        if (snapshot.getCurrentPlayerClockPhase() == ClockPhase.DISABLED) {
             return "--:--";
         }
         return formatDuration(snapshot.getCurrentPlayerByoYomiRemainingMillis());
@@ -529,7 +548,10 @@ public class GameController implements GameActionPort {
     }
 
     private String resolveDisplayLetter(Character displayLetter) {
-        return displayLetter == null ? "" : String.valueOf(displayLetter);
+        if (displayLetter == null || Character.isWhitespace(displayLetter)) {
+            return "";
+        }
+        return String.valueOf(displayLetter);
     }
 
     private void shutdownRuntime() {
@@ -636,6 +658,16 @@ public class GameController implements GameActionPort {
     }
 
     @Override
+    public void onBlankTileLetterAssigned(String tileId, char assignedLetter) {
+        if (isInteractionLocked()) {
+            return;
+        }
+        Objects.requireNonNull(tileId, "tileId cannot be null.");
+        gameRuntime.assignBlankTileLetter(tileId, assignedLetter);
+        refreshSnapshotAfterAction();
+    }
+
+    @Override
     public void onRecallAllDraftTilesRequested() {
         if (isInteractionLocked()) {
             return;
@@ -655,6 +687,9 @@ public class GameController implements GameActionPort {
             return;
         }
         tickClockBeforeActionIfNeeded();
+        if (renderer != null) {
+            renderer.hideRackHandoffOverlay();
+        }
         gameRuntime.submitDraft(trackPendingClientAction(nextClientActionId("submit-draft")));
         refreshSnapshotAfterAction();
     }
@@ -817,6 +852,13 @@ public class GameController implements GameActionPort {
         if (shouldPlayActionConfirm(latestActionResult)) {
             audioManager.playActionConfirm();
         }
+        if (shouldShowRackHandoffOverlay(latestActionResult)) {
+            Platform.runLater(() -> {
+                    if (renderer != null) {
+                        renderer.showRackHandoffOverlay();
+                    }
+                });
+        }
         if (!latestActionResult.isSuccess() && !latestActionResult.getMessage().isBlank()) {
             viewModel.pushTransientMessage(latestActionResult.getMessage());
         }
@@ -838,6 +880,9 @@ public class GameController implements GameActionPort {
     private void clearClientActionTracking() {
         pendingClientActionId = null;
         lastPresentedActionResultId = null;
+        if (renderer != null) {
+            renderer.hideRackHandoffOverlay();
+        }
     }
 
     private GameActionResult latestActionResult() {
@@ -851,5 +896,22 @@ public class GameController implements GameActionPort {
         return latestAfterAction != null
             && latestAfterAction != latestBeforeAction
             && !latestAfterAction.isSuccess();
+    }
+
+    private boolean shouldShowRackHandoffOverlay(GameActionResult latestActionResult) {
+        Objects.requireNonNull(latestActionResult, "latestActionResult cannot be null.");
+        if (!latestActionResult.isSuccess() || latestActionResult.isGameEnded()) {
+            return false;
+        }
+        if (latestActionResult.getActionType() != ActionType.PLACE_TILE
+            && latestActionResult.getActionType() != ActionType.PASS_TURN) {
+            return false;
+        }
+        if (latestActionResult.getNextPlayerId() == null
+            || Objects.equals(latestActionResult.getNextPlayerId(), latestActionResult.getPlayerId())) {
+            return false;
+        }
+        return launchContext.getRequest() != null
+            && launchContext.getRequest().getGameMode() == GameMode.HOT_SEAT;
     }
 }

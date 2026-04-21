@@ -36,11 +36,11 @@ public class SettingsScene extends Scene {
         root.getStyleClass().add("settings-root");
 
         TitleBanner titleBanner = new TitleBanner("SCRABBLE");
-        BorderPane.setMargin(titleBanner, new Insets(60, 110, 30, 110));
+        BorderPane.setMargin(titleBanner, new Insets(42, 100, 18, 100));
         root.setTop(titleBanner);
 
         SettingsGearIconView settingsGearIconView = new SettingsGearIconView();
-        settingsGearIconView.setPrefSize(360, 360);
+        settingsGearIconView.setPrefSize(300, 300);
 
         InputButton nameButton = new InputButton("Name");
         SliderButton musicButton = new SliderButton("Music");
@@ -48,16 +48,16 @@ public class SettingsScene extends Scene {
 
         controller.bindControls(nameButton, musicButton);
 
-        VBox settingColumn = new VBox(26);
+        VBox settingColumn = new VBox(18);
         settingColumn.setAlignment(Pos.CENTER_LEFT);
         settingColumn.getChildren().addAll(nameButton, musicButton, lockedButton);
 
         Region spacer = new Region();
-        spacer.setMinWidth(90);
+        spacer.setMinWidth(60);
 
         HBox contentBox = new HBox(settingsGearIconView, spacer, settingColumn);
         contentBox.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(contentBox, new Insets(20, 110, 90, 110));
+        BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);
 
         BackButton backButton = new BackButton();
@@ -65,7 +65,7 @@ public class SettingsScene extends Scene {
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
         StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
 
-        sceneRoot.getChildren().addAll(root, backButton);
+        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, backButton);
         return sceneRoot;
     }
 

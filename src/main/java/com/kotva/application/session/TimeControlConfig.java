@@ -10,8 +10,8 @@ public class TimeControlConfig implements Serializable {
         if (mainTimeMillis <= 0) {
             throw new IllegalArgumentException("mainTimeMillis must be greater than 0.");
         }
-        if (byoYomiMillisPerTurn <= 0) {
-            throw new IllegalArgumentException("byoYomiMillisPerTurn must be greater than 0.");
+        if (byoYomiMillisPerTurn < 0) {
+            throw new IllegalArgumentException("byoYomiMillisPerTurn cannot be negative.");
         }
         this.mainTimeMillis = mainTimeMillis;
         this.byoYomiMillisPerTurn = byoYomiMillisPerTurn;

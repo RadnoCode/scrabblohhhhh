@@ -12,6 +12,8 @@ public interface GameActionPort {
 
     void onDraftTileRemoved(String tileId);
 
+    void onBlankTileLetterAssigned(String tileId, char assignedLetter);
+
     void onRecallAllDraftTilesRequested();
 
     void onSubmitDraftRequested();

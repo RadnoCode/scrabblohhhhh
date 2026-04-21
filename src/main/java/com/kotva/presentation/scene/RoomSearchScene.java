@@ -42,11 +42,11 @@ public class RoomSearchScene extends Scene {
         root.getStyleClass().add("room-root");
 
         TitleBanner titleBanner = new TitleBanner(viewModel.getTitleText());
-        BorderPane.setMargin(titleBanner, new Insets(60, 110, 30, 110));
+        BorderPane.setMargin(titleBanner, new Insets(42, 100, 18, 100));
         root.setTop(titleBanner);
 
         CardStackIconView cardStackIconView = new CardStackIconView();
-        cardStackIconView.setPrefSize(420, 320);
+        cardStackIconView.setPrefSize(360, 270);
 
         SearchIconView searchIconView = new SearchIconView();
         TextField searchField = new TextField();
@@ -60,7 +60,7 @@ public class RoomSearchScene extends Scene {
         RoomPanelView roomPanelView = RoomPanelView.createSearchPanel();
         ListView<DiscoveredRoom> roomListView = new ListView<>();
         roomListView.getStyleClass().add("room-list-view");
-        roomListView.setPrefSize(420, 178);
+        roomListView.setPrefSize(420, 156);
         controller.bindRoomList(roomListView);
 
         StackPane roomListBox = new StackPane(roomPanelView, roomListView);
@@ -75,15 +75,15 @@ public class RoomSearchScene extends Scene {
         controller.bindJoinAction(joinButton);
         controller.bindRefreshAction(refreshButton);
 
-        VBox rightColumn = new VBox(18, searchBox, roomListBox, statusLabel, joinButton, refreshButton);
+        VBox rightColumn = new VBox(14, searchBox, roomListBox, statusLabel, joinButton, refreshButton);
         rightColumn.setAlignment(Pos.TOP_CENTER);
 
         Region spacer = new Region();
-        spacer.setMinWidth(70);
+        spacer.setMinWidth(56);
 
         HBox contentBox = new HBox(cardStackIconView, spacer, rightColumn);
         contentBox.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(contentBox, new Insets(20, 110, 90, 110));
+        BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);
 
         BackButton backButton = new BackButton();
@@ -91,7 +91,7 @@ public class RoomSearchScene extends Scene {
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
         StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
 
-        sceneRoot.getChildren().addAll(root, backButton);
+        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, backButton);
         controller.startScanning();
         return sceneRoot;
     }

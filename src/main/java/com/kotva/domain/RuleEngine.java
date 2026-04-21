@@ -30,10 +30,10 @@ public class RuleEngine {
             return null;
         }
 
+
         if (action.placements().isEmpty()) {
             return "No tiles placed";
         }
-
         Board board = state.getBoard();
         List<Position> placements = new ArrayList<>();
         if (!state.isFirstMoveMade()) {
@@ -46,6 +46,7 @@ public class RuleEngine {
         for (ActionPlacement placement : action.placements()) {
             placements.add(placement.position());
         }
+
 
         if (!MoveValidator.isStraightLine(placements)) {
             return "Letters shall be in a line";
@@ -67,6 +68,9 @@ public class RuleEngine {
 
         TileBag tilebag = state.getTileBag();
         List<CandidateWord> words = WordExtractor.extract(action, tilebag, board);
+        if(words.isEmpty()) {
+            return "At least one new word must be formed";
+        }
         for (CandidateWord candidate : words) {
             if (!dictionaryRepository.isAccepted(candidate.getWord())) {
                 return "Invalid word: " + candidate.getWord();

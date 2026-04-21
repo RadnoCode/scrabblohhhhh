@@ -93,6 +93,15 @@ abstract class AbstractLocalGameRuntime implements GameRuntime {
     }
 
         @Override
+    public void assignBlankTileLetter(String tileId, char assignedLetter) {
+        requireCurrentPlayerController().assignLettertoBlank(
+            gameApplicationService,
+            requireSession(),
+            tileId,
+            assignedLetter);
+    }
+
+        @Override
     public void recallAllDraftTiles() {
         requireCurrentPlayerController().recallAllDraftTiles(
             gameApplicationService,

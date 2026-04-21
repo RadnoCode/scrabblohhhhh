@@ -20,6 +20,7 @@ public class SettlementScene extends Scene {
     private static Parent createRoot(SettlementController controller) {
         StackPane root = new StackPane();
         root.setAlignment(Pos.CENTER);
+        root.getChildren().add(SceneBackgroundLayer.createFor(root));
 
         CommonButton goBackButton = new CommonButton(GO_BACK_TEXT);
         controller.bindActions(goBackButton);

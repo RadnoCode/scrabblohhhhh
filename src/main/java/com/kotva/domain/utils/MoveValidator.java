@@ -10,6 +10,9 @@ public final class MoveValidator {
 
     private MoveValidator() {
     }
+    public static boolean isOnlyOne(List<Position> placements) {
+        return placements != null && placements.size() == 1;
+    }
 
     public static boolean isStraightLine(List<Position> placements) {
         if (placements == null || placements.size() <= 1) {

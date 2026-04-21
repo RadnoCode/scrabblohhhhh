@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.Objects;
 
 public class GameApplicationServiceImpl implements GameApplicationService {
+    private static final String BLANK_TILE_SELECTION_REQUIRED_MESSAGE =
+        "Invalid placement. Please hover over the blank tile and choose a letter first.";
+
     private final ClockService clockService;
     private final DraftManager draftManager;
     private final MovePreviewService movePreviewService;
@@ -81,8 +84,26 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         @Override
     public void assignLettertoBlank(GameSession session, String tileId, char assignedLetter) {
         ensureEditingAllowed(session);
-        Tile tile =session.getGameState().getTileBag().getTileById(tileId);
-        tile.setAssignedLetter(assignedLetter);
+        Objects.requireNonNull(tileId, "tileId cannot be null.");
+        Tile tile = session.getGameState().getTileBag().getTileById(tileId);
+        if (tile == null) {
+            throw new IllegalArgumentException("Unknown tileId: " + tileId);
+        }
+        if (!tile.isBlank()) {
+            throw new IllegalArgumentException("Tile is not a blank tile: " + tileId);
+        }
+
+        char normalizedLetter = Character.toUpperCase(assignedLetter);
+        if (normalizedLetter < 'A' || normalizedLetter > 'Z') {
+            throw new IllegalArgumentException("Assigned letter must be between A and Z.");
+        }
+
+        tile.setAssignedLetter(normalizedLetter);
+        if (session.getTurnDraft().getPlacements().isEmpty()) {
+            session.getTurnDraft().setPreviewResult(null);
+            return;
+        }
+        refreshPreview(session);
     }
 
         @Override
@@ -210,6 +231,14 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         PlayerAction action,
         String actionId,
         String clientActionId) {
+        if (hasUnassignedBlankTile(session)) {
+            return failureResult(
+                actionId,
+                clientActionId,
+                action,
+                BLANK_TILE_SELECTION_REQUIRED_MESSAGE,
+                currentPlayer.getPlayerId());
+        }
         ensureDictionaryLoaded(session);
         RuleEngine ruleEngine = new RuleEngine(dictionaryRepository);
         String validationMessage = ruleEngine.validateMove(session.getGameState(), action);
@@ -386,6 +415,16 @@ public class GameApplicationServiceImpl implements GameApplicationService {
                 tile.clearAssignedLetter();
             }
         }
+    }
+
+    private boolean hasUnassignedBlankTile(GameSession session) {
+        for (var placement : session.getTurnDraft().getPlacements()) {
+            Tile tile = session.getGameState().getTileBag().getTileById(placement.getTileId());
+            if (tile != null && tile.isBlank() && tile.getAssignedLetter() == null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static GameActionResult failureResult(

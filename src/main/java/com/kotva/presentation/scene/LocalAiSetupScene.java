@@ -39,40 +39,54 @@ public class LocalAiSetupScene extends Scene {
         TitleBanner titleBanner = new TitleBanner(viewModel.getTitleText());
         TransientMessageView messageView = new TransientMessageView();
 
-        VBox topBox = new VBox(12, titleBanner, messageView);
+        VBox topBox = new VBox(10, titleBanner, messageView);
         topBox.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(topBox, new Insets(60, 110, 30, 110));
+        BorderPane.setMargin(topBox, new Insets(42, 100, 18, 100));
         root.setTop(topBox);
 
         CardStackIconView cardStackIconView = new CardStackIconView();
-        cardStackIconView.setPrefSize(420, 320);
+        cardStackIconView.setPrefSize(360, 270);
 
         ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText());
 
         HBox viceTitleBox = new HBox(viceTitleBanner);
         viceTitleBox.setAlignment(Pos.CENTER);
-        viceTitleBox.setPrefWidth(420);
-        viceTitleBox.setMinWidth(420);
-        viceTitleBox.setMaxWidth(420);
+        viceTitleBox.setPrefWidth(400);
+        viceTitleBox.setMinWidth(400);
+        viceTitleBox.setMaxWidth(400);
 
         InputButton firstButton = new InputButton(viewModel.getFirstOptionText());
         firstButton.enableNumericOnlyInput();
+        InputButton stepTimeButton = new InputButton("Select Step Time (s)");
+        stepTimeButton.enableNumericOnlyInput();
         SwitchButton secondButton = new SwitchButton(viewModel.getSecondOptionText());
         SwitchButton thirdButton = new SwitchButton(viewModel.getThirdOptionText());
         CommonButton goButton = new CommonButton("Go!");
-        controller.bindActions(firstButton, secondButton, thirdButton, goButton, messageView);
+        controller.bindActions(
+            firstButton,
+            stepTimeButton,
+            secondButton,
+            thirdButton,
+            goButton,
+            messageView);
 
-        VBox buttonColumn = new VBox(26);
+        VBox buttonColumn = new VBox(16);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
-        buttonColumn.getChildren().addAll(viceTitleBox, firstButton, secondButton, thirdButton, goButton);
+        buttonColumn.getChildren().addAll(
+            viceTitleBox,
+            firstButton,
+            stepTimeButton,
+            secondButton,
+            thirdButton,
+            goButton);
 
         Region spacer = new Region();
-        spacer.setMinWidth(80);
+        spacer.setMinWidth(56);
 
         HBox contentBox = new HBox(cardStackIconView, spacer, buttonColumn);
         contentBox.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(contentBox, new Insets(20, 110, 90, 110));
+        BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);
 
         BackButton backButton = new BackButton();
@@ -80,7 +94,7 @@ public class LocalAiSetupScene extends Scene {
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
         StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
 
-        sceneRoot.getChildren().addAll(root, backButton);
+        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, backButton);
         return sceneRoot;
     }
 

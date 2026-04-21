@@ -21,8 +21,8 @@ public class CommonButton extends Button {
         getStyleClass().add("common-button");
 
         setFocusTraversable(true);
-        setPrefSize(420, 70);
-        setMinSize(420, 70);
+        setPrefSize(420, 60);
+        setMinSize(420, 60);
         setMaxWidth(420);
 
         addEventFilter(MouseEvent.MOUSE_PRESSED, event -> requestFocus());

@@ -251,6 +251,8 @@ public class GameViewModel {
         private final String letter;
         private final int score;
         private final boolean empty;
+        private final boolean blank;
+        private final String assignedLetter;
         private final boolean tutorialHighlighted;
         private final boolean tutorialDimmed;
 
@@ -259,26 +261,40 @@ public class GameViewModel {
             String letter,
             int score,
             boolean empty,
+            boolean blank,
+            String assignedLetter,
             boolean tutorialHighlighted,
             boolean tutorialDimmed) {
             this.tileId = Objects.requireNonNull(tileId, "tileId cannot be null.");
             this.letter = Objects.requireNonNull(letter, "letter cannot be null.");
             this.score = score;
             this.empty = empty;
+            this.blank = blank;
+            this.assignedLetter = Objects.requireNonNull(
+                assignedLetter,
+                "assignedLetter cannot be null.");
             this.tutorialHighlighted = tutorialHighlighted;
             this.tutorialDimmed = tutorialDimmed;
         }
 
         public static TileModel empty() {
-            return new TileModel("", "", 0, true, false, false);
+            return new TileModel("", "", 0, true, false, "", false, false);
         }
 
         public static TileModel empty(boolean tutorialHighlighted, boolean tutorialDimmed) {
-            return new TileModel("", "", 0, true, tutorialHighlighted, tutorialDimmed);
+            return new TileModel(
+                "",
+                "",
+                0,
+                true,
+                false,
+                "",
+                tutorialHighlighted,
+                tutorialDimmed);
         }
 
         public static TileModel filled(String tileId, String letter, int score) {
-            return new TileModel(tileId, letter, score, false, false, false);
+            return new TileModel(tileId, letter, score, false, false, "", false, false);
         }
 
         public static TileModel filled(
@@ -287,11 +303,31 @@ public class GameViewModel {
             int score,
             boolean tutorialHighlighted,
             boolean tutorialDimmed) {
+            return new TileModel(tileId, letter, score, false, false, "", tutorialHighlighted, tutorialDimmed);
+        }
+
+        public static TileModel blank(
+            String tileId,
+            String displayLetter,
+            int score,
+            String assignedLetter) {
+            return new TileModel(tileId, displayLetter, score, false, true, assignedLetter, false, false);
+        }
+
+        public static TileModel blank(
+            String tileId,
+            String displayLetter,
+            int score,
+            String assignedLetter,
+            boolean tutorialHighlighted,
+            boolean tutorialDimmed) {
             return new TileModel(
                 tileId,
-                letter,
+                displayLetter,
                 score,
                 false,
+                true,
+                assignedLetter,
                 tutorialHighlighted,
                 tutorialDimmed);
         }
@@ -310,6 +346,18 @@ public class GameViewModel {
 
         public boolean isEmpty() {
             return empty;
+        }
+
+        public boolean isBlank() {
+            return blank;
+        }
+
+        public String getAssignedLetter() {
+            return assignedLetter;
+        }
+
+        public boolean hasAssignedLetter() {
+            return !assignedLetter.isBlank();
         }
 
         public boolean isTutorialHighlighted() {

@@ -5,6 +5,7 @@ import com.kotva.presentation.viewmodel.GameViewModel;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
+import javafx.geometry.Bounds;
 import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
@@ -155,12 +156,38 @@ public class BoardView extends StackPane {
         return null;
     }
 
+    public Bounds getCellBoundsInScene(BoardCoordinate coordinate) {
+        Objects.requireNonNull(coordinate, "coordinate cannot be null.");
+        StackPane cell = cellViews[coordinate.row()][coordinate.col()];
+        return cell.localToScene(cell.getBoundsInLocal());
+    }
+
     public void setOnCellPressed(BiConsumer<BoardCoordinate, MouseEvent> handler) {
         Objects.requireNonNull(handler, "handler cannot be null.");
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int column = 0; column < BOARD_SIZE; column++) {
                 BoardCoordinate coordinate = new BoardCoordinate(row, column);
                 cellViews[row][column].setOnMousePressed(event -> handler.accept(coordinate, event));
+            }
+        }
+    }
+
+    public void setOnCellEntered(BiConsumer<BoardCoordinate, MouseEvent> handler) {
+        Objects.requireNonNull(handler, "handler cannot be null.");
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int column = 0; column < BOARD_SIZE; column++) {
+                BoardCoordinate coordinate = new BoardCoordinate(row, column);
+                cellViews[row][column].setOnMouseEntered(event -> handler.accept(coordinate, event));
+            }
+        }
+    }
+
+    public void setOnCellExited(BiConsumer<BoardCoordinate, MouseEvent> handler) {
+        Objects.requireNonNull(handler, "handler cannot be null.");
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int column = 0; column < BOARD_SIZE; column++) {
+                BoardCoordinate coordinate = new BoardCoordinate(row, column);
+                cellViews[row][column].setOnMouseExited(event -> handler.accept(coordinate, event));
             }
         }
     }
