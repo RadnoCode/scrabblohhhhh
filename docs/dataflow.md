@@ -1,153 +1,253 @@
 # Data Flow
 
-这份文档只关注“主要数据如何生成、存放、转换、传播”，不再按页面动作顺序描述 UI 流程。阅读方式建议是：
+这份文档基于当前最新代码整理，重点描述“核心数据对象如何生成、归属、变换、同步”，尤其覆盖现在已经成型的三类运行模式：
 
-1. 先看核心数据对象。
-2. 再看对象之间的变换关系。
-3. 最后看几条最重要的数据通道。
+- 本地热座 / 本地 AI
+- LAN Host
+- LAN Client
+
+当前版本里，项目的数据流已经不再是单一的 `GameSession -> UI`。更准确的说法是：
+
+```text
+启动数据
+  → RuntimeLaunchSpec / GameLaunchContext
+  → GameRuntime
+
+权威状态数据
+  → GameSession / GameState
+
+本地编辑态数据
+  → TurnDraft
+
+可传输读模型
+  → GameSessionSnapshot
+
+附加运行态数据
+  → AiRuntimeSnapshot / ClientRuntimeSnapshot
+```
 
 ## 1. 核心数据对象
 
-当前项目的主数据不是 Controller，也不是某个单独 Service，而是下面这组对象：
-
-| 对象 | 所在层 | 作用 | 上游来源 | 下游去向 |
+| 对象 | 层 | 角色 | 谁拥有它 | 谁消费它 |
 | --- | --- | --- | --- | --- |
-| `GameLaunchContext` | Presentation/Application 边界 | 承载“从设置页到对局页”的启动参数 | setup controller 的用户输入 | `GameController` / `GameRuntimeFactory` |
-| `NewGameRequest` | Application 输入 | 标准化开局请求 | `GameLaunchContext` | `GameSetupServiceImpl` |
-| `GameConfig` | Application 会话配置 | 开局后的静态配置 | `GameSetupServiceImpl.buildConfig()` | `GameSession` |
-| `GameSession` | Application 核心 | 一局游戏的聚合根 | `GameSetupServiceImpl` | `GameRuntime` / `GameApplicationService` / `GameSessionSnapshotFactory` |
-| `GameState` | Domain 核心 | 对局真实状态，含棋盘、玩家、牌袋 | `GameSession` 初始化时创建 | `RuleEngine` / `TurnCoordinator` / `SettlementService` |
-| `TurnDraft` | Application 编辑态 | 当前玩家未提交的临时摆放 | `GameSession` 内部持有 | `MovePreviewServiceImpl` / `TurnDraftActionMapper` |
-| `PlayerAction` | Domain 命令对象 | 一次有效操作的标准表达 | `TurnDraftActionMapper` 或 pass/lose 构造器 | `RuleEngine` / `TurnCoordinator` |
-| `PreviewResult` | Application 派生数据 | 对 `TurnDraft` 的规则校验与估分结果 | `MovePreviewServiceImpl` | `TurnDraft` / `GameSessionSnapshotFactory` |
-| `GameActionResult` | Application 动作回执 | 一次提交后的结果摘要 | `GameApplicationServiceImpl.executeAction()` | `GameSession` / `GameController` |
-| `GameSessionSnapshot` | Application 读模型 | 给前端渲染的完整快照 | `GameSessionSnapshotFactory` | `GameController` / Renderer |
-| `SettlementResult` | Application 结算读模型 | 终局后的排名、摘要、棋盘快照 | `SettlementServiceImpl` | `GameSessionSnapshot` / Settlement UI |
-| `AiRuntimeSnapshot` | Application 辅助状态 | AI 运行状态与失败信息 | `LocalAiGameRuntime` | `GameSessionSnapshot` |
+| `GameLaunchContext` | Presentation/Application 边界 | 场景启动上下文 | setup controller / room controller | `GameController` |
+| `RuntimeLaunchSpec` | Application runtime | 标准化运行时启动参数 | `GameLaunchContext` | `GameRuntimeFactory` |
+| `NewGameRequest` | Application setup | 开局请求 | `GameLaunchContext` / `RuntimeLaunchSpec` | `GameSetupServiceImpl` |
+| `GameRuntime` | Application runtime | 一局游戏在某种运行模式下的外壳 | `GameRuntimeFactory` 或外部直接提供 | `GameController` |
+| `GameSession` | Application session | 权威会话聚合根 | 本地 runtime / host runtime / tutorial runtime | `GameApplicationService` / `GameSessionSnapshotFactory` |
+| `GameState` | Domain | 权威对局状态 | `GameSession` | `RuleEngine` / `TurnCoordinator` / `SettlementService` |
+| `TurnDraft` | Application draft | 本地未提交编辑态 | `GameSession` 或 `ClientDraftService` | preview / submit / snapshot projection |
+| `PlayerAction` | Domain command | 标准动作命令 | `TurnDraftActionMapper`、pass、resign、LAN command | `GameApplicationServiceImpl` / host |
+| `PreviewResult` | Application preview | draft 的规则校验与估分结果 | `MovePreviewService` / `ClientPreviewService` | `TurnDraft` / snapshot |
+| `GameActionResult` | Application result | 一次动作落地后的回执 | `GameApplicationServiceImpl` | `GameSession` / `GameSessionSnapshot` |
+| `GameSessionSnapshot` | Application read model | 统一前端读模型，也是 LAN 传输载体 | `GameSessionSnapshotFactory` 或 host 广播 | `GameController` / LAN client |
+| `SettlementResult` | Application result | 终局结算读模型 | `SettlementServiceImpl` | `GameSessionSnapshot` / Settlement UI |
+| `AiRuntimeSnapshot` | Application session | AI 运行状态 | `LocalAiGameRuntime` | `GameSessionSnapshot` |
+| `ClientRuntimeSnapshot` | Application session | LAN 客户端运行状态 | `ClientGameRuntime` / `LanClientService` / host viewer decorator | `GameSessionSnapshot` |
+| `ClientGameContext` | Application client | LAN client 的本地上下文 | `ClientGameRuntime` | `LanClientService` / `ClientDraftService` |
 
-## 2. 数据主线
+## 2. 数据归属边界
 
-整个项目的主数据链可以压缩成下面这一条：
+当前系统最重要的不是调用关系，而是“哪类数据由谁拥有”。
 
-```text
-用户设置
-  → GameLaunchContext
-  → NewGameRequest
-  → GameConfig
-  → GameSession
-      ├─ GameState
-      ├─ TurnDraft
-      ├─ latest GameActionResult
-      └─ TurnCoordinator / SettlementResult
-  → GameSessionSnapshot
-  → ViewModel / UI
-```
+### 2.1 权威状态
 
-也就是说：
+权威状态只存在于能真正推进对局的一侧：
 
-- 写路径主要写入 `GameSession`。
-- 读路径主要从 `GameSessionSnapshot` 输出。
-- `GameState` 是真实对局状态。
-- `TurnDraft` 是未提交编辑态。
-- `PreviewResult`、`GameActionResult`、`SettlementResult` 都是围绕 `GameSession` 产生的派生结果。
-
-## 3. 开局阶段的数据变换
-
-### 3.1 从设置项到开局请求
-
-设置页真正产出的核心不是页面跳转，而是 `GameLaunchContext`。
-
-```text
-game time / dictionary / player count / difficulty
-  ↓
-GameLaunchContext
-  ↓
-NewGameRequest
-  - GameMode
-  - playerCount
-  - playerNames
-  - DictionaryType
-  - TimeControlConfig
-  - AiDifficulty
-```
-
-这里完成的转换包括：
-
-- UI label 映射为 `DictionaryType`
-- 输入分钟数映射为 `TimeControlConfig`
-- 模式映射为 `GameMode`
-- 玩家名列表标准化为 `playerNames`
-
-### 3.2 从请求到会话
-
-`GameSetupServiceImpl` 的主要任务是把请求数据展开成完整会话。
-
-```text
-NewGameRequest
-  ↓ validate + normalize
-GameConfig
-  ↓
-List<Player>
-  ↓
-GameState
-  ↓ initialDraw()
-GameSession
-```
-
-此阶段的数据增量主要有：
-
-- `playerNames` 变成带 `playerId`、`PlayerType`、`PlayerClock` 的 `Player`
-- 配置型数据进入 `GameConfig`
-- 玩家列表进入 `GameState`
-- `GameState` 再被包装进 `GameSession`
-- `GameSession` 自动补齐 `TurnDraft`、`TurnCoordinator`、`sessionId`
-
-## 4. 游戏中的三类数据
-
-游戏运行时最重要的是区分三类数据，它们不能混在一起理解。
-
-### 4.1 真实状态数据
-
-这类数据代表“游戏已经生效”的事实：
-
+- `GameSession`
 - `GameState`
-- `Board`
-- `Player`
-- `Rack`
-- `TileBag`
-- `PlayerClock`
+- `TurnCoordinator`
+- `SettlementResult`
 
-这部分只应在动作提交成功后被修改。
+拥有权：
 
-### 4.2 临时编辑数据
+- 本地热座：本地 runtime
+- 本地 AI：本地 runtime
+- LAN Host：host runtime
+- 教程：tutorial runtime
 
-这类数据代表“玩家正在编辑，但还没有提交”：
+### 2.2 本地编辑态
+
+编辑态用于“正在摆，但尚未提交”的操作：
 
 - `TurnDraft`
-- `DraftPlacement`
-
-这部分只影响预览，不直接改动真实棋盘。
-
-### 4.3 面向 UI 的派生数据
-
-这类数据是从真实状态或临时编辑态计算出来的展示模型：
-
 - `PreviewResult`
-- `PreviewSnapshot`
-- `GameActionResult`
+
+拥有权：
+
+- 本地模式：`GameSession` 内部持有 `TurnDraft`
+- LAN Client：`ClientDraftService` 单独持有本地 `TurnDraft`
+
+### 2.3 只读投影
+
+前端读到的不是权威状态本体，而是投影后的只读模型：
+
 - `GameSessionSnapshot`
-- `SettlementResult`
+- `PreviewSnapshot`
+- `BoardCellRenderSnapshot`
+- `ClientRuntimeSnapshot`
 - `AiRuntimeSnapshot`
 
-所以当前系统的核心边界是：
+所以新版结构下最关键的边界是：
+
+```text
+权威状态 != 本地编辑态 != UI 读模型
+```
+
+也就是：
 
 ```text
 GameState != TurnDraft != GameSessionSnapshot
 ```
 
-## 5. Draft 数据通道
+## 3. 启动数据流
 
-`TurnDraft` 是当前项目最关键的中间态。
+### 3.1 `GameLaunchContext` 已扩展为多入口
+
+现在启动游戏不再只有 `NewGameRequest` 这一条入口。`GameLaunchContext` 可以承载三类启动数据：
+
+```text
+GameLaunchContext
+  ├─ request
+  ├─ launchSpec
+  └─ providedRuntime
+```
+
+对应三种来源：
+
+| 启动方式 | 入口数据 |
+| --- | --- |
+| 本地多人 / 本地 AI | `RuntimeLaunchSpec.forLocal(request)` |
+| LAN Host / LAN Client | `RuntimeLaunchSpec.forLanHost(...)` / `RuntimeLaunchSpec.forLanClient(...)` |
+| 已建好的运行时直接进入游戏页 | `providedRuntime` |
+
+### 3.2 启动阶段的标准变换
+
+```text
+UI setup input
+  ↓
+GameLaunchContext
+  ↓
+RuntimeLaunchSpec / NewGameRequest / providedRuntime
+  ↓
+GameRuntimeFactory.create(...)
+  ↓
+GameRuntime
+```
+
+因此现在“启动数据”这一层已经从旧版本的：
+
+```text
+GameLaunchContext -> NewGameRequest
+```
+
+扩展成：
+
+```text
+GameLaunchContext -> RuntimeLaunchSpec -> GameRuntime
+```
+
+## 4. 本地与 Host 的权威建局流
+
+凡是能真正创建 `GameSession` 的运行时，底层仍然走 `GameSetupServiceImpl`。
+
+```text
+NewGameRequest
+  ↓
+GameSetupServiceImpl.buildConfig(...)
+  ↓
+GameConfig
+  ↓
+Player + PlayerController + PlayerClock
+  ↓
+GameState
+  ↓ initialDraw()
+GameSession
+  ├─ TurnDraft
+  ├─ TurnCoordinator
+  ├─ latestActionResult
+  └─ settlementResult
+```
+
+这里的主要数据增量：
+
+- 请求型数据被标准化成 `GameConfig`
+- 玩家名列表被扩展成 `Player`
+- 规则状态被装入 `GameState`
+- 会话级控制数据被装入 `GameSession`
+
+目前会产生权威 `GameSession` 的 runtime 包括：
+
+- `HotSeatGameRuntime`
+- `LocalAiGameRuntime`
+- `HostGameRuntime`
+- `LobbyHostGameRuntime`
+- `TutorialGameRuntime`
+
+## 5. 客户端模式的数据流
+
+`ClientGameRuntime` 是新版里最重要的结构变化之一，因为它不拥有 `GameSession`。
+
+### 5.1 Client 不持有权威状态
+
+`ClientGameRuntime` 的关键特征是：
+
+- `getSession()` 返回 `null`
+- 本地状态基于 `ClientGameContext`
+- UI 读取的是客户端生成的 `GameSessionSnapshot`
+
+也就是说 LAN client 的核心不是：
+
+```text
+GameSession -> snapshot
+```
+
+而是：
+
+```text
+authoritative remote snapshot
+  → ClientGameContext
+  → local TurnDraft overlay
+  → UI snapshot
+```
+
+### 5.2 Client 的本地数据对象
+
+LAN client 侧主要多出这几个对象：
+
+| 对象 | 作用 |
+| --- | --- |
+| `ClientGameContext` | 保存最近一次权威快照、本地玩家 id、时钟预测所需信息 |
+| `ClientDraftService` | 在客户端维护本地 draft |
+| `ClientPreviewService` | 基于快照重建 `GameState` 做本地预览 |
+| `LanClientService` | 发送命令、接收 host 快照和命令结果 |
+| `ClientRuntimeSnapshot` | 向 UI 暴露“等待 host 确认 / 已断线 / 已锁定”等客户端运行状态 |
+
+### 5.3 Client 的主数据链
+
+```text
+remote GameSessionSnapshot
+  ↓
+ClientGameContext.updateSnapshot(...)
+  ↓
+ClientDraftService.withLocalDraft(...)
+  ↓
+GameSessionSnapshotFactory.withLocalDraft(...)
+  ↓
+UI snapshot
+```
+
+这一条链说明：
+
+- host 发来的快照是权威基线
+- client 自己的 draft 是本地覆盖层
+- UI 最终看到的是“权威快照 + 本地 draft overlay”
+
+## 6. Draft 数据流
+
+新版里 `TurnDraft` 已经分成两种归属方式，但数据形态是一致的。
+
+### 6.1 本地模式
 
 ```text
 UI drag/drop
@@ -156,69 +256,85 @@ GameApplicationService
   ↓
 DraftManager
   ↓
-TurnDraft
+GameSession.turnDraft
 ```
 
-`TurnDraft` 内部承载的数据本质上是：
+### 6.2 LAN Client 模式
 
-- 哪些 tile 被暂时拿出牌架
-- 每个 tile 暂时摆在哪个 board position
-- 当前这批摆法对应的 `PreviewResult`
+```text
+UI drag/drop
+  ↓
+LanClientService
+  ↓
+ClientDraftService
+  ↓
+DraftManager
+  ↓
+local TurnDraft
+```
 
-它的职责是把“编辑中的一手棋”从 `GameState` 中隔离出来。这样做的结果是：
+不管在哪种模式，`TurnDraft` 的语义都相同：
 
-- 棋盘正式状态保持稳定
-- 用户可以反复拖动
-- 预览和提交都基于同一个 draft 数据源
+- 暂存落子位置
+- 暂存从牌架取出的 tile
+- 记录该 draft 的 `PreviewResult`
 
-## 6. Preview 数据通道
+## 7. Preview 数据流
 
-预览流的重点不是“谁调用谁”，而是数据如何被解释。
+### 7.1 本地 / Host 预览
+
+本地和 host 侧，预览直接基于权威 `GameSession` 生成：
 
 ```text
 TurnDraft
   ↓
 TurnDraftActionMapper
   ↓
-PlayerAction(PLACE_TILE)
+PlayerAction
   ↓
-MovePreviewServiceImpl
-  ├─ RuleEngine.validateMove(...)
-  ├─ WordExtractor.extract(...)
-  └─ ScoreCalculator.calculate(...)
+MovePreviewService
   ↓
 PreviewResult
   ↓
 TurnDraft.previewResult
-  ↓
-GameSessionSnapshotFactory
-  ↓
-PreviewSnapshot
 ```
 
-这里发生了三层变换：
+预览计算需要的核心输入是：
 
-1. `TurnDraft -> PlayerAction`
-   把 UI 临时摆放转成规则层可以理解的动作对象。
+- 当前 `GameState`
+- 当前玩家 id
+- 当前 `TurnDraft`
+- 当前词典类型
 
-2. `PlayerAction -> PreviewResult`
-   生成合法性、候选单词、估分、高亮信息。
+### 7.2 LAN Client 预览
 
-3. `PreviewResult -> PreviewSnapshot`
-   转成前端渲染用的只读结构。
-
-因此预览区显示的并不是 `RuleEngine` 原始输出，而是：
+LAN client 不能直接访问 host 的 `GameSession`，所以要先从快照重建预览态：
 
 ```text
-TurnDraft
-  → PreviewResult
-  → PreviewSnapshot
-  → ViewModel
+latest authoritative snapshot
+  ↓
+ClientPreviewStateFactory.fromSnapshot(...)
+  ↓
+preview GameState
+  ↓
+MovePreviewService.preview(...)
+  ↓
+PreviewResult
+  ↓
+local TurnDraft.previewResult
 ```
 
-## 7. Submit 数据通道
+这个变化非常关键，因为它意味着：
 
-提交时发生的是“临时编辑态向真实状态的折叠”。
+- client 的 preview 是本地计算的
+- 但基准局面来自 host 下发的权威快照
+- 真正提交时仍需 host 再次验证
+
+## 8. Submit 与命令数据流
+
+### 8.1 本地 / Host 提交
+
+本地与 host 的提交本质上是把 draft 折叠进权威状态：
 
 ```text
 TurnDraft
@@ -240,115 +356,158 @@ TurnCoordinator.onActionApplied(...)
 GameActionResult
 ```
 
-提交成功后，主要数据变化有：
+提交后会更新的权威数据包括：
 
-| 变化对象 | 变化内容 |
-| --- | --- |
-| `Board` | 正式写入落子 |
-| `Rack` | 对应 tile 被移除 |
-| `Player.score` | 加上本次得分 |
-| `TileBag` | 用于补牌 |
-| `TurnDraft` | 被清空并重建 |
-| `GameActionResult` | 记录动作回执 |
-| `TurnCoordinator` | 更新回合与终局状态 |
+- `Board`
+- `Rack`
+- `Player.score`
+- `TileBag`
+- `TurnDraft`
+- `latestActionResult`
+- `TurnCoordinator`
 
-换句话说，submit 的本质不是“按下按钮”，而是：
+### 8.2 LAN Client 提交
 
-```text
-Draft data
-  → Validated command
-  → Persistent game state mutation
-  → Action result summary
-```
-
-## 8. 回合与终局数据通道
-
-回合推进阶段的核心数据并不是 UI，而是 `TurnCoordinator` 内部维护的回合语义。
+client 提交不会直接修改权威状态，而是先发命令：
 
 ```text
+local TurnDraft
+  ↓
+ClientDraftService.buildSubmitAction()
+  ↓
 PlayerAction
   ↓
-TurnCoordinator
-  ├─ turnNumber
-  ├─ RoundTracker state
-  ├─ gameEnded
-  └─ SettlementResult?
+PlayerController.buildLanCommand(...)
+  ↓
+CommandEnvelope
+  ↓
+LanClientTransport.sendCommand(...)
 ```
 
-`TurnCoordinator` 从动作中提取的不是界面信息，而是：
+之后等待 host 返回：
 
-- 这是否算一手
-- 这手是不是 pass
-- 本轮是否结束
-- 游戏是否结束
-- 若结束，对应的 `SettlementResult` 是什么
+```text
+RemoteCommandResult
+  ├─ success/failure
+  ├─ message
+  └─ snapshot
+```
 
-这里的关键点是：
+如果 host 返回新快照：
 
-- `GameState` 保存局面事实
-- `TurnCoordinator` 保存局面推进语义
+- 成功时：客户端清空本地 draft，接受权威新状态
+- 失败时：可选择保留本地 draft，继续编辑同一回合
 
-两者不是同一层数据。
+因此 client 的 submit 本质是：
 
-## 9. Snapshot 数据通道
+```text
+local draft
+  → remote command
+  → host validation
+  → authoritative snapshot replacement
+```
 
-当前前端不是直接读取 `GameSession`，而是通过 `GameSessionSnapshotFactory` 组装只读快照。
+## 9. Snapshot 数据流
+
+`GameSessionSnapshot` 现在已经不只是前端 DTO，而是整个系统统一的只读交换格式。
+
+### 9.1 Snapshot 的来源
+
+当前 snapshot 有三种主要生成方式：
+
+```text
+GameSessionSnapshotFactory.fromSession(...)
+GameSessionSnapshotFactory.fromSessionForViewer(...)
+GameSessionSnapshotFactory.withLocalDraft(...)
+```
+
+三者含义不同：
+
+| 方法 | 作用 |
+| --- | --- |
+| `fromSession(...)` | 从权威会话生成标准快照 |
+| `fromSessionForViewer(...)` | 按 viewer 身份裁剪可见信息，主要用于 LAN host 向不同玩家广播 |
+| `withLocalDraft(...)` | 在基准快照上叠加本地 draft，主要用于 LAN client UI |
+
+### 9.2 Snapshot 的组成
+
+现在的 `GameSessionSnapshot` 已经聚合了：
+
+- `BoardSnapshot`
+- `boardCells`
+- `currentRackTiles`
+- `draftPlacements`
+- `PreviewSnapshot`
+- `TutorialSnapshot`
+- `GameActionResult`
+- `SettlementResult`
+- `AiRuntimeSnapshot`
+- `ClientRuntimeSnapshot`
+- `snapshotSentAtEpochMillis`
+- `snapshotReceivedAtEpochMillis`
+
+这说明它已经是一个：
+
+```text
+状态 + 可见性裁剪 + 运行时附加信息 + 网络时间信息
+```
+
+的复合读模型。
+
+### 9.3 Host 侧 viewer snapshot
+
+LAN host 不会把同一份原始快照无差别发给所有人，而是会按 viewer 重建：
 
 ```text
 GameSession
-  ├─ GameConfig
-  ├─ GameState
-  ├─ TurnDraft
-  ├─ latestActionResult
-  ├─ settlementResult
-  └─ aiRuntimeSnapshot
-      ↓
-GameSessionSnapshotFactory.fromSession(...)
-      ↓
-GameSessionSnapshot
+  ↓
+GameSessionSnapshotFactory.fromSessionForViewer(session, viewerPlayerId)
+  ↓
+viewer-specific GameSessionSnapshot
 ```
 
-`GameSessionSnapshot` 汇总了多源数据：
+这里最重要的语义是：
 
-| 快照字段来源 | 来源对象 |
-| --- | --- |
-| 当前玩家、玩家列表、时钟 | `GameState` / `PlayerClock` |
-| 棋盘正式落子 | `BoardSnapshotFactory.fromBoard(...)` |
-| 棋盘渲染格子 | `Board + TurnDraft + PreviewSnapshot` |
-| 当前牌架 | 当前玩家 `Rack` |
-| 预览结果 | `TurnDraft.previewResult` |
-| 最新动作反馈 | `latestActionResult` |
-| 结算信息 | `TurnCoordinator.getSettlementResult()` |
-| AI 状态 | `AiRuntimeSnapshot` |
+- 当前轮到谁，谁才能看到自己的 draft / 当前手信息
+- 非当前玩家拿到的是裁剪后的 viewer 快照
 
-这说明当前 UI 所见数据本质上是一个“聚合读模型”，而不是直接暴露底层对象。
+## 10. 客户端运行态数据流
 
-## 10. Settlement 数据通道
+新版 `ClientRuntimeSnapshot` 解决的是“客户端 UI 该如何表达非棋盘状态”。
 
-终局后，主数据从 `GameState` 转为 `SettlementResult`。
+它承载的不是对局规则数据，而是客户端运行状态：
+
+- 是否锁定交互
+- 是否存在 pending command
+- 当前提示 summary
+- 当前详情 details
+
+典型来源有两类：
+
+### 10.1 Client 自己生成
 
 ```text
-GameState + GameEndReason
+pendingCommandId / disconnected / local status
   ↓
-SettlementServiceImpl.settle(...)
+LanClientService.buildRuntimeSnapshot()
   ↓
-SettlementResult
-  - rankings
-  - summaryMessages
-  - BoardSnapshot
+ClientRuntimeSnapshot
+  ↓
+GameSessionSnapshotFactory.withClientRuntimeSnapshot(...)
 ```
 
-结算阶段的数据变换重点有三类：
+### 10.2 Host viewer 注入
 
-- 排名数据：`List<Player> -> List<PlayerSettlement>`
-- 摘要数据：`GameEndReason -> summaryMessages`
-- 棋盘数据：`Board -> BoardSnapshot`
+host 也会在 viewer 快照上注入客户端运行态提示，例如：
 
-因此结算页读到的已经不是原始 `GameState`，而是经过压缩和排序后的结果数据。
+- 当前等待远端玩家行动
+- 当前被系统 notice 锁定
 
-## 11. AI 数据通道
+所以 `ClientRuntimeSnapshot` 已经不再是“client only”字段，而是统一的前端运行态通道。
 
-AI 模式下，多出来的不是另一套游戏状态，而是一条“候选动作输入通道”。
+## 11. AI 数据流
+
+AI 路径本身没变，但现在它和 `ClientRuntimeSnapshot` 一样，也属于 snapshot 的附加运行态字段。
 
 ```text
 GameSession
@@ -357,56 +516,92 @@ AiTurnRuntime
   ↓
 AiMoveOptionSet / AiMove
   ↓
-AI PlayerController
-  ↓
 GameApplicationServiceImpl.executeAction(...)
+  ↓
+GameState mutation
+  ↓
+AiRuntimeSnapshot
+  ↓
+GameSessionSnapshot
 ```
 
-AI 数据最终仍会被转回统一的 `PlayerAction -> GameState -> GameActionResult` 链路，因此：
+因此 AI 和 LAN client 的共同点是：
 
-- AI 不拥有独立棋盘状态
-- AI 不绕过 `RuleEngine`
-- AI 不绕过 `TurnCoordinator`
+- 都会在 `GameSessionSnapshot` 上附加运行态信息
 
-AI 特有的附加数据只有：
+不同点是：
 
-- `AiRuntimeSnapshot`
-- AI 候选步与失败信息
+- AI 改变动作生产方式
+- LAN client 改变状态持有方式
 
-这些数据最终也是以附加字段进入 `GameSessionSnapshot`。
+## 12. 结算数据流
 
-## 12. 当前项目最重要的数据边界
-
-如果只保留最关键的边界，当前结构可以总结成四层：
+结算主线仍然是从权威状态投影到读模型：
 
 ```text
-输入层
-  GameLaunchContext / NewGameRequest / UI drag-drop
-
-会话层
-  GameSession
-
-状态层
-  GameState + TurnDraft
-
-输出层
-  PreviewResult / GameActionResult / GameSessionSnapshot / SettlementResult
+GameState + GameEndReason
+  ↓
+SettlementServiceImpl.settle(...)
+  ↓
+SettlementResult
+  ├─ rankings
+  ├─ summaryMessages
+  └─ BoardSnapshot
 ```
 
-其中最重要的规则是：
+之后结算结果被挂到：
 
-- 开局输入先进入 `NewGameRequest`
-- 游戏编辑先进入 `TurnDraft`
-- 正式落子才进入 `GameState`
-- UI 永远优先消费 `GameSessionSnapshot`
+- 本地 / host：`GameSession` -> `GameSessionSnapshot`
+- client：通过 host 发来的最终 snapshot 同步过来
 
-## 13. 一句话总结
+所以 client 不会独立计算最终结算，它只接收权威结算投影。
 
-当前项目更准确的数据流表述应该是：
+## 13. 当前结构下的四条主数据通道
+
+### 13.1 启动通道
 
 ```text
-配置数据先生成 GameSession，
-运行中的编辑数据先写入 TurnDraft，
-提交后才折叠进 GameState，
-再由 GameSessionSnapshotFactory 把会话状态重新投影成前端可读快照。
+UI setup
+  → GameLaunchContext
+  → RuntimeLaunchSpec / providedRuntime
+  → GameRuntime
+```
+
+### 13.2 权威状态通道
+
+```text
+NewGameRequest
+  → GameSession
+  → GameState
+  → GameActionResult / SettlementResult
+```
+
+### 13.3 本地编辑通道
+
+```text
+UI interaction
+  → TurnDraft
+  → PreviewResult
+```
+
+### 13.4 同步与展示通道
+
+```text
+GameSession or remote snapshot
+  → GameSessionSnapshot
+  → ClientRuntimeSnapshot / AiRuntimeSnapshot
+  → GameController
+  → ViewModel / UI
+```
+
+## 14. 一句话总结
+
+当前最新版代码下，最准确的 data flow 表述应该是：
+
+```text
+RuntimeLaunchSpec 决定运行时类型；
+权威对局状态只存在于本地/host 的 GameSession 中；
+编辑中的落子先进入 TurnDraft；
+LAN client 只持有“权威快照 + 本地 draft 覆盖层”；
+最终所有模式都收敛到统一的 GameSessionSnapshot 供 UI 和网络同步使用。
 ```
