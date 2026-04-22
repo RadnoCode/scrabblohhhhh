@@ -40,13 +40,23 @@ public class ModeSelectScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(360, 270);
+        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         CommonButton withFriendsButton = new CommonButton(viewModel.getWithFriendsText());
         CommonButton withRobotButton = new CommonButton(viewModel.getWithRobotText());
         CommonButton byLanButton = new CommonButton(viewModel.getByLanText());
-        withFriendsButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
-        withRobotButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
-        byLanButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
+        configureModeButton(
+            withFriendsButton,
+            "mode-with-friends-button",
+            "/images/mode/buttons/bottom-with-friends.png");
+        configureModeButton(
+            withRobotButton,
+            "mode-with-robot-button",
+            "/images/mode/buttons/bottom-with-robot.png");
+        configureModeButton(
+            byLanButton,
+            "mode-by-lan-button",
+            "/images/mode/buttons/bottom-by-lan.png");
         controller.bindActions(withFriendsButton, withRobotButton, byLanButton);
 
         VBox buttonColumn = new VBox(20);
@@ -84,10 +94,16 @@ public class ModeSelectScene extends Scene {
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
-        StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
+        StackPane.setMargin(backButton, new Insets(50, 0, 0, 20));
 
         sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, backButton);
         return sceneRoot;
+    }
+
+    private static void configureModeButton(CommonButton button, String styleClass, String imagePath) {
+        button.getStyleClass().addAll("mode-nav-button", styleClass);
+        button.setCustomBackgroundImage(imagePath);
+        button.applyTemplateSize(420);
     }
 
     private void loadStyleSheets() {

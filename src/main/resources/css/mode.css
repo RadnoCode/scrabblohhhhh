@@ -5,3 +5,15 @@
 .mode-button-column {
     -fx-padding: 10 0 0 0;
 }
+
+.mode-nav-button .common-button-label {
+    -fx-opacity: 0;
+}
+
+.local-setup-button .common-button-label {
+    -fx-opacity: 0;
+}
+
+.local-setup-button .setting-item-label {
+    -fx-opacity: 0;
+}

@@ -24,9 +24,9 @@ import javafx.scene.layout.VBox;
 public class OnlineSetupScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
-    private static final String VICE_TITLE_IMAGE_PATH = "/images/mode/play-by-lan.png";
-    private static final double VICE_TITLE_WIDTH = 187.5;
-    private static final double VICE_TITLE_HEIGHT = 123.75;
+    private static final String VICE_TITLE_IMAGE_PATH = "/images/vice-title/play-by-lan.png";
+    private static final double VICE_TITLE_WIDTH = 180;
+    private static final double VICE_TITLE_HEIGHT = 90;
     private static final Insets CONTENT_MARGIN = new Insets(2, 100, 48, 100);
 
     public OnlineSetupScene(OnlineSetupController controller) {
@@ -47,6 +47,7 @@ public class OnlineSetupScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(360, 270);
+        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText(), VICE_TITLE_IMAGE_PATH);
         viceTitleBanner.setPrefSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
@@ -65,7 +66,7 @@ public class OnlineSetupScene extends Scene {
         secondButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
         controller.bindActions(firstButton, secondButton);
 
-        VBox buttonColumn = new VBox(20);
+        VBox buttonColumn = new VBox(10);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
         buttonColumn.setTranslateX(30);
@@ -100,7 +101,7 @@ public class OnlineSetupScene extends Scene {
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
-        StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
+        StackPane.setMargin(backButton, new Insets(50, 0, 0, 20));
 
         sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, backButton);
         return sceneRoot;

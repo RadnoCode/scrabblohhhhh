@@ -25,6 +25,9 @@ import javafx.scene.layout.VBox;
 public class PlayerNameSetupScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
+    private static final String NICKNAME_STAMP_IMAGE_PATH = "/images/vice-title/nickname.png";
+    private static final double NICKNAME_STAMP_WIDTH = 180;
+    private static final double NICKNAME_STAMP_HEIGHT = 90;
     private static final Insets CONTENT_MARGIN = new Insets(8, 100, 48, 100);
     private static final Insets MESSAGE_MARGIN = new Insets(172, 0, 0, 0);
 
@@ -47,8 +50,14 @@ public class PlayerNameSetupScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(360, 270);
+        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
-        ViceTitleBanner viceTitleBanner = new ViceTitleBanner(context.getViceTitleText());
+        ViceTitleBanner viceTitleBanner = new ViceTitleBanner(
+                context.getViceTitleText(),
+                NICKNAME_STAMP_IMAGE_PATH);
+        viceTitleBanner.setPrefSize(NICKNAME_STAMP_WIDTH, NICKNAME_STAMP_HEIGHT);
+        viceTitleBanner.setMinSize(NICKNAME_STAMP_WIDTH, NICKNAME_STAMP_HEIGHT);
+        viceTitleBanner.setMaxSize(NICKNAME_STAMP_WIDTH, NICKNAME_STAMP_HEIGHT);
         HBox viceTitleBox = new HBox(viceTitleBanner);
         viceTitleBox.setAlignment(Pos.CENTER);
         viceTitleBox.setPrefWidth(420);
@@ -106,7 +115,7 @@ public class PlayerNameSetupScene extends Scene {
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
-        StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
+        StackPane.setMargin(backButton, new Insets(50, 0, 0, 20));
 
         StackPane.setAlignment(messageView, Pos.TOP_CENTER);
         StackPane.setMargin(messageView, MESSAGE_MARGIN);

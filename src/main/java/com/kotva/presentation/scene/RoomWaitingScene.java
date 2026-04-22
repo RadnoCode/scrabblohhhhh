@@ -44,6 +44,7 @@ public class RoomWaitingScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(360, 270);
+        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         RoomPanelView roomPanelView = RoomPanelView.createWaitingPanel();
         Label roomSummaryLabel = new Label();
@@ -90,7 +91,7 @@ public class RoomWaitingScene extends Scene {
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
-        StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
+        StackPane.setMargin(backButton, new Insets(50, 0, 0, 20));
 
         sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, backButton);
         controller.startMonitoring();

@@ -19,13 +19,13 @@ import java.util.Objects;
 public class CommonButton extends Button {
     private static final double TEMPLATE_ASPECT_RATIO = 1301.0 / 262.0;
     private static final double DEFAULT_BUTTON_WIDTH = 420;
-    private static final double DEFAULT_BUTTON_HEIGHT = DEFAULT_BUTTON_WIDTH / TEMPLATE_ASPECT_RATIO;
     private static final double DEFAULT_BUTTON_SCALE = 0.8;
     private static AudioManager audioManager;
     private static final Map<TemplateState, Image> TEMPLATE_IMAGES = createTemplateImages();
 
     private boolean templateEnabled = true;
     private TemplateState templateState = TemplateState.TEMPLATE_1;
+    private Image customBackgroundImage;
     private final StackPane graphicRoot = new StackPane();
     private final ImageView backgroundView = new ImageView();
     private final StackPane contentHolder = new StackPane();
@@ -63,7 +63,7 @@ public class CommonButton extends Button {
         setScaleX(DEFAULT_BUTTON_SCALE);
         setScaleY(DEFAULT_BUTTON_SCALE);
         initializeGraphicRoot();
-        setTemplateState(TemplateState.TEMPLATE_1);
+        refreshBackgroundImage();
         applyTemplateSize(DEFAULT_BUTTON_WIDTH);
 
         addEventFilter(MouseEvent.MOUSE_PRESSED, event -> requestFocus());
@@ -72,24 +72,33 @@ public class CommonButton extends Button {
 
     public void setTemplateState(TemplateState templateState) {
         this.templateState = templateState == null ? TemplateState.TEMPLATE_1 : templateState;
-        refreshTemplateBackground();
+        refreshBackgroundImage();
     }
 
-    public TemplateState getTemplateState() {
+    protected final TemplateState getTemplateState() {
         return templateState;
     }
 
-    public void setTemplateEnabled(boolean templateEnabled) {
+    protected final void setTemplateEnabled(boolean templateEnabled) {
         this.templateEnabled = templateEnabled;
-        refreshTemplateBackground();
+        refreshBackgroundImage();
     }
 
-    public boolean isTemplateEnabled() {
-        return templateEnabled;
+    public void setCustomBackgroundImage(String imagePath) {
+        if (imagePath == null || imagePath.isBlank()) {
+            customBackgroundImage = null;
+        } else {
+            customBackgroundImage = loadImage(imagePath);
+        }
+        refreshBackgroundImage();
     }
 
     public void applyTemplateSize(double width) {
         double height = computeTemplateHeight(width);
+        applyFixedSize(width, height);
+    }
+
+    public void applyButtonSize(double width, double height) {
         applyFixedSize(width, height);
     }
 
@@ -146,10 +155,14 @@ public class CommonButton extends Button {
         graphicRoot.setClip(clip);
     }
 
-    private void refreshTemplateBackground() {
-        backgroundView.setVisible(templateEnabled);
-        backgroundView.setManaged(templateEnabled);
-        backgroundView.setImage(templateEnabled ? TEMPLATE_IMAGES.get(templateState) : null);
+    private void refreshBackgroundImage() {
+        Image backgroundImage = customBackgroundImage != null
+            ? customBackgroundImage
+            : (templateEnabled ? TEMPLATE_IMAGES.get(templateState) : null);
+        boolean hasBackground = backgroundImage != null;
+        backgroundView.setVisible(hasBackground);
+        backgroundView.setManaged(hasBackground);
+        backgroundView.setImage(backgroundImage);
     }
 
     private static Map<TemplateState, Image> createTemplateImages() {
@@ -164,7 +177,7 @@ public class CommonButton extends Button {
         return new Image(
             Objects.requireNonNull(
                 CommonButton.class.getResource(imagePath),
-                "Missing common button template image: " + imagePath)
+                "Missing common button background image: " + imagePath)
                 .toExternalForm());
     }
 }
