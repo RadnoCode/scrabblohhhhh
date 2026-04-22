@@ -122,6 +122,7 @@ public class LanHostBroadcaster {
     private DiscoveredRoom withHostIp(DiscoveredRoom room, String hostIp) {
         return new DiscoveredRoom(
                 room.sessionId(),
+                room.roomName(),
                 room.hostPlayerName(),
                 hostIp,
                 room.tcpPort(),

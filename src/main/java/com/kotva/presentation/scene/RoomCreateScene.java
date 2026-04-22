@@ -59,6 +59,7 @@ public class RoomCreateScene extends Scene {
         viceTitleBox.setMinWidth(400);
         viceTitleBox.setMaxWidth(400);
 
+        InputButton roomNameButton = new InputButton("Room Name");
         InputButton firstButton = new InputButton(viewModel.getFirstOptionText());
         firstButton.enableNumericOnlyInput();
         InputButton stepTimeButton = new InputButton("Select Step Time (s)");
@@ -73,6 +74,7 @@ public class RoomCreateScene extends Scene {
         thirdButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
         goButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
         controller.bindActions(
+            roomNameButton,
             firstButton,
             stepTimeButton,
             secondButton,
@@ -85,6 +87,7 @@ public class RoomCreateScene extends Scene {
         buttonColumn.getStyleClass().add("mode-button-column");
         buttonColumn.getChildren().addAll(
             viceTitleBox,
+            roomNameButton,
             firstButton,
             stepTimeButton,
             secondButton,
@@ -103,18 +106,24 @@ public class RoomCreateScene extends Scene {
             sceneRoot,
             titleBanner,
             cardStackIconView,
-            List.of(viceTitleBox, firstButton, stepTimeButton, secondButton, thirdButton, goButton))
+            List.of(viceTitleBox, roomNameButton, firstButton, stepTimeButton, secondButton, thirdButton, goButton))
             .install();
 
         OptionSceneExitAnimationManager exitAnimationManager = new OptionSceneExitAnimationManager(
             sceneRoot,
             titleBanner,
             cardStackIconView,
-            List.of(viceTitleBox, firstButton, stepTimeButton, secondButton, thirdButton, goButton));
+            List.of(viceTitleBox, roomNameButton, firstButton, stepTimeButton, secondButton, thirdButton, goButton));
         goButton.setOnAction(event -> {
-            var roomWaitingContext = controller.prepareRoomWaitingContext(firstButton, stepTimeButton, messageView);
-            if (roomWaitingContext != null) {
-                exitAnimationManager.play(goButton, () -> controller.navigateToPreparedRoom(roomWaitingContext));
+            var playerNameSetupContext = controller.preparePlayerNameSetupContext(
+                roomNameButton,
+                firstButton,
+                stepTimeButton,
+                messageView);
+            if (playerNameSetupContext != null) {
+                exitAnimationManager.play(
+                    goButton,
+                    () -> controller.navigateToPlayerNameSetup(playerNameSetupContext));
             }
         });
 

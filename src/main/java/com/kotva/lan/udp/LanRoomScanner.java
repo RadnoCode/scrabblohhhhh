@@ -112,6 +112,7 @@ public class LanRoomScanner {
                     if (decodedRoom != null) {
                         DiscoveredRoom normalizedRoom = new DiscoveredRoom(
                                 decodedRoom.sessionId(),
+                                decodedRoom.roomName(),
                                 decodedRoom.hostPlayerName(),
                                 resolveAdvertisedHost(packet.getAddress(), decodedRoom.hostIp()),
                                 decodedRoom.tcpPort(),

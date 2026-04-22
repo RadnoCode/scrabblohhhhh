@@ -128,6 +128,7 @@ public class GameSessionBroker {
         this.lanHostService = lanHostService;
         this.lobbySettings =
                 new LanLobbySettings(
+                        "LAN Match",
                         session.getConfig().getDictionaryType(),
                         session.getConfig().getTimeControlConfig(),
                         session.getConfig().getPlayerCount());
@@ -500,7 +501,7 @@ public class GameSessionBroker {
                 return authoritativeSession.getConfig().getPlayers().get(playerIndex).getPlayerName();
             }
         }
-        return normalizePlayerName(requestedPlayerName);
+        return ensureUniqueLobbyName(normalizePlayerName(requestedPlayerName));
     }
 
     private List<String> buildOrderedPlayerIds() {
@@ -663,6 +664,44 @@ public class GameSessionBroker {
             return "Guest";
         }
         return playerName.trim();
+    }
+
+    private String ensureUniqueLobbyName(String requestedPlayerName) {
+        if (localGameSession == null) {
+            return requestedPlayerName;
+        }
+
+        String normalizedCandidate = requestedPlayerName;
+        int suffix = 2;
+        while (containsPlayerNameIgnoreCase(normalizedCandidate)) {
+            normalizedCandidate = appendSuffix(requestedPlayerName, suffix++);
+        }
+        return normalizedCandidate;
+    }
+
+    private boolean containsPlayerNameIgnoreCase(String candidateName) {
+        return localGameSession.getPlayersReadonly().values().stream()
+                .filter(Objects::nonNull)
+                .anyMatch(existingName -> existingName.equalsIgnoreCase(candidateName));
+    }
+
+    private String appendSuffix(String baseName, int suffix) {
+        String suffixText = Integer.toString(suffix);
+        int maxBaseCodePoints = Math.max(1, 8 - suffixText.length());
+        String trimmedBaseName = trimToCodePoints(baseName, maxBaseCodePoints);
+        return trimmedBaseName + suffixText;
+    }
+
+    private String trimToCodePoints(String text, int maxCodePoints) {
+        if (text == null || text.isEmpty() || maxCodePoints < 1) {
+            return "";
+        }
+        int codePointCount = text.codePointCount(0, text.length());
+        if (codePointCount <= maxCodePoints) {
+            return text;
+        }
+        int endIndex = text.offsetByCodePoints(0, maxCodePoints);
+        return text.substring(0, endIndex);
     }
 
     private record AssignedSeat(String playerId, String playerName) {

@@ -40,7 +40,8 @@ public final class LanDiscoveryCodec {
                 String.valueOf(room.currentPlayers()),
                 String.valueOf(room.maxPlayers()),
                 safe(room.dictionaryLabel()),
-                safe(room.timeLabel()));
+                safe(room.timeLabel()),
+                safe(room.roomName()));
         return payload.getBytes(StandardCharsets.UTF_8);
     }
 
@@ -57,6 +58,7 @@ public final class LanDiscoveryCodec {
         try {
             return new DiscoveredRoom(
                     parts[3],
+                    parts.length >= 11 ? parts[10] : parts[4],
                     parts[4],
                     "",
                     Integer.parseInt(parts[5]),

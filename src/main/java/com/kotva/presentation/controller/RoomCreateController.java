@@ -1,20 +1,13 @@
 package com.kotva.presentation.controller;
 
-import com.kotva.infrastructure.logging.AppLog;
-import com.kotva.lan.GameSessionBroker;
-import com.kotva.lan.LanLobbySettings;
-import com.kotva.lan.LanLobbySnapshot;
-import com.kotva.lan.discovery.LanDiscoveryHostService;
-import com.kotva.lan.discovery.UdpLanDiscoveryHostService;
-import com.kotva.lan.udp.DiscoveredRoom;
 import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.InputButton;
 import com.kotva.presentation.component.SwitchButton;
+import com.kotva.presentation.component.TextInputLimiter;
 import com.kotva.presentation.component.TransientMessageView;
-import com.kotva.presentation.fx.RoomWaitingContext;
+import com.kotva.presentation.fx.PlayerNameSetupContext;
 import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
-import javafx.scene.control.Alert;
 
 /**
  * RoomCreateController handles the create-room page.
@@ -22,10 +15,12 @@ import javafx.scene.control.Alert;
  * LocalMultiplayerSetup page.
  */
 public class RoomCreateController {
-    private static final String HOST_PLAYER_ID = "player-1";
-    private static final String HOST_PLAYER_NAME = "Host";
+    private static final String DEFAULT_ROOM_NAME = "LAN Room";
     private static final String DEFAULT_GAME_TIME_MINUTES = "15";
     private static final String DEFAULT_STEP_TIME_SECONDS = "30";
+    private static final int MAX_ROOM_NAME_CODE_POINTS = 18;
+    private static final String INVALID_ROOM_NAME_MESSAGE =
+        "Room name cannot be blank.";
     private static final String INVALID_GAME_TIME_MESSAGE =
         "Please enter an integer between 15 and 90 minutes.";
     private static final String INVALID_STEP_TIME_MESSAGE =
@@ -53,12 +48,15 @@ public class RoomCreateController {
     }
 
     public void bindActions(
+            InputButton roomNameButton,
             InputButton gameTimeButton,
             InputButton stepTimeButton,
             SwitchButton dictionaryButton,
             SwitchButton playerCountButton,
             CommonButton goButton,
             TransientMessageView messageView) {
+        roomNameButton.setInputText(DEFAULT_ROOM_NAME);
+        TextInputLimiter.limitCodePoints(roomNameButton.getTextField(), MAX_ROOM_NAME_CODE_POINTS);
         gameTimeButton.setInputText(DEFAULT_GAME_TIME_MINUTES);
         stepTimeButton.setInputText(DEFAULT_STEP_TIME_SECONDS);
         dictionaryButton.setCurrentValue(languages[languageIndex]);
@@ -66,19 +64,26 @@ public class RoomCreateController {
 
         dictionaryButton.setOnSwitchAction(this::rotateLanguage);
         playerCountButton.setOnSwitchAction(this::rotatePlayerCount);
-        goButton.setOnAction(event -> navigateToGame(gameTimeButton, stepTimeButton, messageView));
+        goButton.setOnAction(
+            event -> navigateToPlayerNameSetup(roomNameButton, gameTimeButton, stepTimeButton, messageView));
     }
 
     public void bindBackAction(CommonButton backButton) {
         backButton.setOnAction(event -> navigator.goBack());
     }
 
-    public RoomWaitingContext prepareRoomWaitingContext(
+    public PlayerNameSetupContext preparePlayerNameSetupContext(
+        InputButton roomNameButton,
         InputButton gameTimeButton,
         InputButton stepTimeButton,
         TransientMessageView messageView) {
+        String roomNameInput = roomNameButton.getTextField().getText();
         String gameTimeInput = gameTimeButton.getTextField().getText();
         String stepTimeInput = stepTimeButton.getTextField().getText();
+        if (roomNameInput == null || roomNameInput.trim().isBlank()) {
+            messageView.showMessage(INVALID_ROOM_NAME_MESSAGE);
+            return null;
+        }
         if (!isValidIntegerInRange(gameTimeInput, 15, 90)) {
             messageView.showMessage(INVALID_GAME_TIME_MESSAGE);
             return null;
@@ -87,46 +92,17 @@ public class RoomCreateController {
             messageView.showMessage(INVALID_STEP_TIME_MESSAGE);
             return null;
         }
-
-        try {
-            GameSessionBroker broker = new GameSessionBroker(GameSessionBroker.DEFAULT_PORT);
-            LanLobbySettings settings = new LanLobbySettings(
-                "British".equalsIgnoreCase(languages[languageIndex])
-                    ? com.kotva.policy.DictionaryType.BR
-                    : com.kotva.policy.DictionaryType.AM,
-                com.kotva.presentation.viewmodel.GameLaunchContext
-                    .forRoomCreate(
-                        gameTimeInput,
-                        stepTimeInput,
-                        languages[languageIndex],
-                        playerCounts[playerCountIndex])
-                    .getRequest()
-                    .getTimeControlConfig(),
-                Integer.parseInt(playerCounts[playerCountIndex]));
-            broker.createLobby(settings, HOST_PLAYER_ID, HOST_PLAYER_NAME);
-
-            LanDiscoveryHostService discoveryHostService = new UdpLanDiscoveryHostService();
-            String gameTimeDisplay = gameTimeInput + "min";
-            discoveryHostService.startHosting(
-                () -> buildDiscoveredRoom(broker, settings, gameTimeDisplay));
-
-            return RoomWaitingContext.forHost(
-                "Create Room",
-                gameTimeDisplay,
-                languages[languageIndex],
-                playerCounts[playerCountIndex],
-                broker,
-                discoveryHostService);
-        } catch (Exception exception) {
-            AppLog.logException(RoomCreateController.class, "Failed to create LAN room.", exception);
-            showError("Failed to create LAN room", exception.getMessage());
-            return null;
-        }
+        return PlayerNameSetupContext.forLanHost(
+            roomNameInput.trim(),
+            gameTimeInput,
+            stepTimeInput,
+            languages[languageIndex],
+            playerCounts[playerCountIndex]);
     }
 
-    public void navigateToPreparedRoom(RoomWaitingContext roomWaitingContext) {
+    public void navigateToPlayerNameSetup(PlayerNameSetupContext playerNameSetupContext) {
         navigator.requestNextSceneTitleEntranceAnimation();
-        navigator.showRoomWaiting(roomWaitingContext);
+        navigator.showPlayerNameSetup(playerNameSetupContext);
     }
 
     private String rotateLanguage() {
@@ -139,42 +115,19 @@ public class RoomCreateController {
         return playerCounts[playerCountIndex];
     }
 
-    private void navigateToGame(
+    private void navigateToPlayerNameSetup(
+            InputButton roomNameButton,
             InputButton gameTimeButton,
             InputButton stepTimeButton,
             TransientMessageView messageView) {
-        RoomWaitingContext roomWaitingContext = prepareRoomWaitingContext(
+        PlayerNameSetupContext playerNameSetupContext = preparePlayerNameSetupContext(
+            roomNameButton,
             gameTimeButton,
             stepTimeButton,
             messageView);
-        if (roomWaitingContext != null) {
-            navigateToPreparedRoom(roomWaitingContext);
+        if (playerNameSetupContext != null) {
+            navigateToPlayerNameSetup(playerNameSetupContext);
         }
-    }
-
-    private DiscoveredRoom buildDiscoveredRoom(
-            GameSessionBroker broker,
-            LanLobbySettings settings,
-            String gameTimeDisplay) {
-        LanLobbySnapshot snapshot = broker.getLobbySnapshot();
-        int currentPlayers = snapshot == null ? 1 : snapshot.getCurrentPlayerCount();
-        return new DiscoveredRoom(
-                snapshot == null ? "lobby" : snapshot.getLobbyId(),
-                HOST_PLAYER_NAME,
-                "",
-                broker.getBoundPort(),
-                currentPlayers,
-                settings.getMaxPlayers(),
-                languages[languageIndex],
-                gameTimeDisplay,
-                System.currentTimeMillis());
-    }
-
-    private void showError(String headerText, String contentText) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setHeaderText(headerText);
-        alert.setContentText(contentText);
-        alert.showAndWait();
     }
 
     private boolean isValidIntegerInRange(String rawInput, int min, int max) {

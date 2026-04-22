@@ -30,6 +30,7 @@ public class GameSessionBrokerLobbyTest {
             String lobbyId =
                     broker.createLobby(
                             new LanLobbySettings(
+                                    "Alpha Room",
                                     DictionaryType.AM,
                                     new TimeControlConfig(15L * 60_000L, 30_000L),
                                     3),
@@ -41,6 +42,7 @@ public class GameSessionBrokerLobbyTest {
             assertEquals(lobbyId, hostLobbySnapshot.getLobbyId());
             assertEquals(LanLobbyPhase.WAITING_FOR_PLAYERS, hostLobbySnapshot.getPhase());
             assertEquals(1, hostLobbySnapshot.getCurrentPlayerCount());
+            assertEquals("Alpha Room", hostLobbySnapshot.getSettings().getRoomName());
             assertFalse(hostLobbySnapshot.canStart());
 
             clientSession =
@@ -87,6 +89,7 @@ public class GameSessionBrokerLobbyTest {
         try {
             broker.createLobby(
                     new LanLobbySettings(
+                            "Beta Room",
                             DictionaryType.AM,
                             new TimeControlConfig(15L * 60_000L, 30_000L),
                             3),
@@ -119,6 +122,7 @@ public class GameSessionBrokerLobbyTest {
         try {
             broker.createLobby(
                     new LanLobbySettings(
+                            "Gamma Room",
                             DictionaryType.AM,
                             new TimeControlConfig(15L * 60_000L, 30_000L),
                             2),

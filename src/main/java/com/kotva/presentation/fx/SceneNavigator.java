@@ -8,6 +8,7 @@ import com.kotva.presentation.controller.LocalAiSetupController;
 import com.kotva.presentation.controller.LocalMultiplayerSetupController;
 import com.kotva.presentation.controller.ModeSelectController;
 import com.kotva.presentation.controller.OnlineSetupController;
+import com.kotva.presentation.controller.PlayerNameSetupController;
 import com.kotva.presentation.controller.RoomCreateController;
 import com.kotva.presentation.controller.RoomSearchController;
 import com.kotva.presentation.controller.RoomWaitingController;
@@ -20,6 +21,7 @@ import com.kotva.presentation.scene.LocalAiSetupScene;
 import com.kotva.presentation.scene.LocalMultiplayerSetupScene;
 import com.kotva.presentation.scene.ModeSelectScene;
 import com.kotva.presentation.scene.OnlineSetupScene;
+import com.kotva.presentation.scene.PlayerNameSetupScene;
 import com.kotva.presentation.scene.RoomCreateScene;
 import com.kotva.presentation.scene.RoomSearchScene;
 import com.kotva.presentation.scene.RoomWaitingScene;
@@ -38,6 +40,7 @@ public class SceneNavigator {
     private final AppContext appContext;
     private final Deque<PageType> history;
     private GameLaunchContext gameLaunchContext;
+    private PlayerNameSetupContext playerNameSetupContext;
     private RoomWaitingContext roomWaitingContext;
     private PageType currentPage;
     private GameController gameController;
@@ -89,6 +92,17 @@ public class SceneNavigator {
 
     public void showOnlineSetup() {
         showPage(PageType.ONLINE_SETUP, true);
+    }
+
+    public void showPlayerNameSetup(PlayerNameSetupContext playerNameSetupContext) {
+        this.playerNameSetupContext = Objects.requireNonNull(
+                playerNameSetupContext,
+                "playerNameSetupContext cannot be null.");
+        showPage(PageType.PLAYER_NAME_SETUP, true);
+    }
+
+    public PlayerNameSetupContext getPlayerNameSetupContext() {
+        return playerNameSetupContext;
     }
 
     public void showRoomSearch() {
@@ -153,6 +167,7 @@ public class SceneNavigator {
             case LOCAL_MULTIPLAYER_SETUP -> showLocalMultiplayerSetupScene();
             case LOCAL_AI_SETUP -> showLocalAiSetupScene();
             case ONLINE_SETUP -> showOnlineSetupScene();
+            case PLAYER_NAME_SETUP -> showPlayerNameSetupScene();
             case ROOM_SEARCH -> showRoomSearchScene();
             case ROOM_CREATE -> showRoomCreateScene();
             case ROOM_WAITING -> showRoomWaitingScene();
@@ -222,6 +237,12 @@ public class SceneNavigator {
         showScene(scene, "Scrabble Online Setup");
     }
 
+    private void showPlayerNameSetupScene() {
+        PlayerNameSetupController controller = new PlayerNameSetupController(this);
+        PlayerNameSetupScene scene = new PlayerNameSetupScene(controller);
+        showScene(scene, "Scrabble Player Setup");
+    }
+
     private void showRoomSearchScene() {
         RoomSearchController controller = new RoomSearchController(this);
         RoomSearchScene scene = new RoomSearchScene(controller);
@@ -267,6 +288,7 @@ public class SceneNavigator {
         LOCAL_MULTIPLAYER_SETUP,
         LOCAL_AI_SETUP,
         ONLINE_SETUP,
+        PLAYER_NAME_SETUP,
         ROOM_SEARCH,
         ROOM_CREATE,
         ROOM_WAITING,

@@ -55,7 +55,7 @@ public class PreviewPanelView extends StackPane {
     public void setModel(GameViewModel.PreviewPanelModel model) {
         getStyleClass().removeAll(VALID_STYLE, INVALID_STYLE);
         if (model == null || !model.isVisible()) {
-            statusLabel.setText("拖动棋子后在这里查看合法性。");
+            statusLabel.setText("See preview here");
             wordLabel.setText("");
             scoreLabel.setText("");
             messagesLabel.setText("");

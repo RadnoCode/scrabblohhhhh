@@ -23,6 +23,7 @@ public class LanDiscoveryCodecTest {
     public void responseRoundTripPreservesRoomMetadata() {
         DiscoveredRoom room = new DiscoveredRoom(
                 "session-1",
+                "Friday Room",
                 "Host",
                 "",
                 5050,
@@ -37,6 +38,7 @@ public class LanDiscoveryCodecTest {
 
         assertNotNull(decodedRoom);
         assertEquals("session-1", decodedRoom.sessionId());
+        assertEquals("Friday Room", decodedRoom.roomName());
         assertEquals("Host", decodedRoom.hostPlayerName());
         assertEquals(5050, decodedRoom.tcpPort());
         assertEquals(2, decodedRoom.currentPlayers());

@@ -165,6 +165,7 @@ final class HostGameRuntime extends AbstractLocalGameRuntime {
                         : localGameSession.getCurrentPlayerCount();
         return new DiscoveredRoom(
                 requireSession().getSessionId(),
+                requireLocalPlayerName() + "'s Room",
                 requireLocalPlayerName(),
                 "",
                 gameSessionBroker == null ? GameSessionBroker.DEFAULT_PORT : gameSessionBroker.getBoundPort(),

@@ -423,15 +423,15 @@ public class GameController implements GameActionPort {
         }
 
         PreviewWordSnapshot mainWord = findMainWord(previewSnapshot);
-        String mainWordText = mainWord == null ? "主词：--" : "主词：" + mainWord.getWord();
+        String mainWordText = mainWord == null ? "Main Word: --" : "Main Word: " + mainWord.getWord();
         List<String> messages = previewSnapshot.getMessages().isEmpty()
-            ? List.of(previewSnapshot.isValid() ? "当前落子合法。" : "当前落子不合法。")
+            ? List.of(previewSnapshot.isValid() ? "Current move is valid." : "Current move is invalid.")
             : previewSnapshot.getMessages();
         return new GameViewModel.PreviewPanelModel(
             true,
             previewSnapshot.isValid(),
-            previewSnapshot.isValid() ? "合法" : "不合法",
-            "预估分数：" + previewSnapshot.getEstimatedScore(),
+            previewSnapshot.isValid() ? "Valid" : "Invalid",
+            "Estimated Score: " + previewSnapshot.getEstimatedScore(),
             mainWordText,
             messages);
     }
@@ -442,7 +442,7 @@ public class GameController implements GameActionPort {
         }
         return new GameViewModel.TutorialOverlayModel(
             true,
-            "步骤 " + tutorialSnapshot.getStepNumber() + " / " + tutorialSnapshot.getStepCount(),
+            "Step " + tutorialSnapshot.getStepNumber() + " / " + tutorialSnapshot.getStepCount(),
             tutorialSnapshot.getTitle(),
             tutorialSnapshot.getBody(),
             tutorialSnapshot.isTapToContinue(),

@@ -5,9 +5,9 @@ import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.InputButton;
 import com.kotva.presentation.component.SwitchButton;
 import com.kotva.presentation.component.TransientMessageView;
+import com.kotva.presentation.fx.PlayerNameSetupContext;
 import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
-import com.kotva.presentation.viewmodel.GameLaunchContext;
 
 public class LocalMultiplayerSetupController {
     private static final String DEFAULT_GAME_TIME_MINUTES = "15";
@@ -78,12 +78,12 @@ public class LocalMultiplayerSetupController {
         return true;
     }
 
-    public void navigateToGame(InputButton gameTimeButton, InputButton stepTimeButton) {
+    public void navigateToPlayerNameSetup(InputButton gameTimeButton, InputButton stepTimeButton) {
         String gameTimeInput = gameTimeButton.getTextField().getText();
         String stepTimeInput = stepTimeButton.getTextField().getText();
         audioManager.playActionConfirm();
         navigator.requestNextSceneTitleEntranceAnimation();
-        navigator.showGame(buildLaunchContext(gameTimeInput, stepTimeInput));
+        navigator.showPlayerNameSetup(buildPlayerNameSetupContext(gameTimeInput, stepTimeInput));
     }
 
     private String rotateDictionary() {
@@ -96,8 +96,10 @@ public class LocalMultiplayerSetupController {
         return playerCounts[playerCountIndex];
     }
 
-    private GameLaunchContext buildLaunchContext(String gameTimeInput, String stepTimeInput) {
-        return GameLaunchContext.forLocalMultiplayer(
+    private PlayerNameSetupContext buildPlayerNameSetupContext(
+        String gameTimeInput,
+        String stepTimeInput) {
+        return PlayerNameSetupContext.forHotSeat(
             gameTimeInput,
             stepTimeInput,
             dictionaries[dictionaryIndex],
@@ -111,7 +113,7 @@ public class LocalMultiplayerSetupController {
         if (!validateGameSetup(gameTimeButton, stepTimeButton, messageView)) {
             return;
         }
-        navigateToGame(gameTimeButton, stepTimeButton);
+        navigateToPlayerNameSetup(gameTimeButton, stepTimeButton);
     }
 
     private boolean isValidGameTimeInput(String rawInput) {

@@ -117,7 +117,9 @@ public class LocalMultiplayerSetupScene extends Scene {
             List.of(viceTitleBox, firstButton, stepTimeButton, secondButton, thirdButton, goButton));
         goButton.setOnAction(event -> {
             if (controller.validateGameSetup(firstButton, stepTimeButton, messageView)) {
-                exitAnimationManager.play(goButton, () -> controller.navigateToGame(firstButton, stepTimeButton));
+                exitAnimationManager.play(
+                    goButton,
+                    () -> controller.navigateToPlayerNameSetup(firstButton, stepTimeButton));
             }
         });
 

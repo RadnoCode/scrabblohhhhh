@@ -84,6 +84,21 @@ public class GameLaunchContext {
         String playerCountLabel) {
         int playerCount = Integer.parseInt(playerCountLabel);
         List<String> playerNames = buildSequentialNames("Player ", playerCount);
+        return forLocalMultiplayer(
+            gameTimeLabel,
+            stepTimeSecondsLabel,
+            languageLabel,
+            playerCountLabel,
+            playerNames);
+    }
+
+    public static GameLaunchContext forLocalMultiplayer(
+        String gameTimeLabel,
+        String stepTimeSecondsLabel,
+        String languageLabel,
+        String playerCountLabel,
+        List<String> playerNames) {
+        int playerCount = Integer.parseInt(playerCountLabel);
         NewGameRequest request = new NewGameRequest(
             GameMode.HOT_SEAT,
             playerCount,

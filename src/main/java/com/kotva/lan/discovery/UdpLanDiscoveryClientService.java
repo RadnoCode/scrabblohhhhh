@@ -88,6 +88,7 @@ public final class UdpLanDiscoveryClientService implements LanDiscoveryClientSer
                     if (decodedRoom != null) {
                         DiscoveredRoom resolvedRoom = new DiscoveredRoom(
                                 decodedRoom.sessionId(),
+                                decodedRoom.roomName(),
                                 decodedRoom.hostPlayerName(),
                                 packet.getAddress().getHostAddress(),
                                 decodedRoom.tcpPort(),
@@ -147,7 +148,11 @@ public final class UdpLanDiscoveryClientService implements LanDiscoveryClientSer
 
     private List<DiscoveredRoom> snapshotRooms() {
         List<DiscoveredRoom> rooms = new ArrayList<>(roomsByKey.values());
-        rooms.sort(Comparator.comparing(DiscoveredRoom::hostPlayerName));
+        rooms.sort(
+                Comparator.comparing(
+                                DiscoveredRoom::displayRoomName,
+                                String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(DiscoveredRoom::hostPlayerName, String.CASE_INSENSITIVE_ORDER));
         return rooms;
     }
 
