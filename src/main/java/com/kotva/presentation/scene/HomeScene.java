@@ -53,10 +53,10 @@ public class HomeScene extends Scene {
         CommonButton tutorialButton = new CommonButton(viewModel.getTutorialText());
         CommonButton settingsButton = new CommonButton(viewModel.getSettingsText());
         CommonButton helpButton = new CommonButton(viewModel.getHelpText());
-        playButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
-        tutorialButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
-        settingsButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
-        helpButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        configureHomeButton(playButton, "home-play-button", "/images/home/buttons/bottom-play.png");
+        configureHomeButton(tutorialButton, "home-tutorial-button", "/images/home/buttons/bottom-tutorial.png");
+        configureHomeButton(settingsButton, "home-settings-button", "/images/home/buttons/bottom-settings.png");
+        configureHomeButton(helpButton, "home-help-button", "/images/home/buttons/bottom-help.png");
 
         controller.bindActions(
             playButton,
@@ -156,6 +156,12 @@ public class HomeScene extends Scene {
         card.getChildren().addAll(titleLabel, bodyLabel, buttonBox);
         overlay.getChildren().add(card);
         return overlay;
+    }
+
+    private static void configureHomeButton(CommonButton button, String styleClass, String imagePath) {
+        button.getStyleClass().addAll("home-nav-button", styleClass);
+        button.setCustomBackgroundImage(imagePath);
+        button.applyTemplateSize(420);
     }
 
     private void loadStyleSheets() {

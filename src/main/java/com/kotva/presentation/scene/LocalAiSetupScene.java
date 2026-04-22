@@ -24,9 +24,11 @@ import javafx.scene.layout.VBox;
 public class LocalAiSetupScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
-    private static final String VICE_TITLE_IMAGE_PATH = "/images/mode/play-with-robot.png";
-    private static final double VICE_TITLE_WIDTH = 187.5;
-    private static final double VICE_TITLE_HEIGHT = 123.75;
+    private static final double DICTIONARY_TRIGGER_WIDTH = 232;
+    private static final double DICTIONARY_TRIGGER_HEIGHT = 40;
+    private static final String VICE_TITLE_IMAGE_PATH = "/images/vice-title/play-with-robot.png";
+    private static final double VICE_TITLE_WIDTH = 180;
+    private static final double VICE_TITLE_HEIGHT = 90;
     private static final Insets CONTENT_MARGIN = new Insets(2, 100, 48, 100);
     private static final Insets MESSAGE_MARGIN = new Insets(172, 0, 0, 0);
 
@@ -49,6 +51,7 @@ public class LocalAiSetupScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(360, 270);
+        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText(), VICE_TITLE_IMAGE_PATH);
         viceTitleBanner.setPrefSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
@@ -66,6 +69,7 @@ public class LocalAiSetupScene extends Scene {
         InputButton stepTimeButton = new InputButton("Select Step Time (s)");
         stepTimeButton.enableNumericOnlyInput();
         SwitchButton secondButton = new SwitchButton(viewModel.getSecondOptionText());
+        secondButton.setSwitchTriggerSize(DICTIONARY_TRIGGER_WIDTH, DICTIONARY_TRIGGER_HEIGHT);
         SwitchButton thirdButton = new SwitchButton(viewModel.getThirdOptionText());
         CommonButton goButton = new CommonButton("Go!");
         firstButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
@@ -81,7 +85,7 @@ public class LocalAiSetupScene extends Scene {
             goButton,
             messageView);
 
-        VBox buttonColumn = new VBox(20);
+        VBox buttonColumn = new VBox(10);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
         buttonColumn.setTranslateX(30);
@@ -123,7 +127,7 @@ public class LocalAiSetupScene extends Scene {
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
-        StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
+        StackPane.setMargin(backButton, new Insets(50, 0, 0, 20));
 
         StackPane.setAlignment(messageView, Pos.TOP_CENTER);
         StackPane.setMargin(messageView, MESSAGE_MARGIN);

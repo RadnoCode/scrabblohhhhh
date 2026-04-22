@@ -28,6 +28,11 @@ import javafx.scene.layout.VBox;
 public class RoomCreateScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
+    private static final String VICE_TITLE_IMAGE_PATH = "/images/vice-title/nickname.png";
+    private static final double VICE_TITLE_WIDTH = 180;
+    private static final double VICE_TITLE_HEIGHT = 90;
+    private static final double DICTIONARY_TRIGGER_WIDTH = 232;
+    private static final double DICTIONARY_TRIGGER_HEIGHT = 40;
 
     public RoomCreateScene(RoomCreateController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -50,8 +55,12 @@ public class RoomCreateScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(360, 270);
+        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
-        ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText());
+        ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText(), VICE_TITLE_IMAGE_PATH);
+        viceTitleBanner.setPrefSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
+        viceTitleBanner.setMinSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
+        viceTitleBanner.setMaxSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
 
         HBox viceTitleBox = new HBox(viceTitleBanner);
         viceTitleBox.setAlignment(Pos.CENTER);
@@ -65,6 +74,7 @@ public class RoomCreateScene extends Scene {
         InputButton stepTimeButton = new InputButton("Select Step Time (s)");
         stepTimeButton.enableNumericOnlyInput();
         SwitchButton secondButton = new SwitchButton(viewModel.getSecondOptionText());
+        secondButton.setSwitchTriggerSize(DICTIONARY_TRIGGER_WIDTH, DICTIONARY_TRIGGER_HEIGHT);
         SwitchButton thirdButton = new SwitchButton(viewModel.getThirdOptionText());
         thirdButton.getStyleClass().add("compact-setting-label");
         CommonButton goButton = new CommonButton("Go!");
@@ -82,7 +92,7 @@ public class RoomCreateScene extends Scene {
             goButton,
             messageView);
 
-        VBox buttonColumn = new VBox(20);
+        VBox buttonColumn = new VBox(10);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
         buttonColumn.getChildren().addAll(
@@ -130,7 +140,7 @@ public class RoomCreateScene extends Scene {
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
-        StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
+        StackPane.setMargin(backButton, new Insets(50, 0, 0, 20));
 
         sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, backButton);
         return sceneRoot;

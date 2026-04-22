@@ -10,6 +10,10 @@
     -fx-padding: 10 0 0 0;
 }
 
+.home-nav-button .common-button-label {
+    -fx-opacity: 0;
+}
+
 .home-envelope-stack {
     -fx-alignment: center;
 }
