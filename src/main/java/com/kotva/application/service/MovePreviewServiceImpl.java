@@ -24,10 +24,14 @@ import com.kotva.domain.utils.MoveValidator;
 import com.kotva.domain.utils.ScoreCalculator;
 import com.kotva.domain.utils.WordExtractor;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
+import com.kotva.policy.DictionaryType;
 import com.kotva.policy.WordType;
 
 public class MovePreviewServiceImpl implements MovePreviewService
 {
+    private static final String BLANK_TILE_SELECTION_REQUIRED_MESSAGE =
+        "Invalid placement. Please hover over the blank tile and choose a letter first.";
+
     private final DictionaryRepository dictionaryRepository;
     private final RuleEngine ruleEngine;
 
@@ -38,16 +42,41 @@ public class MovePreviewServiceImpl implements MovePreviewService
         this.ruleEngine = new RuleEngine(this.dictionaryRepository);
     }
 
-        @Override
+    @Override
     public PreviewResult preview(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
-        ensureDictionaryLoaded(session);
         GameState gameState = session.getGameState();
         Player currentPlayer = gameState.requireCurrentActivePlayer();
-        TurnDraft turnDraft = session.getTurnDraft();
+        return preview(
+                gameState,
+                session.getConfig().getDictionaryType(),
+                currentPlayer.getPlayerId(),
+                session.getTurnDraft());
+    }
 
+    @Override
+    public PreviewResult preview(
+            GameState gameState,
+            DictionaryType dictionaryType,
+            String playerId,
+            TurnDraft turnDraft) {
+        Objects.requireNonNull(gameState, "gameState cannot be null.");
+        Objects.requireNonNull(dictionaryType, "dictionaryType cannot be null.");
+        Objects.requireNonNull(turnDraft, "turnDraft cannot be null.");
+        ensureDictionaryLoaded(dictionaryType);
+
+        if (hasUnassignedBlankTile(gameState, turnDraft)) {
+            return new PreviewResult(
+                false,
+                0,
+                List.of(),
+                buildHighlights(turnDraft, false),
+                List.of(BLANK_TILE_SELECTION_REQUIRED_MESSAGE));
+        }
+
+        Player previewPlayer = resolvePreviewPlayer(gameState, playerId);
         PlayerAction action =
-        TurnDraftActionMapper.toPlaceAction(currentPlayer.getPlayerId(), turnDraft);
+                TurnDraftActionMapper.toPlaceAction(previewPlayer.getPlayerId(), turnDraft);
 
         String validationMessage = validateSafely(gameState, action);
 
@@ -66,10 +95,33 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return new PreviewResult(valid, estimatedScore, words, highlights, messages);
     }
 
-    private void ensureDictionaryLoaded(GameSession session) {
-        if (dictionaryRepository.getLoadedDictionaryType() != session.getConfig().getDictionaryType()) {
-            dictionaryRepository.loadDictionary(session.getConfig().getDictionaryType());
+    private void ensureDictionaryLoaded(DictionaryType dictionaryType) {
+        if (dictionaryRepository.getLoadedDictionaryType() != dictionaryType) {
+            dictionaryRepository.loadDictionary(dictionaryType);
         }
+    }
+
+    private Player resolvePreviewPlayer(GameState gameState, String playerId) {
+        if (playerId != null) {
+            Player player = gameState.getPlayerById(playerId);
+            if (player != null) {
+                return player;
+            }
+        }
+        return gameState.requireCurrentActivePlayer();
+    }
+
+    private boolean hasUnassignedBlankTile(GameState gameState, TurnDraft turnDraft) {
+        for (DraftPlacement placement : turnDraft.getPlacements()) {
+            if (placement == null) {
+                continue;
+            }
+            var tile = gameState.getTileBag().getTileById(placement.getTileId());
+            if (tile != null && tile.isBlank() && tile.getAssignedLetter() == null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String validateSafely(GameState gameState, PlayerAction action) {

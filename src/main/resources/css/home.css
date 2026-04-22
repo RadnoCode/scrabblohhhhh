@@ -1,5 +1,5 @@
 .home-root {
-    -fx-background-color: -app-background;
+    -fx-background-color: transparent;
 }
 
 .home-content-box {
@@ -8,6 +8,10 @@
 
 .home-button-column {
     -fx-padding: 10 0 0 0;
+}
+
+.home-envelope-stack {
+    -fx-alignment: center;
 }
 
 .home-tutorial-overlay {

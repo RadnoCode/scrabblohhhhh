@@ -11,11 +11,10 @@ public class WorkbenchButton extends CommonButton {
     }
 
     private void initializeWorkbenchButton() {
+        setTemplateEnabled(false);
         getStyleClass().add("workbench-button");
         setAlignment(Pos.CENTER);
-        setPrefSize(180, 44);
-        setMinSize(180, 44);
-        setMaxSize(180, 44);
+        applyFixedSize(172, 38);
         setPadding(new Insets(0));
     }
 }

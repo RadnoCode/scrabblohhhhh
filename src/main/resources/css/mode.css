@@ -1,5 +1,5 @@
 .mode-root {
-    -fx-background-color: -app-background;
+    -fx-background-color: transparent;
 }
 
 .mode-button-column {

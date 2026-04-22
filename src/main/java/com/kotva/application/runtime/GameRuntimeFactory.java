@@ -38,17 +38,27 @@ public final class GameRuntimeFactory {
 
     public GameRuntime create(NewGameRequest request) {
         Objects.requireNonNull(request, "request cannot be null.");
-        return switch (request.getGameMode()) {
-        case HOT_SEAT -> new HotSeatGameRuntime(
-                gameSetupService,
-                gameApplicationService);
-        case HUMAN_VS_AI -> new LocalAiGameRuntime(
-                gameSetupService,
-                gameApplicationService,
-                aiRuntimeBootstrapperSupplier);
-        case LAN_MULTIPLAYER ->
-            throw new IllegalArgumentException(
-                "LAN_MULTIPLAYER is not supported on this branch.");
+        if (request.getGameMode() == com.kotva.mode.GameMode.LAN_MULTIPLAYER) {
+            return create(RuntimeLaunchSpec.forLanHost(request));
+        }
+        return create(RuntimeLaunchSpec.forLocal(request));
+    }
+
+    public GameRuntime create(RuntimeLaunchSpec launchSpec) {
+        Objects.requireNonNull(launchSpec, "launchSpec cannot be null.");
+        return switch (launchSpec.getGameMode()) {
+            case HOT_SEAT -> new HotSeatGameRuntime(
+                    gameSetupService,
+                    gameApplicationService);
+            case HUMAN_VS_AI -> new LocalAiGameRuntime(
+                    gameSetupService,
+                    gameApplicationService,
+                    aiRuntimeBootstrapperSupplier);
+            case LAN_MULTIPLAYER -> launchSpec.getLanRole() == LanRole.CLIENT
+                    ? new ClientGameRuntime(launchSpec)
+                    : new HostGameRuntime(
+                            gameSetupService,
+                            gameApplicationService);
         };
     }
 }

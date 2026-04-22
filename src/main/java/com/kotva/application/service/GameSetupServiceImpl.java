@@ -51,9 +51,6 @@ public class GameSetupServiceImpl implements GameSetupService {
         if (playerCount < 2 || playerCount > 4) {
             throw new IllegalArgumentException("playerCount must be between 2 and 4.");
         }
-        if (gameMode == GameMode.LAN_MULTIPLAYER) {
-            throw new IllegalArgumentException("LAN_MULTIPLAYER is not supported on this branch.");
-        }
         if (gameMode == GameMode.HUMAN_VS_AI && playerCount != 2) {
             throw new IllegalArgumentException("HUMAN_VS_AI currently requires exactly 2 players.");
         }
@@ -93,6 +90,12 @@ public class GameSetupServiceImpl implements GameSetupService {
         @Override
     public GameSession startNewGame(NewGameRequest request) {
         GameConfig config = buildConfig(request);
+        return createSession(config);
+    }
+
+    @Override
+    public GameSession startNewGame(GameConfig config) {
+        Objects.requireNonNull(config, "config cannot be null.");
         return createSession(config);
     }
 
@@ -155,9 +158,7 @@ public class GameSetupServiceImpl implements GameSetupService {
         return switch (gameMode) {
         case HOT_SEAT -> PlayerType.LOCAL;
         case HUMAN_VS_AI -> playerIndex == 0 ? PlayerType.LOCAL : PlayerType.AI;
-        case LAN_MULTIPLAYER ->
-            throw new IllegalArgumentException(
-                "LAN_MULTIPLAYER is not supported on this branch.");
+        case LAN_MULTIPLAYER -> playerIndex == 0 ? PlayerType.LOCAL : PlayerType.LAN;
         };
     }
 }

@@ -30,10 +30,10 @@ public class PreviewPanelView extends StackPane {
 
     private void initialize() {
         getStyleClass().add("game-preview-panel");
-        setPrefWidth(236);
-        setMinWidth(236);
-        setMaxWidth(236);
-        setPadding(new Insets(18));
+        setPrefSize(220, 120);
+        setMinSize(220, 120);
+        setMaxSize(220, 120);
+        setPadding(new Insets(12));
 
         titleLabel.getStyleClass().add("game-preview-title");
         statusLabel.getStyleClass().add("game-preview-status");
@@ -43,9 +43,9 @@ public class PreviewPanelView extends StackPane {
         messagesLabel.setWrapText(true);
 
         Region spacer = new Region();
-        spacer.setMinHeight(6);
+        spacer.setMinHeight(2);
 
-        VBox content = new VBox(10, titleLabel, statusLabel, wordLabel, scoreLabel, spacer, messagesLabel);
+        VBox content = new VBox(4, titleLabel, statusLabel, wordLabel, scoreLabel, spacer, messagesLabel);
         content.setAlignment(Pos.TOP_LEFT);
         getChildren().add(content);
 

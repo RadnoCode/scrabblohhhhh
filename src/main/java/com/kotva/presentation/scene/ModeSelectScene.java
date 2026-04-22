@@ -6,6 +6,7 @@ import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.controller.ModeSelectController;
 import com.kotva.presentation.viewmodel.SetupViewModel;
+import java.util.List;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -34,36 +35,58 @@ public class ModeSelectScene extends Scene {
         root.getStyleClass().add("mode-root");
 
         TitleBanner titleBanner = new TitleBanner(viewModel.getTitleText());
-        BorderPane.setMargin(titleBanner, new Insets(60, 110, 30, 110));
+        BorderPane.setMargin(titleBanner, new Insets(42, 100, 18, 100));
         root.setTop(titleBanner);
 
         CardStackIconView cardStackIconView = new CardStackIconView();
-        cardStackIconView.setPrefSize(420, 320);
+        cardStackIconView.setPrefSize(360, 270);
 
         CommonButton withFriendsButton = new CommonButton(viewModel.getWithFriendsText());
         CommonButton withRobotButton = new CommonButton(viewModel.getWithRobotText());
         CommonButton byLanButton = new CommonButton(viewModel.getByLanText());
+        withFriendsButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        withRobotButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        byLanButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
         controller.bindActions(withFriendsButton, withRobotButton, byLanButton);
 
-        VBox buttonColumn = new VBox(26);
+        VBox buttonColumn = new VBox(20);
         buttonColumn.setAlignment(Pos.CENTER_LEFT);
         buttonColumn.getStyleClass().add("mode-button-column");
         buttonColumn.getChildren().addAll(withFriendsButton, withRobotButton, byLanButton);
 
         Region spacer = new Region();
-        spacer.setMinWidth(80);
+        spacer.setMinWidth(56);
 
         HBox contentBox = new HBox(cardStackIconView, spacer, buttonColumn);
         contentBox.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(contentBox, new Insets(20, 110, 90, 110));
+        BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);
+
+        new OptionSceneEntranceAnimationManager(
+            sceneRoot,
+            titleBanner,
+            cardStackIconView,
+            List.of(withFriendsButton, withRobotButton, byLanButton))
+            .install();
+
+        OptionSceneExitAnimationManager exitAnimationManager = new OptionSceneExitAnimationManager(
+            sceneRoot,
+            titleBanner,
+            cardStackIconView,
+            List.of(withFriendsButton, withRobotButton, byLanButton));
+        withFriendsButton.setOnAction(event ->
+            exitAnimationManager.play(withFriendsButton, controller::navigateToWithFriends));
+        withRobotButton.setOnAction(event ->
+            exitAnimationManager.play(withRobotButton, controller::navigateToWithRobot));
+        byLanButton.setOnAction(event ->
+            exitAnimationManager.play(byLanButton, controller::navigateToByLan));
 
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
         StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
 
-        sceneRoot.getChildren().addAll(root, backButton);
+        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, backButton);
         return sceneRoot;
     }
 

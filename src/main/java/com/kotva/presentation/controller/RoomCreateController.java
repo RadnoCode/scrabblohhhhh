@@ -1,36 +1,51 @@
 package com.kotva.presentation.controller;
 
-import com.kotva.infrastructure.AudioManager;
+import com.kotva.infrastructure.logging.AppLog;
+import com.kotva.lan.GameSessionBroker;
+import com.kotva.lan.LanLobbySettings;
+import com.kotva.lan.LanLobbySnapshot;
+import com.kotva.lan.discovery.LanDiscoveryHostService;
+import com.kotva.lan.discovery.UdpLanDiscoveryHostService;
+import com.kotva.lan.udp.DiscoveredRoom;
 import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.InputButton;
 import com.kotva.presentation.component.SwitchButton;
 import com.kotva.presentation.component.TransientMessageView;
+import com.kotva.presentation.fx.RoomWaitingContext;
 import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
-import com.kotva.presentation.viewmodel.GameLaunchContext;
+import javafx.scene.control.Alert;
 
+/**
+ * RoomCreateController handles the create-room page.
+ * Its current layout and option structure intentionally match the
+ * LocalMultiplayerSetup page.
+ */
 public class RoomCreateController {
+    private static final String HOST_PLAYER_ID = "player-1";
+    private static final String HOST_PLAYER_NAME = "Host";
     private static final String DEFAULT_GAME_TIME_MINUTES = "15";
+    private static final String DEFAULT_STEP_TIME_SECONDS = "30";
     private static final String INVALID_GAME_TIME_MESSAGE =
-    "Please enter an integer between 15 and 90 minutes.";
+        "Please enter an integer between 15 and 90 minutes.";
+    private static final String INVALID_STEP_TIME_MESSAGE =
+        "Please enter an integer between 0 and 180 seconds.";
 
     private final SceneNavigator navigator;
     private final GameBranchSetupViewModel viewModel;
-    private final AudioManager audioManager;
-    private final String[] dictionaries = {"North American", "British"};
+    private final String[] languages = {"American", "British"};
     private final String[] playerCounts = {"2", "3", "4"};
-    private int dictionaryIndex;
+    private int languageIndex;
     private int playerCountIndex;
 
     public RoomCreateController(SceneNavigator navigator) {
         this.navigator = navigator;
-        this.audioManager = navigator.getAppContext().getAudioManager();
         this.viewModel = new GameBranchSetupViewModel(
-            "SCRABBLE",
-            "Create Room",
-            "Select Game Time",
-            "Dictionary",
-            "Number of Player");
+                "SCRABBLE",
+                "Create Room",
+                "Select Game Time",
+                "Language",
+                "Number of Player");
     }
 
     public GameBranchSetupViewModel getViewModel() {
@@ -38,27 +53,85 @@ public class RoomCreateController {
     }
 
     public void bindActions(
-        InputButton firstButton,
-        SwitchButton secondButton,
-        SwitchButton thirdButton,
-        CommonButton goButton,
-        TransientMessageView messageView) {
-        firstButton.setInputText(DEFAULT_GAME_TIME_MINUTES);
-        secondButton.setCurrentValue(dictionaries[dictionaryIndex]);
-        thirdButton.setCurrentValue(playerCounts[playerCountIndex]);
+            InputButton gameTimeButton,
+            InputButton stepTimeButton,
+            SwitchButton dictionaryButton,
+            SwitchButton playerCountButton,
+            CommonButton goButton,
+            TransientMessageView messageView) {
+        gameTimeButton.setInputText(DEFAULT_GAME_TIME_MINUTES);
+        stepTimeButton.setInputText(DEFAULT_STEP_TIME_SECONDS);
+        dictionaryButton.setCurrentValue(languages[languageIndex]);
+        playerCountButton.setCurrentValue(playerCounts[playerCountIndex]);
 
-        secondButton.setOnSwitchAction(this::rotateDictionary);
-        thirdButton.setOnSwitchAction(this::rotatePlayerCount);
-        goButton.setOnAction(event -> navigateToGame(firstButton, messageView));
+        dictionaryButton.setOnSwitchAction(this::rotateLanguage);
+        playerCountButton.setOnSwitchAction(this::rotatePlayerCount);
+        goButton.setOnAction(event -> navigateToGame(gameTimeButton, stepTimeButton, messageView));
     }
 
     public void bindBackAction(CommonButton backButton) {
         backButton.setOnAction(event -> navigator.goBack());
     }
 
-    private String rotateDictionary() {
-        dictionaryIndex = (dictionaryIndex + 1) % dictionaries.length;
-        return dictionaries[dictionaryIndex];
+    public RoomWaitingContext prepareRoomWaitingContext(
+        InputButton gameTimeButton,
+        InputButton stepTimeButton,
+        TransientMessageView messageView) {
+        String gameTimeInput = gameTimeButton.getTextField().getText();
+        String stepTimeInput = stepTimeButton.getTextField().getText();
+        if (!isValidIntegerInRange(gameTimeInput, 15, 90)) {
+            messageView.showMessage(INVALID_GAME_TIME_MESSAGE);
+            return null;
+        }
+        if (!isValidIntegerInRange(stepTimeInput, 0, 180)) {
+            messageView.showMessage(INVALID_STEP_TIME_MESSAGE);
+            return null;
+        }
+
+        try {
+            GameSessionBroker broker = new GameSessionBroker(GameSessionBroker.DEFAULT_PORT);
+            LanLobbySettings settings = new LanLobbySettings(
+                "British".equalsIgnoreCase(languages[languageIndex])
+                    ? com.kotva.policy.DictionaryType.BR
+                    : com.kotva.policy.DictionaryType.AM,
+                com.kotva.presentation.viewmodel.GameLaunchContext
+                    .forRoomCreate(
+                        gameTimeInput,
+                        stepTimeInput,
+                        languages[languageIndex],
+                        playerCounts[playerCountIndex])
+                    .getRequest()
+                    .getTimeControlConfig(),
+                Integer.parseInt(playerCounts[playerCountIndex]));
+            broker.createLobby(settings, HOST_PLAYER_ID, HOST_PLAYER_NAME);
+
+            LanDiscoveryHostService discoveryHostService = new UdpLanDiscoveryHostService();
+            String gameTimeDisplay = gameTimeInput + "min";
+            discoveryHostService.startHosting(
+                () -> buildDiscoveredRoom(broker, settings, gameTimeDisplay));
+
+            return RoomWaitingContext.forHost(
+                "Create Room",
+                gameTimeDisplay,
+                languages[languageIndex],
+                playerCounts[playerCountIndex],
+                broker,
+                discoveryHostService);
+        } catch (Exception exception) {
+            AppLog.logException(RoomCreateController.class, "Failed to create LAN room.", exception);
+            showError("Failed to create LAN room", exception.getMessage());
+            return null;
+        }
+    }
+
+    public void navigateToPreparedRoom(RoomWaitingContext roomWaitingContext) {
+        navigator.requestNextSceneTitleEntranceAnimation();
+        navigator.showRoomWaiting(roomWaitingContext);
+    }
+
+    private String rotateLanguage() {
+        languageIndex = (languageIndex + 1) % languages.length;
+        return languages[languageIndex];
     }
 
     private String rotatePlayerCount() {
@@ -66,23 +139,45 @@ public class RoomCreateController {
         return playerCounts[playerCountIndex];
     }
 
-    private GameLaunchContext buildLaunchContext(String gameTimeInput) {
-        return GameLaunchContext.forRoomCreate(
-            gameTimeInput,
-            dictionaries[dictionaryIndex],
-            playerCounts[playerCountIndex]);
-    }
-
-    private void navigateToGame(InputButton gameTimeButton, TransientMessageView messageView) {
-        if (!isValidGameTimeInput(gameTimeButton.getTextField().getText())) {
-            messageView.showMessage(INVALID_GAME_TIME_MESSAGE);
-            return;
+    private void navigateToGame(
+            InputButton gameTimeButton,
+            InputButton stepTimeButton,
+            TransientMessageView messageView) {
+        RoomWaitingContext roomWaitingContext = prepareRoomWaitingContext(
+            gameTimeButton,
+            stepTimeButton,
+            messageView);
+        if (roomWaitingContext != null) {
+            navigateToPreparedRoom(roomWaitingContext);
         }
-        audioManager.playActionConfirm();
-        navigator.showGame(buildLaunchContext(gameTimeButton.getTextField().getText()));
     }
 
-    private boolean isValidGameTimeInput(String rawInput) {
+    private DiscoveredRoom buildDiscoveredRoom(
+            GameSessionBroker broker,
+            LanLobbySettings settings,
+            String gameTimeDisplay) {
+        LanLobbySnapshot snapshot = broker.getLobbySnapshot();
+        int currentPlayers = snapshot == null ? 1 : snapshot.getCurrentPlayerCount();
+        return new DiscoveredRoom(
+                snapshot == null ? "lobby" : snapshot.getLobbyId(),
+                HOST_PLAYER_NAME,
+                "",
+                broker.getBoundPort(),
+                currentPlayers,
+                settings.getMaxPlayers(),
+                languages[languageIndex],
+                gameTimeDisplay,
+                System.currentTimeMillis());
+    }
+
+    private void showError(String headerText, String contentText) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setHeaderText(headerText);
+        alert.setContentText(contentText);
+        alert.showAndWait();
+    }
+
+    private boolean isValidIntegerInRange(String rawInput, int min, int max) {
         if (rawInput == null) {
             return false;
         }
@@ -93,8 +188,8 @@ public class RoomCreateController {
         }
 
         try {
-            int minutes = Integer.parseInt(normalizedInput);
-            return minutes >= 15 && minutes <= 90;
+            int value = Integer.parseInt(normalizedInput);
+            return value >= min && value <= max;
         } catch (NumberFormatException exception) {
             return false;
         }

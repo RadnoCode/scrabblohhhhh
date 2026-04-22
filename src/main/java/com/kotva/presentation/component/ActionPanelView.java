@@ -26,12 +26,12 @@ public class ActionPanelView extends StackPane {
 
     private void initializePanel() {
         getStyleClass().add("game-placeholder-panel");
-        setPrefSize(236, 320);
-        setMinSize(236, 320);
-        setMaxSize(236, 320);
-        setPadding(new Insets(20, 18, 20, 18));
+        setPrefSize(220, 252);
+        setMinSize(220, 252);
+        setMaxSize(220, 252);
+        setPadding(new Insets(14, 12, 14, 12));
 
-        VBox buttonColumn = new VBox(12,
+        VBox buttonColumn = new VBox(8,
             skipTurnButton,
             rearrangeButton,
             recallButton,

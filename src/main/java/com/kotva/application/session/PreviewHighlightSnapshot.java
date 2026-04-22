@@ -1,9 +1,10 @@
 package com.kotva.application.session;
 
 import com.kotva.application.preview.HighlightType;
+import java.io.Serializable;
 import java.util.Objects;
 
-public class PreviewHighlightSnapshot {
+public class PreviewHighlightSnapshot implements Serializable {
     private final int row;
     private final int col;
     private final HighlightType highlightType;

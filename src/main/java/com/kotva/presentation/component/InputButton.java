@@ -28,7 +28,7 @@ public class InputButton extends CommonButton {
         leftLabel.getStyleClass().add("setting-item-label");
         textField.getStyleClass().add("input-button-field");
         textField.setPromptText("Enter here");
-        textField.setPrefWidth(180);
+        textField.setPrefWidth(168);
         textField.setContextMenu(null);
         textField.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, ContextMenuEvent::consume);
 
@@ -39,7 +39,7 @@ public class InputButton extends CommonButton {
         BorderPane.setAlignment(leftLabel, Pos.CENTER_LEFT);
         BorderPane.setAlignment(textField, Pos.CENTER_RIGHT);
 
-        setGraphic(content);
+        setButtonContent(content);
     }
 
     public TextField getTextField() {

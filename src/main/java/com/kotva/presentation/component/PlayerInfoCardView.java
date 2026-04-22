@@ -10,6 +10,10 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 public class PlayerInfoCardView extends StackPane {
+    private static final double CARD_WIDTH = 288;
+    private static final double CARD_HEIGHT = 96;
+    private static final double AVATAR_SIZE = 56;
+
     private final Label avatarLabel;
     private final Label playerNameLabel;
     private final Label playerIdLabel;
@@ -30,16 +34,16 @@ public class PlayerInfoCardView extends StackPane {
 
     private void initializeCard() {
         getStyleClass().add("game-player-card");
-        setPrefSize(236, 140);
-        setMinSize(236, 140);
-        setMaxSize(236, 140);
-        setPadding(new Insets(14, 18, 14, 18));
+        setPrefSize(CARD_WIDTH, CARD_HEIGHT);
+        setMinSize(CARD_WIDTH, CARD_HEIGHT);
+        setMaxSize(CARD_WIDTH, CARD_HEIGHT);
+        setPadding(new Insets(10, 16, 10, 14));
 
         StackPane avatarPane = new StackPane(avatarLabel);
         avatarPane.getStyleClass().add("game-player-avatar");
-        avatarPane.setPrefSize(62, 62);
-        avatarPane.setMinSize(62, 62);
-        avatarPane.setMaxSize(62, 62);
+        avatarPane.setPrefSize(AVATAR_SIZE, AVATAR_SIZE);
+        avatarPane.setMinSize(AVATAR_SIZE, AVATAR_SIZE);
+        avatarPane.setMaxSize(AVATAR_SIZE, AVATAR_SIZE);
 
         avatarLabel.getStyleClass().add("game-player-avatar-text");
 
@@ -54,20 +58,20 @@ public class PlayerInfoCardView extends StackPane {
 
         Region leaderPlaceholder = new Region();
         leaderPlaceholder.getStyleClass().add("game-player-lead-placeholder");
-        leaderPlaceholder.setPrefSize(22, 14);
-        leaderPlaceholder.setMinSize(22, 14);
-        leaderPlaceholder.setMaxSize(22, 14);
+        leaderPlaceholder.setPrefSize(18, 12);
+        leaderPlaceholder.setMinSize(18, 12);
+        leaderPlaceholder.setMaxSize(18, 12);
 
-        HBox scoreRow = new HBox(10, playerScoreLabel, scoreSpacer, leaderPlaceholder);
+        HBox scoreRow = new HBox(4, playerScoreLabel, scoreSpacer, leaderPlaceholder);
         scoreRow.setAlignment(Pos.CENTER_LEFT);
 
-        HBox stepMarkRow = new HBox(6, stepMarkTitleLabel, stepMarkValueLabel);
+        HBox stepMarkRow = new HBox(2, stepMarkTitleLabel, stepMarkValueLabel);
         stepMarkRow.setAlignment(Pos.CENTER_LEFT);
 
-        VBox textColumn = new VBox(6, playerNameLabel, playerIdLabel, scoreRow, stepMarkRow);
+        VBox textColumn = new VBox(1, playerNameLabel, playerIdLabel, scoreRow, stepMarkRow);
         textColumn.setAlignment(Pos.CENTER_LEFT);
 
-        HBox content = new HBox(16, avatarPane, textColumn);
+        HBox content = new HBox(18, avatarPane, textColumn);
         content.setAlignment(Pos.CENTER_LEFT);
         getChildren().add(content);
     }

@@ -1,6 +1,8 @@
 package com.kotva.application.session;
 
-public class TimeControlConfig {
+import java.io.Serializable;
+
+public class TimeControlConfig implements Serializable {
     private final long mainTimeMillis;
     private final long byoYomiMillisPerTurn;
 
@@ -8,8 +10,8 @@ public class TimeControlConfig {
         if (mainTimeMillis <= 0) {
             throw new IllegalArgumentException("mainTimeMillis must be greater than 0.");
         }
-        if (byoYomiMillisPerTurn <= 0) {
-            throw new IllegalArgumentException("byoYomiMillisPerTurn must be greater than 0.");
+        if (byoYomiMillisPerTurn < 0) {
+            throw new IllegalArgumentException("byoYomiMillisPerTurn cannot be negative.");
         }
         this.mainTimeMillis = mainTimeMillis;
         this.byoYomiMillisPerTurn = byoYomiMillisPerTurn;

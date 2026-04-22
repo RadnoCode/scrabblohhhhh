@@ -29,8 +29,8 @@ public class SwitchButton extends CommonButton {
         leftLabel.getStyleClass().add("setting-item-label");
         valueLabel.getStyleClass().add("switch-button-value");
         switchTrigger.getStyleClass().add("switch-trigger");
-        switchTrigger.setMinWidth(180);
-        switchTrigger.setPrefHeight(42);
+        switchTrigger.setMinWidth(168);
+        switchTrigger.setPrefHeight(38);
 
         switchTrigger.setOnMouseClicked(event -> {
                 playClickSound();
@@ -47,7 +47,7 @@ public class SwitchButton extends CommonButton {
         BorderPane.setAlignment(leftLabel, Pos.CENTER_LEFT);
         BorderPane.setAlignment(switchTrigger, Pos.CENTER_RIGHT);
 
-        setGraphic(content);
+        setButtonContent(content);
     }
 
     public void setCurrentValue(String value) {

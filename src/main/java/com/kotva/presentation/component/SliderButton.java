@@ -31,7 +31,7 @@ public class SliderButton extends CommonButton {
         slider.getStyleClass().add("slider-button-control");
         valueLabel.getStyleClass().add("slider-value-label");
 
-        slider.setPrefWidth(150);
+        slider.setPrefWidth(136);
         slider.valueProperty().addListener((observable, oldValue, newValue) -> {
                 double value = newValue.doubleValue();
                 valueLabel.setText(String.valueOf((int) Math.round(value)));
@@ -40,7 +40,7 @@ public class SliderButton extends CommonButton {
                 }
             });
 
-        HBox sliderBox = new HBox(12, slider, valueLabel);
+        HBox sliderBox = new HBox(10, slider, valueLabel);
         sliderBox.setAlignment(Pos.CENTER_RIGHT);
 
         BorderPane content = new BorderPane();
@@ -50,7 +50,7 @@ public class SliderButton extends CommonButton {
         BorderPane.setAlignment(leftLabel, Pos.CENTER_LEFT);
         BorderPane.setAlignment(sliderBox, Pos.CENTER_RIGHT);
 
-        setGraphic(content);
+        setButtonContent(content);
     }
 
     public void setSliderValue(double value) {

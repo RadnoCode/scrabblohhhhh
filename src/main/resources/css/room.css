@@ -1,5 +1,5 @@
 .room-root {
-    -fx-background-color: -app-background;
+    -fx-background-color: transparent;
 }
 
 .room-search-box {
@@ -49,13 +49,66 @@
 
 .room-panel-cutout,
 .room-panel-divider-dot {
-    -fx-fill: -app-background;
+    -fx-fill: transparent;
     -fx-stroke: #9fb0cf;
     -fx-stroke-width: 2;
 }
 
 .room-panel {
     -fx-cursor: hand;
+}
+
+.room-list-view {
+    -fx-max-width: 420px;
+    -fx-pref-width: 420px;
+    -fx-background-color: rgba(255, 255, 255, 0.78);
+    -fx-background-radius: 6;
+    -fx-border-color: rgba(159, 176, 207, 0.85);
+    -fx-border-width: 1.5;
+    -fx-border-radius: 6;
+    -fx-padding: 4;
+}
+
+.room-list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-text;
+    -fx-font-size: 14px;
+    -fx-padding: 8 10 8 10;
+}
+
+.room-list-view .list-cell:filled:selected,
+.room-list-view .list-cell:filled:hover {
+    -fx-background-color: rgba(157, 176, 214, 0.26);
+    -fx-background-radius: 4;
+}
+
+.room-status-label {
+    -fx-text-fill: rgba(79, 97, 132, 0.92);
+    -fx-font-size: 16px;
+    -fx-wrap-text: true;
+    -fx-max-width: 420px;
+}
+
+.room-summary-label {
+    -fx-text-fill: rgba(79, 97, 132, 0.96);
+    -fx-font-size: 18px;
+    -fx-font-weight: 600;
+    -fx-wrap-text: true;
+    -fx-max-width: 420px;
+}
+
+.room-join-address-label {
+    -fx-text-fill: rgba(58, 75, 110, 0.98);
+    -fx-font-size: 15px;
+    -fx-font-weight: 600;
+    -fx-wrap-text: true;
+    -fx-max-width: 420px;
+    -fx-padding: 8 12 8 12;
+    -fx-background-color: rgba(255, 255, 255, 0.78);
+    -fx-background-radius: 6;
+    -fx-border-color: rgba(159, 176, 207, 0.85);
+    -fx-border-width: 1.5;
+    -fx-border-radius: 6;
 }
 
 .room-waiting-hint {

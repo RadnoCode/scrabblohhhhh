@@ -23,6 +23,7 @@ import com.kotva.presentation.scene.OnlineSetupScene;
 import com.kotva.presentation.scene.RoomCreateScene;
 import com.kotva.presentation.scene.RoomSearchScene;
 import com.kotva.presentation.scene.RoomWaitingScene;
+import com.kotva.presentation.scene.SceneTitleEntranceAnimationManager;
 import com.kotva.presentation.scene.SettingsScene;
 import com.kotva.presentation.scene.SettlementScene;
 import com.kotva.presentation.viewmodel.GameLaunchContext;
@@ -37,8 +38,11 @@ public class SceneNavigator {
     private final AppContext appContext;
     private final Deque<PageType> history;
     private GameLaunchContext gameLaunchContext;
+    private RoomWaitingContext roomWaitingContext;
     private PageType currentPage;
     private GameController gameController;
+    private RoomWaitingController roomWaitingController;
+    private boolean animateNextSceneTitleEntrance;
 
     public SceneNavigator(Stage stage, AppContext appContext) {
         this.stage = Objects.requireNonNull(stage, "stage cannot be null.");
@@ -99,8 +103,21 @@ public class SceneNavigator {
         showPage(PageType.ROOM_WAITING, true);
     }
 
+    public void showRoomWaiting(RoomWaitingContext roomWaitingContext) {
+        this.roomWaitingContext = roomWaitingContext;
+        showPage(PageType.ROOM_WAITING, true);
+    }
+
+    public RoomWaitingContext getRoomWaitingContext() {
+        return roomWaitingContext;
+    }
+
     public void showSettlement() {
         showPage(PageType.SETTLEMENT, false);
+    }
+
+    public void requestNextSceneTitleEntranceAnimation() {
+        animateNextSceneTitleEntrance = true;
     }
 
     public void goBack() {
@@ -146,17 +163,13 @@ public class SceneNavigator {
     private void showHomeScene() {
         HomeController controller = new HomeController(this);
         HomeScene scene = new HomeScene(controller);
-        stage.setTitle("Scrabble Front-End");
-        stage.setScene(scene);
-        stage.show();
+        showScene(scene, "Scrabble Front-End");
     }
 
     private void showGameSettingScene() {
         ModeSelectController controller = new ModeSelectController(this);
         ModeSelectScene scene = new ModeSelectScene(controller);
-        stage.setTitle("Scrabble Game Setting");
-        stage.setScene(scene);
-        stage.show();
+        showScene(scene, "Scrabble Game Setting");
     }
 
     private void showGameScene() {
@@ -165,9 +178,7 @@ public class SceneNavigator {
                 gameLaunchContext != null ? gameLaunchContext : GameLaunchContext.defaultContext());
         gameController = controller;
         GameScene scene = new GameScene(controller);
-        stage.setTitle("Scrabble Game");
-        stage.setScene(scene);
-        stage.show();
+        showScene(scene, "Scrabble Game");
     }
 
     private void releaseCurrentPage() {
@@ -175,78 +186,76 @@ public class SceneNavigator {
             gameController.shutdown();
             gameController = null;
         }
+        if (currentPage == PageType.ROOM_WAITING && roomWaitingController != null) {
+            roomWaitingController.shutdown();
+            roomWaitingController = null;
+        }
     }
 
     private void showSettingsScene() {
         SettingsController controller = new SettingsController(this);
         SettingsScene scene = new SettingsScene(controller);
-        stage.setTitle("Scrabble Settings");
-        stage.setScene(scene);
-        stage.show();
+        showScene(scene, "Scrabble Settings");
     }
 
     private void showHelpScene() {
         HelpController controller = new HelpController(this);
         HelpScene scene = new HelpScene(controller);
-        stage.setTitle("Scrabble Help");
-        stage.setScene(scene);
-        stage.show();
+        showScene(scene, "Scrabble Help");
     }
 
     private void showLocalMultiplayerSetupScene() {
         LocalMultiplayerSetupController controller = new LocalMultiplayerSetupController(this);
         LocalMultiplayerSetupScene scene = new LocalMultiplayerSetupScene(controller);
-        stage.setTitle("Scrabble Local Multiplayer Setup");
-        stage.setScene(scene);
-        stage.show();
+        showScene(scene, "Scrabble Local Multiplayer Setup");
     }
 
     private void showLocalAiSetupScene() {
         LocalAiSetupController controller = new LocalAiSetupController(this);
         LocalAiSetupScene scene = new LocalAiSetupScene(controller);
-        stage.setTitle("Scrabble Local AI Setup");
-        stage.setScene(scene);
-        stage.show();
+        showScene(scene, "Scrabble Local AI Setup");
     }
 
     private void showOnlineSetupScene() {
         OnlineSetupController controller = new OnlineSetupController(this);
         OnlineSetupScene scene = new OnlineSetupScene(controller);
-        stage.setTitle("Scrabble Online Setup");
-        stage.setScene(scene);
-        stage.show();
+        showScene(scene, "Scrabble Online Setup");
     }
 
     private void showRoomSearchScene() {
         RoomSearchController controller = new RoomSearchController(this);
         RoomSearchScene scene = new RoomSearchScene(controller);
-        stage.setTitle("Scrabble Room Search");
-        stage.setScene(scene);
-        stage.show();
+        showScene(scene, "Scrabble Room Search");
     }
 
     private void showRoomCreateScene() {
         RoomCreateController controller = new RoomCreateController(this);
         RoomCreateScene scene = new RoomCreateScene(controller);
-        stage.setTitle("Scrabble Create Room");
-        stage.setScene(scene);
-        stage.show();
+        showScene(scene, "Scrabble Create Room");
     }
 
     private void showRoomWaitingScene() {
         RoomWaitingController controller = new RoomWaitingController(this);
+        roomWaitingController = controller;
         RoomWaitingScene scene = new RoomWaitingScene(controller);
-        stage.setTitle("Scrabble Room Waiting");
-        stage.setScene(scene);
-        stage.show();
+        showScene(scene, "Scrabble Room Waiting");
     }
 
     private void showSettlementScene() {
         SettlementController controller = new SettlementController(this);
         SettlementScene scene = new SettlementScene(controller);
-        stage.setTitle("Scrabble Settlement");
+        showScene(scene, "Scrabble Settlement");
+    }
+
+    private void showScene(javafx.scene.Scene scene, String stageTitle) {
+        stage.setTitle(stageTitle);
         stage.setScene(scene);
         stage.show();
+
+        if (animateNextSceneTitleEntrance) {
+            animateNextSceneTitleEntrance = false;
+            SceneTitleEntranceAnimationManager.playEntranceIfPresent(scene.getRoot());
+        }
     }
 
     private enum PageType {
