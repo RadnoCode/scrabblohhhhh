@@ -181,9 +181,23 @@ public class LanClientService {
     }
 
     private ClientRuntimeSnapshot buildRuntimeSnapshot() {
+        if (disconnected) {
+            return new ClientRuntimeSnapshot(true, null, statusSummary, statusDetails);
+        }
+        if (pendingCommandId != null) {
+            return new ClientRuntimeSnapshot(true, pendingCommandId, statusSummary, statusDetails);
+        }
+        if (context.getSessionStatus() == SessionStatus.IN_PROGRESS && !context.isLocalPlayerTurn()) {
+            GameSessionSnapshot latestSnapshot = context.getLatestSnapshot();
+            return new ClientRuntimeSnapshot(
+                    true,
+                    null,
+                    "Waiting for remote player.",
+                    latestSnapshot.getCurrentPlayerName() + " is taking this turn.");
+        }
         return new ClientRuntimeSnapshot(
-                disconnected || pendingCommandId != null,
-                pendingCommandId,
+                false,
+                null,
                 statusSummary,
                 statusDetails);
     }

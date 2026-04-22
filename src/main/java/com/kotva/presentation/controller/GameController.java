@@ -148,15 +148,16 @@ public class GameController implements GameActionPort {
         clearClientActionTracking();
 
         GameSessionSnapshot firstSnapshot = gameRuntime.getSessionSnapshot();
-        if (gameRuntime.isSessionInProgress() && gameRuntime.hasTimeControl()) {
-            // Prime the clock baseline before the initial render can trigger an AI move.
+        boolean shouldPoll = shouldStartPolling(gameRuntime);
+        if (gameRuntime.isSessionInProgress() && shouldPoll) {
+            // Prime the baseline before polling can drive either local clocks or LAN snapshot refreshes.
             lastTickNanos = System.nanoTime();
         } else {
             lastTickNanos = 0L;
         }
         renderSnapshot(firstSnapshot);
 
-        if (!gameRuntime.isSessionInProgress() || !gameRuntime.hasTimeControl()) {
+        if (!gameRuntime.isSessionInProgress() || !shouldPoll) {
             return;
         }
 
@@ -547,6 +548,11 @@ public class GameController implements GameActionPort {
             return 0L;
         }
         return (currentTickNanos - previousTickNanos) / 1_000_000L;
+    }
+
+    static boolean shouldStartPolling(GameRuntime gameRuntime) {
+        return gameRuntime != null
+            && (gameRuntime.hasTimeControl() || gameRuntime.requiresBackgroundRefresh());
     }
 
     private String resolveDisplayLetter(Character displayLetter) {
