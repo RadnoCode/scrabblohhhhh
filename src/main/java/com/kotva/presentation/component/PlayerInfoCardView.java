@@ -6,8 +6,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 
 public class PlayerInfoCardView extends StackPane {
-    private static final double CARD_WIDTH = 288;
-    private static final double CARD_HEIGHT = 96;
+    public static final double CARD_WIDTH = 288;
+    public static final double CARD_HEIGHT = 96;
     private static final double AVATAR_WIDTH = 82;
     private static final double AVATAR_HEIGHT = 60;
     private static final double AVATAR_X = 10;

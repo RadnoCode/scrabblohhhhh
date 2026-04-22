@@ -16,6 +16,7 @@ import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.policy.DictionaryType;
 import com.kotva.tutorial.TutorialScriptId;
 import com.kotva.tutorial.TutorialUiEvent;
+import java.util.List;
 import java.util.Set;
 import org.junit.Test;
 
@@ -59,16 +60,61 @@ public class TutorialGameRuntimeTest {
     }
 
     @Test
+    public void tutorialRuntimeDoesNotAdvanceFirstMoveUntilCatIsComplete() {
+        TutorialGameRuntime runtime = createRuntime();
+        runtime.start(null);
+        runtime.advanceTutorialInstruction();
+
+        runtime.placeDraftTile(findRackTile(runtime, 'C').getTileID(), new Position(7, 6));
+        runtime.placeDraftTile(findRackTile(runtime, 'A').getTileID(), new Position(7, 7));
+
+        assertEquals(2, runtime.getSessionSnapshot().getTutorial().getStepNumber());
+
+        runtime.placeDraftTile(findRackTile(runtime, 'T').getTileID(), new Position(7, 8));
+
+        assertEquals(3, runtime.getSessionSnapshot().getTutorial().getStepNumber());
+    }
+
+    @Test
+    public void tutorialRuntimeAllowsRemovingDraftTilesDuringBoardEditSteps() {
+        TutorialGameRuntime runtime = createRuntime();
+        runtime.start(null);
+        runtime.advanceTutorialInstruction();
+
+        Tile tileC = findRackTile(runtime, 'C');
+        runtime.placeDraftTile(tileC.getTileID(), new Position(7, 6));
+        assertEquals(1, runtime.getSession().getTurnDraft().getPlacements().size());
+
+        runtime.removeDraftTile(tileC.getTileID());
+
+        assertTrue(runtime.getSession().getTurnDraft().getPlacements().isEmpty());
+        assertEquals(2, runtime.getSessionSnapshot().getTutorial().getStepNumber());
+    }
+
+    @Test
+    public void tutorialRuntimeShowsInvalidAhExampleBeforePlacingFinalA() {
+        TutorialGameRuntime runtime = createRuntime();
+        advanceToLegalityStep(runtime);
+
+        GameSessionSnapshot snapshot = runtime.getSessionSnapshot();
+        assertEquals(3, snapshot.getTutorial().getStepNumber());
+        assertFalse(snapshot.getPreview().isValid());
+        assertEquals("AH", snapshot.getPreview().getWords().get(0).getWord());
+        assertEquals(List.of(0), snapshot.getTutorial().getHighlightedRackSlots());
+        assertEquals("A", snapshot.getTutorial().getGhostTiles().get(0).getLetter());
+    }
+
+    @Test
     public void tutorialRuntimeCarriesValidPreviewIntoSubmitStep() {
         TutorialGameRuntime runtime = createRuntime();
         advanceToLegalityStep(runtime);
 
-        runtime.placeDraftTile(findRackTile(runtime, 'C').getTileID(), new Position(7, 6));
+        runtime.placeDraftTile(findRackTile(runtime, 'A').getTileID(), new Position(7, 6));
 
         GameSessionSnapshot previewValidSnapshot = runtime.getSessionSnapshot();
         assertEquals(4, previewValidSnapshot.getTutorial().getStepNumber());
         assertTrue(previewValidSnapshot.getPreview().isValid());
-        assertEquals("CAB", previewValidSnapshot.getPreview().getWords().get(0).getWord());
+        assertEquals("AAH", previewValidSnapshot.getPreview().getWords().get(0).getWord());
 
         runtime.submitDraft();
 
@@ -106,7 +152,7 @@ public class TutorialGameRuntimeTest {
 
     private void advanceToRearrangeStep(TutorialGameRuntime runtime) {
         advanceToLegalityStep(runtime);
-        runtime.placeDraftTile(findRackTile(runtime, 'C').getTileID(), new Position(7, 6));
+        runtime.placeDraftTile(findRackTile(runtime, 'A').getTileID(), new Position(7, 6));
         runtime.submitDraft();
         runtime.placeDraftTile(findRackTile(runtime, 'S').getTileID(), new Position(7, 10));
         runtime.submitDraft();
@@ -139,7 +185,7 @@ public class TutorialGameRuntimeTest {
 
         @Override
         public Set<String> getDictionary() {
-            return Set.of("CAB", "CAT", "CATS", "DOG");
+            return Set.of("AAH", "CAT", "CATS", "DOG");
         }
 
         @Override

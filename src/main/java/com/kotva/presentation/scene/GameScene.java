@@ -33,6 +33,7 @@ import javafx.scene.layout.VBox;
 public class GameScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
+    private static final double SIDE_CARD_GAP = 12;
 
     public GameScene(GameController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -93,12 +94,31 @@ public class GameScene extends Scene {
         ActionPanelView actionPanel = new ActionPanelView();
         BlankTilePickerView blankTilePickerView = new BlankTilePickerView();
         RackHandoffOverlayView rackHandoffOverlayView = new RackHandoffOverlayView(rackView);
+        TutorialOverlayView tutorialOverlayView = new TutorialOverlayView();
+        tutorialOverlayView.setOnAdvanceRequested(controller::onTutorialAdvanceRequested);
+        tutorialOverlayView.setOnExitRequested(controller::onTutorialExitRequested);
+        tutorialOverlayView.setOnReturnHomeRequested(controller::onTutorialReturnHomeRequested);
         blankTilePickerLayer.getChildren().add(blankTilePickerView);
         rackHandoffLayer.getChildren().add(rackHandoffOverlayView);
         Region rightSpacer = new Region();
         VBox.setVgrow(rightSpacer, Priority.ALWAYS);
 
-        VBox rightColumn = new VBox(12, rightTopCard, rightBottomCard, rightSpacer, actionPanel);
+        VBox rightInfoCards = new VBox(SIDE_CARD_GAP, rightTopCard, rightBottomCard);
+        rightInfoCards.setAlignment(Pos.TOP_CENTER);
+
+        StackPane rightTopSlot = new StackPane(rightInfoCards, tutorialOverlayView);
+        rightTopSlot.setAlignment(Pos.TOP_CENTER);
+        rightTopSlot.setPrefSize(
+            PlayerInfoCardView.CARD_WIDTH,
+            PlayerInfoCardView.CARD_HEIGHT * 2 + SIDE_CARD_GAP);
+        rightTopSlot.setMinSize(
+            PlayerInfoCardView.CARD_WIDTH,
+            PlayerInfoCardView.CARD_HEIGHT * 2 + SIDE_CARD_GAP);
+        rightTopSlot.setMaxSize(
+            PlayerInfoCardView.CARD_WIDTH,
+            PlayerInfoCardView.CARD_HEIGHT * 2 + SIDE_CARD_GAP);
+
+        VBox rightColumn = new VBox(12, rightTopSlot, rightSpacer, actionPanel);
         rightColumn.setAlignment(Pos.TOP_CENTER);
         rightColumn.setPrefHeight(boardHeight);
         rightColumn.setMinHeight(boardHeight);
@@ -114,11 +134,6 @@ public class GameScene extends Scene {
         boardColumn.getStyleClass().add("game-board-column");
         BorderPane.setMargin(boardColumn, new Insets(0, 20, 8, 20));
         contentRoot.setCenter(boardColumn);
-
-        TutorialOverlayView tutorialOverlayView = new TutorialOverlayView();
-        tutorialOverlayView.setOnAdvanceRequested(controller::onTutorialAdvanceRequested);
-        tutorialOverlayView.setOnExitRequested(controller::onTutorialExitRequested);
-        tutorialOverlayView.setOnReturnHomeRequested(controller::onTutorialReturnHomeRequested);
 
         PreviewRenderer previewRenderer = new PreviewRenderer(boardView, rackView, dragOverlay);
         GameRenderer renderer = new GameRenderer(
@@ -151,8 +166,7 @@ public class GameScene extends Scene {
             contentRoot,
             blankTilePickerLayer,
             dragOverlay,
-            rackHandoffLayer,
-            tutorialOverlayView);
+            rackHandoffLayer);
 
         return root;
     }

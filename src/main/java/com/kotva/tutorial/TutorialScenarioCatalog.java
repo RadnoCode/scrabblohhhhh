@@ -31,8 +31,8 @@ public final class TutorialScenarioCatalog {
             TutorialScenarioKey.LEGALITY,
             new TutorialScenarioDefinition(
                 List.of(new TutorialPlacedTile('A', 7, 7)),
-                List.of('B', 'C', 'E', 'N', 'O', 'R', 'S'),
-                List.of(new TutorialPlacedTile('B', 7, 8))),
+                List.of('A', 'H', 'E', 'N', 'O', 'R', 'S'),
+                List.of(new TutorialPlacedTile('H', 7, 8))),
             TutorialScenarioKey.CONNECTED_PLAY,
             new TutorialScenarioDefinition(
                 List.of(
@@ -100,7 +100,7 @@ public final class TutorialScenarioCatalog {
                 3,
                 8,
                 "Validity",
-                "Check the Preview section. The current draft is invalid.\nPlace C on the highlighted position, complete AB to the valid word CAB, and observe the Preview color change.",
+                "Check the Preview section. The current draft is invalid.\nPlace A on the highlighted position, complete AH to the valid word AAH, and observe the Preview color change.",
                 TutorialScenarioKey.LEGALITY,
                 true,
                 TutorialAdvanceCondition.PREVIEW_VALID,
@@ -110,11 +110,11 @@ public final class TutorialScenarioCatalog {
                     new TutorialCell(7, 6),
                     new TutorialCell(7, 7),
                     new TutorialCell(7, 8)),
-                List.of(1),
-                List.of(new TutorialGhostTile('C', 7, 6)),
+                List.of(0),
+                List.of(new TutorialGhostTile('A', 7, 6)),
                 List.of(),
                 List.of(TutorialActionKey.BOARD_EDIT),
-                List.of(new TutorialExpectedPlacement('C', 7, 6)),
+                List.of(new TutorialExpectedPlacement('A', 7, 6)),
                 true),
             new TutorialStepDefinition(
                 4,
