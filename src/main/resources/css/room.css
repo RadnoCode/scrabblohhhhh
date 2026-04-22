@@ -59,14 +59,18 @@
 }
 
 .room-list-view {
+    -fx-min-width: 420px;
     -fx-max-width: 420px;
     -fx-pref-width: 420px;
+    -fx-min-height: 168px;
+    -fx-max-height: 168px;
+    -fx-pref-height: 168px;
     -fx-background-color: rgba(255, 255, 255, 0.78);
     -fx-background-radius: 6;
     -fx-border-color: rgba(159, 176, 207, 0.85);
     -fx-border-width: 1.5;
     -fx-border-radius: 6;
-    -fx-padding: 4;
+    -fx-padding: 4 4 10 4;
 }
 
 .room-list-view .list-cell {
@@ -80,6 +84,47 @@
 .room-list-view .list-cell:filled:hover {
     -fx-background-color: rgba(157, 176, 214, 0.26);
     -fx-background-radius: 4;
+}
+
+.room-list-view .virtual-flow,
+.room-list-view .corner,
+.room-list-view .scroll-bar:horizontal,
+.room-list-view .scroll-bar:horizontal .track,
+.room-list-view .scroll-bar:horizontal .thumb {
+    -fx-background-color: transparent;
+}
+
+.room-list-view .scroll-bar:vertical {
+    -fx-background-color: rgba(239, 232, 220, 0.24);
+    -fx-background-radius: 999;
+    -fx-background-insets: 0;
+    -fx-padding: 5 4 5 1;
+}
+
+.room-list-view .scroll-bar:vertical .track {
+    -fx-background-color: rgba(159, 176, 207, 0.18);
+    -fx-background-radius: 999;
+    -fx-background-insets: 0;
+}
+
+.room-list-view .scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(124, 144, 181, 0.78);
+    -fx-background-radius: 999;
+    -fx-background-insets: 0;
+}
+
+.room-list-view .scroll-bar:vertical .thumb:hover,
+.room-list-view .scroll-bar:vertical .thumb:pressed {
+    -fx-background-color: rgba(108, 128, 166, 0.92);
+}
+
+.room-list-view .scroll-bar .increment-button,
+.room-list-view .scroll-bar .decrement-button,
+.room-list-view .scroll-bar .increment-arrow,
+.room-list-view .scroll-bar .decrement-arrow {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-opacity: 0;
 }
 
 .room-status-label {

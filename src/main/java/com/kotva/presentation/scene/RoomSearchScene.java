@@ -3,7 +3,6 @@ package com.kotva.presentation.scene;
 import com.kotva.presentation.component.BackButton;
 import com.kotva.presentation.component.CardStackIconView;
 import com.kotva.presentation.component.CommonButton;
-import com.kotva.presentation.component.RoomPanelView;
 import com.kotva.presentation.component.SearchIconView;
 import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.controller.RoomSearchController;
@@ -28,6 +27,10 @@ import javafx.scene.layout.VBox;
 public class RoomSearchScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
+    private static final double ROOM_LIST_WIDTH = 420;
+    private static final double ROOM_LIST_HEIGHT = 168;
+    private static final double RIGHT_COLUMN_OFFSET_X = 28;
+    private static final double RIGHT_COLUMN_OFFSET_Y = 50;
 
     public RoomSearchScene(RoomSearchController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -57,14 +60,12 @@ public class RoomSearchScene extends Scene {
         searchBox.getStyleClass().add("room-search-box");
         searchBox.setAlignment(Pos.CENTER_LEFT);
 
-        RoomPanelView roomPanelView = RoomPanelView.createSearchPanel();
         ListView<DiscoveredRoom> roomListView = new ListView<>();
         roomListView.getStyleClass().add("room-list-view");
-        roomListView.setPrefSize(420, 156);
+        roomListView.setPrefSize(ROOM_LIST_WIDTH, ROOM_LIST_HEIGHT);
+        roomListView.setMinSize(ROOM_LIST_WIDTH, ROOM_LIST_HEIGHT);
+        roomListView.setMaxSize(ROOM_LIST_WIDTH, ROOM_LIST_HEIGHT);
         controller.bindRoomList(roomListView);
-
-        StackPane roomListBox = new StackPane(roomPanelView, roomListView);
-        roomListBox.setAlignment(Pos.CENTER);
 
         Label statusLabel = new Label(viewModel.getStatusText());
         statusLabel.getStyleClass().add("room-status-label");
@@ -80,8 +81,13 @@ public class RoomSearchScene extends Scene {
         VBox buttonBox = new VBox(20, joinButton, refreshButton);
         buttonBox.setAlignment(Pos.TOP_CENTER);
 
-        VBox rightColumn = new VBox(14, searchBox, roomListBox, statusLabel, buttonBox);
+        VBox rightColumn = new VBox(14, searchBox, roomListView, statusLabel, buttonBox);
         rightColumn.setAlignment(Pos.TOP_CENTER);
+        rightColumn.setPrefWidth(440);
+        rightColumn.setMinWidth(440);
+        rightColumn.setMaxWidth(440);
+        rightColumn.setTranslateX(RIGHT_COLUMN_OFFSET_X);
+        rightColumn.setTranslateY(RIGHT_COLUMN_OFFSET_Y);
 
         Region spacer = new Region();
         spacer.setMinWidth(56);
