@@ -1,13 +1,21 @@
 package com.kotva.presentation.component;
 
 import com.kotva.presentation.viewmodel.GameViewModel;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 
 public class ActionPanelView extends StackPane {
     private static final String HIGHLIGHT_STYLE = "action-panel-button-highlight";
+    private static final double PANEL_WIDTH = 188;
+    private static final double PANEL_HEIGHT = 276;
+    private static final double BUTTON_WIDTH = 160;
+    private static final double BUTTON_HEIGHT = 40;
+
+    private static final double SKIP_CENTER_Y = 43.8;
+    private static final double REARRANGE_CENTER_Y = 92.9;
+    private static final double RECALL_CENTER_Y = 137.9;
+    private static final double RESIGN_CENTER_Y = 190.0;
+    private static final double SUBMIT_CENTER_Y = 237.8;
 
     private final WorkbenchButton skipTurnButton;
     private final WorkbenchButton rearrangeButton;
@@ -20,31 +28,46 @@ public class ActionPanelView extends StackPane {
         this.rearrangeButton = createButton("Rearrange");
         this.recallButton = createButton("Recall");
         this.resignButton = createButton("Resign");
-        this.submitButton = createButton("Submmit");
+        this.submitButton = createButton("Submit");
         initializePanel();
     }
 
     private void initializePanel() {
-        getStyleClass().add("game-placeholder-panel");
-        setPrefSize(220, 252);
-        setMinSize(220, 252);
-        setMaxSize(220, 252);
-        setPadding(new Insets(14, 12, 14, 12));
+        getStyleClass().add("game-workbench-panel");
+        setPrefSize(PANEL_WIDTH, PANEL_HEIGHT);
+        setMinSize(PANEL_WIDTH, PANEL_HEIGHT);
+        setMaxSize(PANEL_WIDTH, PANEL_HEIGHT);
 
-        VBox buttonColumn = new VBox(8,
+        Pane buttonLayer = new Pane(
             skipTurnButton,
             rearrangeButton,
             recallButton,
             resignButton,
             submitButton);
-        buttonColumn.setAlignment(Pos.CENTER);
-        getChildren().add(buttonColumn);
+        buttonLayer.setPrefSize(PANEL_WIDTH, PANEL_HEIGHT);
+        buttonLayer.setMinSize(PANEL_WIDTH, PANEL_HEIGHT);
+        buttonLayer.setMaxSize(PANEL_WIDTH, PANEL_HEIGHT);
+
+        positionButton(skipTurnButton, SKIP_CENTER_Y);
+        positionButton(rearrangeButton, REARRANGE_CENTER_Y);
+        positionButton(recallButton, RECALL_CENTER_Y);
+        positionButton(resignButton, RESIGN_CENTER_Y);
+        positionButton(submitButton, SUBMIT_CENTER_Y);
+
+        getChildren().add(buttonLayer);
     }
 
     private WorkbenchButton createButton(String text) {
         WorkbenchButton button = new WorkbenchButton(text);
         button.getStyleClass().add("action-panel-button");
+        button.setWorkbenchSize(BUTTON_WIDTH, BUTTON_HEIGHT);
         return button;
+    }
+
+    private void positionButton(WorkbenchButton button, double centerY) {
+        button.relocate(
+            (PANEL_WIDTH - BUTTON_WIDTH) / 2.0,
+            centerY - (BUTTON_HEIGHT / 2.0));
     }
 
     public WorkbenchButton getSkipTurnButton() {

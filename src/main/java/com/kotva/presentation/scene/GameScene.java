@@ -25,6 +25,8 @@ import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -63,21 +65,27 @@ public class GameScene extends Scene {
         AiStatusBannerView aiStatusBannerView = new AiStatusBannerView();
         BoardView boardView = new BoardView();
         RackView rackView = new RackView();
-        VBox boardColumn = new VBox(12, aiStatusBannerView, boardView, rackView);
-        boardColumn.setAlignment(Pos.CENTER);
-        boardColumn.getStyleClass().add("game-board-column");
+        double boardHeight = BoardView.BOARD_SIZE * BoardView.CELL_SIZE
+            + (BoardView.BOARD_SIZE - 1) * BoardView.CELL_GAP;
 
         PlayerInfoCardView leftTopCard = new PlayerInfoCardView();
         PlayerInfoCardView leftBottomCard = new PlayerInfoCardView();
-        TimerView stepTimerView = new TimerView("Step Time");
-        TimerView totalTimerView = new TimerView("Total Time");
+        TimerView stepTimerView = new TimerView("Step Time", TimerView.Variant.STEP);
+        TimerView totalTimerView = new TimerView("Total Time", TimerView.Variant.TOTAL);
         PreviewPanelView previewPanelView = new PreviewPanelView();
         HBox timerRow = new HBox(8, stepTimerView, totalTimerView);
         timerRow.setAlignment(Pos.CENTER);
         timerRow.getStyleClass().add("game-timer-row");
+        VBox leftBottomGroup = new VBox(10, timerRow, previewPanelView);
+        leftBottomGroup.setAlignment(Pos.TOP_CENTER);
+        Region leftSpacer = new Region();
+        VBox.setVgrow(leftSpacer, Priority.ALWAYS);
 
-        VBox leftColumn = new VBox(10, leftTopCard, leftBottomCard, timerRow, previewPanelView);
+        VBox leftColumn = new VBox(10, leftTopCard, leftBottomCard, leftSpacer, leftBottomGroup);
         leftColumn.setAlignment(Pos.TOP_CENTER);
+        leftColumn.setPrefHeight(boardHeight);
+        leftColumn.setMinHeight(boardHeight);
+        leftColumn.setMaxHeight(boardHeight);
         leftColumn.getStyleClass().add("game-side-column");
 
         PlayerInfoCardView rightTopCard = new PlayerInfoCardView();
@@ -87,16 +95,25 @@ public class GameScene extends Scene {
         RackHandoffOverlayView rackHandoffOverlayView = new RackHandoffOverlayView(rackView);
         blankTilePickerLayer.getChildren().add(blankTilePickerView);
         rackHandoffLayer.getChildren().add(rackHandoffOverlayView);
+        Region rightSpacer = new Region();
+        VBox.setVgrow(rightSpacer, Priority.ALWAYS);
 
-        VBox rightColumn = new VBox(12, rightTopCard, rightBottomCard, actionPanel);
+        VBox rightColumn = new VBox(12, rightTopCard, rightBottomCard, rightSpacer, actionPanel);
         rightColumn.setAlignment(Pos.TOP_CENTER);
+        rightColumn.setPrefHeight(boardHeight);
+        rightColumn.setMinHeight(boardHeight);
+        rightColumn.setMaxHeight(boardHeight);
         rightColumn.getStyleClass().add("game-side-column");
 
-        HBox contentBox = new HBox(22, leftColumn, boardColumn, rightColumn);
-        contentBox.setAlignment(Pos.TOP_CENTER);
-        contentBox.getStyleClass().add("game-content-box");
-        BorderPane.setMargin(contentBox, new Insets(0, 20, 8, 20));
-        contentRoot.setCenter(contentBox);
+        HBox boardPlayArea = new HBox(22, leftColumn, boardView, rightColumn);
+        boardPlayArea.setAlignment(Pos.TOP_CENTER);
+        boardPlayArea.getStyleClass().add("game-content-box");
+        VBox boardColumn = new VBox(12, aiStatusBannerView, boardPlayArea, rackView);
+        boardColumn.setAlignment(Pos.TOP_CENTER);
+        boardColumn.setFillWidth(false);
+        boardColumn.getStyleClass().add("game-board-column");
+        BorderPane.setMargin(boardColumn, new Insets(0, 20, 8, 20));
+        contentRoot.setCenter(boardColumn);
 
         TutorialOverlayView tutorialOverlayView = new TutorialOverlayView();
         tutorialOverlayView.setOnAdvanceRequested(controller::onTutorialAdvanceRequested);
