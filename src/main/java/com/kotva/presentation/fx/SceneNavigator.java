@@ -1,5 +1,6 @@
 package com.kotva.presentation.fx;
 
+import com.kotva.application.result.SettlementResult;
 import com.kotva.launcher.AppContext;
 import com.kotva.presentation.controller.GameController;
 import com.kotva.presentation.controller.HelpController;
@@ -42,6 +43,7 @@ public class SceneNavigator {
     private GameLaunchContext gameLaunchContext;
     private PlayerNameSetupContext playerNameSetupContext;
     private RoomWaitingContext roomWaitingContext;
+    private SettlementResult settlementResult;
     private PageType currentPage;
     private GameController gameController;
     private RoomWaitingController roomWaitingController;
@@ -75,6 +77,7 @@ public class SceneNavigator {
 
     public void showGame(GameLaunchContext gameLaunchContext) {
         this.gameLaunchContext = gameLaunchContext;
+        this.settlementResult = null;
         showPage(PageType.GAME, true);
     }
 
@@ -127,7 +130,16 @@ public class SceneNavigator {
     }
 
     public void showSettlement() {
+        showSettlement(settlementResult);
+    }
+
+    public void showSettlement(SettlementResult settlementResult) {
+        this.settlementResult = settlementResult;
         showPage(PageType.SETTLEMENT, false);
+    }
+
+    public SettlementResult getSettlementResult() {
+        return settlementResult;
     }
 
     public void requestNextSceneTitleEntranceAnimation() {

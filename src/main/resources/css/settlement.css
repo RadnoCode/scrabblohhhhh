@@ -1,0 +1,148 @@
+.settlement-root {
+    -fx-background-color: transparent;
+}
+
+.settlement-reason-caption {
+    -fx-text-fill: rgba(79, 97, 132, 0.78);
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+}
+
+.settlement-reason-title {
+    -fx-text-fill: #32435e;
+    -fx-font-size: 34px;
+    -fx-font-weight: 800;
+    -fx-text-alignment: center;
+}
+
+.settlement-reason-detail {
+    -fx-text-fill: rgba(61, 73, 96, 0.88);
+    -fx-font-size: 16px;
+    -fx-font-weight: 500;
+    -fx-text-alignment: center;
+}
+
+.settlement-podium-title {
+    -fx-text-fill: linear-gradient(to bottom, #39557f, #a87a33);
+    -fx-font-size: 68px;
+    -fx-font-weight: 900;
+    -fx-font-style: italic;
+}
+
+.settlement-podium-line {
+    -fx-pref-width: 180;
+    -fx-min-width: 180;
+    -fx-max-width: 180;
+    -fx-pref-height: 6;
+    -fx-background-color: linear-gradient(to right, rgba(57, 85, 127, 0.0), rgba(57, 85, 127, 0.92), rgba(168, 122, 51, 0.92), rgba(168, 122, 51, 0.0));
+    -fx-background-radius: 999;
+}
+
+.settlement-summary-label {
+    -fx-text-fill: #4a5873;
+    -fx-font-size: 20px;
+    -fx-font-weight: 600;
+    -fx-text-alignment: center;
+}
+
+.settlement-chart-card {
+    -fx-background-color: rgba(255, 255, 255, 0.70);
+    -fx-background-radius: 32;
+    -fx-border-color: rgba(140, 152, 172, 0.86);
+    -fx-border-width: 2;
+    -fx-border-radius: 32;
+    -fx-padding: 26 28 26 28;
+    -fx-effect: dropshadow(gaussian, rgba(61, 73, 96, 0.12), 20, 0.12, 0, 6);
+}
+
+.settlement-score-chart {
+    -fx-alignment: center-left;
+}
+
+.settlement-score-row {
+    -fx-background-color: rgba(247, 243, 235, 0.60);
+    -fx-background-radius: 20;
+    -fx-padding: 10 12 10 12;
+}
+
+.settlement-score-row-winner {
+    -fx-background-color: rgba(239, 226, 189, 0.80);
+}
+
+.settlement-rank-badge {
+    -fx-background-color: rgba(79, 97, 132, 0.12);
+    -fx-background-radius: 999;
+    -fx-text-fill: #54637f;
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-alignment: center;
+    -fx-padding: 7 0 7 0;
+}
+
+.settlement-rank-badge-winner {
+    -fx-background-color: rgba(168, 122, 51, 0.18);
+    -fx-text-fill: #8a5d19;
+}
+
+.settlement-player-name {
+    -fx-text-fill: #32435e;
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
+}
+
+.settlement-player-name-winner {
+    -fx-text-fill: #7b5419;
+}
+
+.settlement-score-track {
+    -fx-background-color: rgba(157, 176, 214, 0.18);
+    -fx-background-radius: 999;
+    -fx-border-color: rgba(157, 176, 214, 0.54);
+    -fx-border-width: 1;
+    -fx-border-radius: 999;
+    -fx-pref-height: 24;
+    -fx-min-height: 24;
+    -fx-max-height: 24;
+}
+
+.settlement-score-fill {
+    -fx-background-color: linear-gradient(to right, #6f8fc0, #3f5b86);
+    -fx-background-radius: 999;
+    -fx-pref-height: 24;
+    -fx-min-height: 24;
+    -fx-max-height: 24;
+}
+
+.settlement-score-fill-winner {
+    -fx-background-color: linear-gradient(to right, #d2b15c, #a87930);
+}
+
+.settlement-score-value {
+    -fx-text-fill: #32435e;
+    -fx-font-size: 20px;
+    -fx-font-weight: 800;
+    -fx-alignment: center-right;
+}
+
+.settlement-score-value-winner {
+    -fx-text-fill: #8a5d19;
+}
+
+.settlement-empty-label {
+    -fx-text-fill: rgba(61, 73, 96, 0.68);
+    -fx-font-size: 16px;
+    -fx-font-weight: 600;
+}
+
+.settlement-action-button {
+    -fx-pref-width: 176;
+}
+
+.settlement-export-message {
+    -fx-background-color: rgba(56, 104, 88, 0.94);
+    -fx-border-color: rgba(206, 240, 228, 0.68);
+}
+
+.settlement-export-message .transient-message-label {
+    -fx-text-fill: #f5fff8;
+}

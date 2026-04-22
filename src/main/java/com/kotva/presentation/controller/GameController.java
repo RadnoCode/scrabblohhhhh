@@ -216,7 +216,7 @@ public class GameController implements GameActionPort {
         persistTutorialCompletionIfNeeded(tutorialSnapshot);
         if (snapshot.getSessionStatus() == SessionStatus.COMPLETED && !gameRuntime.isTutorialRuntime()) {
             stopPolling();
-            navigateToSettlementIfNeeded();
+            navigateToSettlementIfNeeded(snapshot);
             return;
         }
         syncAiTurn(snapshot);
@@ -566,12 +566,12 @@ public class GameController implements GameActionPort {
         lastTickNanos = 0L;
     }
 
-    private void navigateToSettlementIfNeeded() {
+    private void navigateToSettlementIfNeeded(GameSessionSnapshot snapshot) {
         if (settlementNavigated) {
             return;
         }
         settlementNavigated = true;
-        Platform.runLater(navigator::showSettlement);
+        Platform.runLater(() -> navigator.showSettlement(snapshot.getSettlementResult()));
     }
 
     private void syncAiTurn(GameSessionSnapshot snapshot) {
