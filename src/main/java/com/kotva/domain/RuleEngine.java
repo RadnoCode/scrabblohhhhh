@@ -95,6 +95,9 @@ public class RuleEngine {
 
                 Tile realTile = tileBag.getTileById(tileId);
                 Cell cell = board.getCell(pos);
+                if (realTile != null && realTile.isBlank() && placement.assignedLetter() != null) {
+                    realTile.setAssignedLetter(placement.assignedLetter());
+                }
                 cell.setPlacedTile(realTile);
                 if (realTile != null && realTile.isBlank()) {
                     realTile.markFixed();

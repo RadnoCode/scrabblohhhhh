@@ -84,6 +84,11 @@ final class ClientGameRuntime implements GameRuntime {
     }
 
     @Override
+    public void assignBlankTileLetter(String tileId, char assignedLetter) {
+        requireLanClientService().assignBlankTileLetter(tileId, assignedLetter);
+    }
+
+    @Override
     public void recallAllDraftTiles() {
         requireLanClientService().recallAllDraftTiles();
     }

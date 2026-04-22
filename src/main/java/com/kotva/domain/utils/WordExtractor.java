@@ -144,6 +144,9 @@ public final class WordExtractor {
     }
 
     private static String resolveLetter(ActionPlacement placement, TileBag tileBag) {
+        if (placement.assignedLetter() != null) {
+            return String.valueOf(placement.assignedLetter());
+        }
         if (tileBag == null) {
             return placement.tileId();
         }

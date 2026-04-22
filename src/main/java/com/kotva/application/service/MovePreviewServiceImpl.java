@@ -117,7 +117,10 @@ public class MovePreviewServiceImpl implements MovePreviewService
                 continue;
             }
             var tile = gameState.getTileBag().getTileById(placement.getTileId());
-            if (tile != null && tile.isBlank() && tile.getAssignedLetter() == null) {
+            if (tile != null
+                && tile.isBlank()
+                && tile.getAssignedLetter() == null
+                && placement.getAssignedLetter() == null) {
                 return true;
             }
         }

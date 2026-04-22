@@ -12,6 +12,7 @@ public class TurnDraft
 
     private List<DraftPlacement> placements;  // List of tile placements for the current turn (in this turn, we put how many tiles on the board and where they are placed)
     private Map<String, Integer> originalRackSlots;  //record the original rack slots of the tiles being moved, so that we can restore them if the draft is cancelled or invalid
+    private Map<String, Character> assignedLettersByTileId;
 
     private String draggingTileId; // The ID of the tile currently being dragged by the player, if any. This helps the UI to provide visual feedback and manage tile movements during the drafting phase.
     private PreviewResult previewResult; //analyze and tell the player the result of the current draft, including estimated score, formed words, and any rule violations or messages. This allows the player to see the potential outcome of their proposed move before finalizing it.
@@ -19,6 +20,7 @@ public class TurnDraft
     public TurnDraft() {
         this.placements = new ArrayList<>();
         this.originalRackSlots = new HashMap<>();
+        this.assignedLettersByTileId = new HashMap<>();
         this.draggingTileId = null;
         this.previewResult = null;
     }
@@ -33,6 +35,10 @@ public class TurnDraft
 
     public Map<String, Integer> getOriginalRackSlots() {
         return originalRackSlots;
+    }
+
+    public Map<String, Character> getAssignedLettersByTileId() {
+        return assignedLettersByTileId;
     }
 
     public String getDraggingTileId() {

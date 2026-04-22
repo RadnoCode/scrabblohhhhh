@@ -1,6 +1,7 @@
 package com.kotva.application.draft;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.kotva.domain.action.PlayerAction;
@@ -22,8 +23,19 @@ public class TurnDraftActionMapperTest {
         assertEquals("tile-1", action.placements().get(0).tileId());
         assertEquals(7, action.placements().get(0).position().getRow());
         assertEquals(7, action.placements().get(0).position().getCol());
+        assertNull(action.placements().get(0).assignedLetter());
         assertEquals("tile-2", action.placements().get(1).tileId());
         assertEquals(8, action.placements().get(1).position().getCol());
+    }
+
+        @Test
+    public void mapsAssignedLetterForBlankPlacements() {
+        TurnDraft turnDraft = new TurnDraft();
+        turnDraft.getPlacements().add(new DraftPlacement("blank-1", new Position(7, 7), 'e'));
+
+        PlayerAction action = TurnDraftActionMapper.toPlaceAction("p1", turnDraft);
+
+        assertEquals(Character.valueOf('E'), action.placements().get(0).assignedLetter());
     }
 
         @Test
