@@ -61,6 +61,31 @@ public class LocalAiSetupController {
         backButton.setOnAction(event -> navigator.goBack());
     }
 
+    public boolean validateGameSetup(
+        InputButton gameTimeButton,
+        InputButton stepTimeButton,
+        TransientMessageView messageView) {
+        String gameTimeInput = gameTimeButton.getTextField().getText();
+        String stepTimeInput = stepTimeButton.getTextField().getText();
+        if (!isValidGameTimeInput(gameTimeInput)) {
+            messageView.showMessage(INVALID_GAME_TIME_MESSAGE);
+            return false;
+        }
+        if (!isValidStepTimeInput(stepTimeInput)) {
+            messageView.showMessage(INVALID_STEP_TIME_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+
+    public void navigateToGame(InputButton gameTimeButton, InputButton stepTimeButton) {
+        String gameTimeInput = gameTimeButton.getTextField().getText();
+        String stepTimeInput = stepTimeButton.getTextField().getText();
+        audioManager.playActionConfirm();
+        navigator.requestNextSceneTitleEntranceAnimation();
+        navigator.showGame(buildLaunchContext(gameTimeInput, stepTimeInput));
+    }
+
     private String rotateDictionary() {
         dictionaryIndex = (dictionaryIndex + 1) % dictionaries.length;
         return dictionaries[dictionaryIndex];
@@ -83,18 +108,10 @@ public class LocalAiSetupController {
         InputButton gameTimeButton,
         InputButton stepTimeButton,
         TransientMessageView messageView) {
-        String gameTimeInput = gameTimeButton.getTextField().getText();
-        String stepTimeInput = stepTimeButton.getTextField().getText();
-        if (!isValidGameTimeInput(gameTimeInput)) {
-            messageView.showMessage(INVALID_GAME_TIME_MESSAGE);
+        if (!validateGameSetup(gameTimeButton, stepTimeButton, messageView)) {
             return;
         }
-        if (!isValidStepTimeInput(stepTimeInput)) {
-            messageView.showMessage(INVALID_STEP_TIME_MESSAGE);
-            return;
-        }
-        audioManager.playActionConfirm();
-        navigator.showGame(buildLaunchContext(gameTimeInput, stepTimeInput));
+        navigateToGame(gameTimeButton, stepTimeButton);
     }
 
     private boolean isValidGameTimeInput(String rawInput) {

@@ -5,6 +5,7 @@ import com.kotva.presentation.component.HelpEnvelope;
 import com.kotva.presentation.component.PlayEnvelope;
 import com.kotva.presentation.component.SettingEnvelope;
 import com.kotva.presentation.component.TitleBanner;
+import com.kotva.presentation.component.TutorialEnvelope;
 import com.kotva.presentation.controller.HomeController;
 import com.kotva.presentation.viewmodel.HomeViewModel;
 import javafx.geometry.Insets;
@@ -17,6 +18,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.control.Label;
+import java.util.List;
 
 public class HomeScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
@@ -40,16 +42,21 @@ public class HomeScene extends Scene {
         root.setTop(titleBanner);
 
         PlayEnvelope playEnvelope = new PlayEnvelope();
+        TutorialEnvelope tutorialEnvelope = new TutorialEnvelope();
         SettingEnvelope settingEnvelope = new SettingEnvelope();
         HelpEnvelope helpEnvelope = new HelpEnvelope();
-        StackPane envelopeStack = new StackPane(playEnvelope, settingEnvelope, helpEnvelope);
+        StackPane envelopeStack = new StackPane(playEnvelope, tutorialEnvelope, settingEnvelope, helpEnvelope);
         envelopeStack.getStyleClass().add("home-envelope-stack");
-        playEnvelope.activate();
+        playEnvelope.showForwardStartState();
 
         CommonButton playButton = new CommonButton(viewModel.getPlayText());
         CommonButton tutorialButton = new CommonButton(viewModel.getTutorialText());
         CommonButton settingsButton = new CommonButton(viewModel.getSettingsText());
         CommonButton helpButton = new CommonButton(viewModel.getHelpText());
+        playButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        tutorialButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
+        settingsButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        helpButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
 
         controller.bindActions(
             playButton,
@@ -57,10 +64,33 @@ public class HomeScene extends Scene {
             settingsButton,
             helpButton,
             playEnvelope,
+            tutorialEnvelope,
             settingEnvelope,
             helpEnvelope);
 
-        VBox buttonColumn = new VBox(18);
+        HomeSelectionAnimationManager selectionAnimationManager = new HomeSelectionAnimationManager(
+            sceneRoot,
+            titleBanner,
+            envelopeStack,
+            playButton,
+            tutorialButton,
+            settingsButton,
+            helpButton);
+
+        playButton.setOnAction(event -> selectionAnimationManager.play(
+            HomeSelectionAnimationManager.ButtonKey.PLAY,
+            controller::navigateToPlay));
+        tutorialButton.setOnAction(event -> selectionAnimationManager.play(
+            HomeSelectionAnimationManager.ButtonKey.TUTORIAL,
+            controller::navigateToTutorial));
+        settingsButton.setOnAction(event -> selectionAnimationManager.play(
+            HomeSelectionAnimationManager.ButtonKey.SETTINGS,
+            controller::navigateToSettings));
+        helpButton.setOnAction(event -> selectionAnimationManager.play(
+            HomeSelectionAnimationManager.ButtonKey.HELP,
+            controller::navigateToHelp));
+
+        VBox buttonColumn = new VBox(20);
         buttonColumn.setAlignment(Pos.CENTER_LEFT);
         buttonColumn.getStyleClass().add("home-button-column");
         buttonColumn.getChildren().addAll(playButton, tutorialButton, settingsButton, helpButton);
@@ -76,7 +106,14 @@ public class HomeScene extends Scene {
         BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);
 
-        sceneRoot.getChildren().add(root);
+        new HomeEntranceAnimationManager(
+            sceneRoot,
+            titleBanner,
+            envelopeStack,
+            List.of(playButton, tutorialButton, settingsButton, helpButton))
+            .install();
+
+        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root);
         if (controller.isTutorialPromptVisible()) {
             sceneRoot.getChildren().add(createTutorialPrompt(controller));
         }
@@ -103,8 +140,10 @@ public class HomeScene extends Scene {
 
         CommonButton startButton = new CommonButton("Start Tutorial");
         CommonButton skipButton = new CommonButton("Skip for Now");
-        startButton.setPrefWidth(280);
-        skipButton.setPrefWidth(280);
+        startButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        skipButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
+        startButton.applyTemplateSize(280);
+        skipButton.applyTemplateSize(280);
         startButton.setOnAction(event -> controller.startTutorialFromPrompt());
         skipButton.setOnAction(event -> {
             controller.dismissTutorialPrompt();
@@ -112,7 +151,7 @@ public class HomeScene extends Scene {
             overlay.setManaged(false);
         });
 
-        VBox buttonBox = new VBox(12, startButton, skipButton);
+        VBox buttonBox = new VBox(20, startButton, skipButton);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
         card.getChildren().addAll(titleLabel, bodyLabel, buttonBox);
         overlay.getChildren().add(card);

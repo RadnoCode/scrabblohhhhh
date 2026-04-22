@@ -10,6 +10,7 @@ import com.kotva.presentation.component.TransientMessageView;
 import com.kotva.presentation.component.ViceTitleBanner;
 import com.kotva.presentation.controller.RoomCreateController;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
+import java.util.List;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -66,6 +67,11 @@ public class RoomCreateScene extends Scene {
         SwitchButton thirdButton = new SwitchButton(viewModel.getThirdOptionText());
         thirdButton.getStyleClass().add("compact-setting-label");
         CommonButton goButton = new CommonButton("Go!");
+        firstButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
+        stepTimeButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        secondButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        thirdButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
+        goButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
         controller.bindActions(
             firstButton,
             stepTimeButton,
@@ -74,7 +80,7 @@ public class RoomCreateScene extends Scene {
             goButton,
             messageView);
 
-        VBox buttonColumn = new VBox(16);
+        VBox buttonColumn = new VBox(20);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
         buttonColumn.getChildren().addAll(
@@ -93,12 +99,31 @@ public class RoomCreateScene extends Scene {
         BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
         root.setCenter(contentBox);
 
+        new OptionSceneEntranceAnimationManager(
+            sceneRoot,
+            titleBanner,
+            cardStackIconView,
+            List.of(viceTitleBox, firstButton, stepTimeButton, secondButton, thirdButton, goButton))
+            .install();
+
+        OptionSceneExitAnimationManager exitAnimationManager = new OptionSceneExitAnimationManager(
+            sceneRoot,
+            titleBanner,
+            cardStackIconView,
+            List.of(viceTitleBox, firstButton, stepTimeButton, secondButton, thirdButton, goButton));
+        goButton.setOnAction(event -> {
+            var roomWaitingContext = controller.prepareRoomWaitingContext(firstButton, stepTimeButton, messageView);
+            if (roomWaitingContext != null) {
+                exitAnimationManager.play(goButton, () -> controller.navigateToPreparedRoom(roomWaitingContext));
+            }
+        });
+
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
         StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
 
-        sceneRoot.getChildren().addAll(root, backButton);
+        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, backButton);
         return sceneRoot;
     }
 

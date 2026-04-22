@@ -27,6 +27,7 @@ public class RackHandoffOverlayView extends Pane {
         this.rackCover = new Rectangle();
         this.promptLabel = new Label(PROMPT_TEXT);
         this.readyButton = new CommonButton("Ready");
+        this.readyButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
         this.contentBox = new VBox(10);
         this.hideTransition = new PauseTransition(DEFAULT_VISIBLE_DURATION);
         initialize();
@@ -46,9 +47,7 @@ public class RackHandoffOverlayView extends Pane {
         promptLabel.setAlignment(Pos.CENTER);
 
         readyButton.getStyleClass().add("rack-handoff-ready-button");
-        readyButton.setPrefSize(220, 42);
-        readyButton.setMinSize(220, 42);
-        readyButton.setMaxSize(220, 42);
+        readyButton.applyTemplateSize(220);
         readyButton.setOnAction(event -> hideOverlay());
 
         contentBox.getStyleClass().add("rack-handoff-content");

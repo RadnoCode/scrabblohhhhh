@@ -7,6 +7,7 @@ import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.component.ViceTitleBanner;
 import com.kotva.presentation.controller.OnlineSetupController;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
+import java.util.List;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -23,6 +24,10 @@ import javafx.scene.layout.VBox;
 public class OnlineSetupScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
+    private static final String VICE_TITLE_IMAGE_PATH = "/images/mode/play-by-lan.png";
+    private static final double VICE_TITLE_WIDTH = 187.5;
+    private static final double VICE_TITLE_HEIGHT = 123.75;
+    private static final Insets CONTENT_MARGIN = new Insets(2, 100, 48, 100);
 
     public OnlineSetupScene(OnlineSetupController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -43,7 +48,10 @@ public class OnlineSetupScene extends Scene {
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(360, 270);
 
-        ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText());
+        ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText(), VICE_TITLE_IMAGE_PATH);
+        viceTitleBanner.setPrefSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
+        viceTitleBanner.setMinSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
+        viceTitleBanner.setMaxSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
 
         HBox viceTitleBox = new HBox(viceTitleBanner);
         viceTitleBox.setAlignment(Pos.CENTER);
@@ -53,27 +61,48 @@ public class OnlineSetupScene extends Scene {
 
         CommonButton firstButton = new CommonButton(viewModel.getFirstOptionText());
         CommonButton secondButton = new CommonButton(viewModel.getSecondOptionText());
+        firstButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        secondButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
         controller.bindActions(firstButton, secondButton);
 
-        VBox buttonColumn = new VBox(18);
+        VBox buttonColumn = new VBox(20);
         buttonColumn.setAlignment(Pos.CENTER);
         buttonColumn.getStyleClass().add("mode-button-column");
+        buttonColumn.setTranslateX(30);
+        buttonColumn.setTranslateY(-10);
         buttonColumn.getChildren().addAll(viceTitleBox, firstButton, secondButton);
 
         Region spacer = new Region();
         spacer.setMinWidth(56);
 
         HBox contentBox = new HBox(cardStackIconView, spacer, buttonColumn);
-        contentBox.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
+        contentBox.setAlignment(Pos.TOP_CENTER);
+        BorderPane.setMargin(contentBox, CONTENT_MARGIN);
         root.setCenter(contentBox);
+
+        new OptionSceneEntranceAnimationManager(
+            sceneRoot,
+            titleBanner,
+            cardStackIconView,
+            List.of(viceTitleBox, firstButton, secondButton))
+            .install();
+
+        OptionSceneExitAnimationManager exitAnimationManager = new OptionSceneExitAnimationManager(
+            sceneRoot,
+            titleBanner,
+            cardStackIconView,
+            List.of(viceTitleBox, firstButton, secondButton));
+        firstButton.setOnAction(event ->
+            exitAnimationManager.play(firstButton, controller::navigateToSearchRoom));
+        secondButton.setOnAction(event ->
+            exitAnimationManager.play(secondButton, controller::navigateToCreateRoom));
 
         BackButton backButton = new BackButton();
         controller.bindBackAction(backButton);
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
         StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
 
-        sceneRoot.getChildren().addAll(root, backButton);
+        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, backButton);
         return sceneRoot;
     }
 

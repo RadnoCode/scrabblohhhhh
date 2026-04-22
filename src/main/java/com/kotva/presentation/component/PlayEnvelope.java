@@ -2,6 +2,6 @@ package com.kotva.presentation.component;
 
 public class PlayEnvelope extends AbstractEnvelopeGifView {
     public PlayEnvelope() {
-        super("/images/home/Play.gif");
+        super("/images/home/Play.gif", "/images/home/PlayBack.gif");
     }
 }

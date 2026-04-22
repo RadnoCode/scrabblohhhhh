@@ -72,10 +72,15 @@ public class RoomSearchScene extends Scene {
 
         CommonButton joinButton = new CommonButton("Join Selected");
         CommonButton refreshButton = new CommonButton("Refresh");
+        joinButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        refreshButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
         controller.bindJoinAction(joinButton);
         controller.bindRefreshAction(refreshButton);
 
-        VBox rightColumn = new VBox(14, searchBox, roomListBox, statusLabel, joinButton, refreshButton);
+        VBox buttonBox = new VBox(20, joinButton, refreshButton);
+        buttonBox.setAlignment(Pos.TOP_CENTER);
+
+        VBox rightColumn = new VBox(14, searchBox, roomListBox, statusLabel, buttonBox);
         rightColumn.setAlignment(Pos.TOP_CENTER);
 
         Region spacer = new Region();
@@ -91,7 +96,7 @@ public class RoomSearchScene extends Scene {
         StackPane.setAlignment(backButton, Pos.TOP_LEFT);
         StackPane.setMargin(backButton, new Insets(10, 0, 0, 30));
 
-        sceneRoot.getChildren().addAll(root, backButton);
+        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, backButton);
         controller.startScanning();
         return sceneRoot;
     }

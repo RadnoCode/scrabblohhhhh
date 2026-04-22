@@ -1,5 +1,5 @@
 .home-root {
-    -fx-background-color: -app-background;
+    -fx-background-color: transparent;
 }
 
 .home-content-box {
