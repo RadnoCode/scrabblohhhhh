@@ -55,7 +55,7 @@ public final class TutorialScenarioCatalog {
                 "Colourful cells are bonus cells: TW is triple word score, DW is double word score, TL is triple letter score, DL is double letter score.\nThe first word must also go through the center cell.",
                 TutorialScenarioKey.BOARD_INTRO,
                 true,
-                TutorialAdvanceConditions.TAP,
+                TutorialAdvanceCondition.TAP,
                 true,
                 false,
                 List.of(
