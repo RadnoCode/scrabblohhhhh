@@ -120,25 +120,36 @@
     -fx-background-radius: 30;
 }
 
+.game-workbench-panel {
+    -fx-background-color: transparent;
+    -fx-background-image: url("/images/game/workbench/tool.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center bottom;
+    -fx-background-size: 100% 100%;
+    -fx-border-width: 0;
+}
+
 .action-panel-button-highlight {
+    -fx-background-color: rgba(255, 244, 181, 0.10);
     -fx-border-color: rgba(255, 236, 148, 0.98);
-    -fx-border-width: 3;
+    -fx-border-width: 2.5;
 }
 
 .game-preview-panel {
-    -fx-background-color: rgba(226, 219, 206, 0.86);
-    -fx-background-radius: 24;
-    -fx-border-color: rgba(82, 96, 128, 0.24);
-    -fx-border-radius: 24;
-    -fx-border-width: 1;
+    -fx-background-color: transparent;
+    -fx-background-image: url("/images/game/preview/preview-panel.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-background-size: 100% 100%;
+    -fx-border-width: 0;
 }
 
 .game-preview-panel-valid {
-    -fx-border-color: rgba(112, 171, 111, 0.92);
+    -fx-effect: dropshadow(gaussian, rgba(112, 171, 111, 0.18), 16, 0.14, 0, 3);
 }
 
 .game-preview-panel-invalid {
-    -fx-border-color: rgba(192, 106, 106, 0.94);
+    -fx-effect: dropshadow(gaussian, rgba(192, 106, 106, 0.22), 16, 0.14, 0, 3);
 }
 
 .game-preview-title {
@@ -156,8 +167,18 @@
 .game-preview-word,
 .game-preview-score,
 .game-preview-messages {
-    -fx-text-fill: #4b556a;
-    -fx-font-size: 13px;
+    -fx-text-fill: #0f4f8a;
+    -fx-font-size: 17px;
+    -fx-font-weight: 700;
+    -fx-alignment: center-left;
+}
+
+.game-preview-hint {
+    -fx-text-fill: #0f4f8a;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
 }
 
 .tutorial-overlay-blocker {

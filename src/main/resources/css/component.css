@@ -284,8 +284,10 @@
 }
 
 .game-timer {
-    -fx-background-color: rgba(226, 219, 206, 0.82);
-    -fx-background-radius: 28;
+    -fx-background-color: transparent;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-background-size: 100% 100%;
 }
 
 .game-timer-title {
@@ -294,9 +296,17 @@
     -fx-font-weight: 600;
 }
 
+.game-timer-step {
+    -fx-background-image: url("/images/game/timers/step-time.png");
+}
+
+.game-timer-total {
+    -fx-background-image: url("/images/game/timers/total-time.png");
+}
+
 .game-timer-value {
-    -fx-text-fill: #3d4960;
-    -fx-font-size: 22px;
+    -fx-text-fill: #000000;
+    -fx-font-size: 26px;
     -fx-font-weight: 700;
 }
 
@@ -371,29 +381,41 @@
 }
 
 .action-panel-button {
-    -fx-font-size: 14px;
-    -fx-font-weight: 600;
-    -fx-alignment: center;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
     -fx-padding: 0;
 }
 
 .workbench-button {
-    -fx-background-color: -app-panel;
-    -fx-text-fill: -app-text;
-    -fx-border-color: -app-line;
-    -fx-border-width: 2;
-    -fx-background-radius: 14;
-    -fx-border-radius: 14;
+    -fx-background-color: transparent;
+    -fx-text-fill: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
 }
 
 .workbench-button .common-button-label {
-    -fx-text-fill: -app-text;
-    -fx-font-size: 16px;
-    -fx-font-weight: 600;
+    -fx-text-fill: transparent;
+    -fx-font-size: 1px;
+    -fx-opacity: 0;
 }
 
 .action-panel-button:hover {
-    -fx-effect: dropshadow(gaussian, -app-shadow, 12, 0.16, 0, 4);
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-border-color: rgba(255, 255, 255, 0.30);
+}
+
+.action-panel-button:pressed {
+    -fx-background-color: rgba(255, 255, 255, 0.16);
+}
+
+.action-panel-button:disabled {
+    -fx-opacity: 0.45;
 }
 
 .transient-message {

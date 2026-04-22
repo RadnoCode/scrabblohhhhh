@@ -17,4 +17,8 @@ public class WorkbenchButton extends CommonButton {
         applyFixedSize(172, 38);
         setPadding(new Insets(0));
     }
+
+    public void setWorkbenchSize(double width, double height) {
+        applyFixedSize(width, height);
+    }
 }
