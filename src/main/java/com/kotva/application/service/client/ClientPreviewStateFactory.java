@@ -22,6 +22,7 @@ final class ClientPreviewStateFactory {
 
         GameState gameState = new GameState(buildPlayers(snapshot, localPlayerId));
         restoreBoard(gameState, snapshot);
+        restoreFirstMoveState(gameState);
         restoreRack(gameState, snapshot, localPlayerId);
         return gameState;
     }
@@ -78,6 +79,12 @@ final class ClientPreviewStateFactory {
                     .getBoard()
                     .getCell(new Position(boardCell.getRow(), boardCell.getCol()))
                     .setPlacedTile(tile);
+        }
+    }
+
+    private static void restoreFirstMoveState(GameState gameState) {
+        if (!gameState.getBoard().isEmpty()) {
+            gameState.markFirstMoveMade();
         }
     }
 

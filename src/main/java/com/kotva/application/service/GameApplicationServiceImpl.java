@@ -1,6 +1,7 @@
 package com.kotva.application.service;
 
 import com.kotva.application.draft.DraftManager;
+import com.kotva.application.draft.DraftPlacement;
 import com.kotva.application.draft.TurnDraftActionMapper;
 import com.kotva.application.preview.PreviewResult;
 import com.kotva.application.session.GameSession;
@@ -99,6 +100,11 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         }
 
         tile.setAssignedLetter(normalizedLetter);
+        session.getTurnDraft().getAssignedLettersByTileId().put(tileId, normalizedLetter);
+        DraftPlacement placement = draftManager.findPlacementByTileId(session.getTurnDraft(), tileId);
+        if (placement != null) {
+            placement.setAssignedLetter(normalizedLetter);
+        }
         if (session.getTurnDraft().getPlacements().isEmpty()) {
             session.getTurnDraft().setPreviewResult(null);
             return;
@@ -231,7 +237,7 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         PlayerAction action,
         String actionId,
         String clientActionId) {
-        if (hasUnassignedBlankTile(session)) {
+        if (hasUnassignedBlankTile(session, action)) {
             return failureResult(
                 actionId,
                 clientActionId,
@@ -417,10 +423,13 @@ public class GameApplicationServiceImpl implements GameApplicationService {
         }
     }
 
-    private boolean hasUnassignedBlankTile(GameSession session) {
-        for (var placement : session.getTurnDraft().getPlacements()) {
-            Tile tile = session.getGameState().getTileBag().getTileById(placement.getTileId());
-            if (tile != null && tile.isBlank() && tile.getAssignedLetter() == null) {
+    private boolean hasUnassignedBlankTile(GameSession session, PlayerAction action) {
+        for (var placement : action.placements()) {
+            Tile tile = session.getGameState().getTileBag().getTileById(placement.tileId());
+            if (tile != null
+                && tile.isBlank()
+                && tile.getAssignedLetter() == null
+                && placement.assignedLetter() == null) {
                 return true;
             }
         }

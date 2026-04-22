@@ -16,6 +16,7 @@ import com.kotva.application.draft.DraftManager;
 import com.kotva.domain.model.GameState;
 import com.kotva.domain.model.Player;
 import com.kotva.domain.model.Position;
+import com.kotva.domain.model.Tile;
 import com.kotva.infrastructure.network.CommandEnvelope;
 import com.kotva.infrastructure.network.LanClientTransport;
 import com.kotva.infrastructure.network.LanInboundMessage;
@@ -92,6 +93,36 @@ public class LanClientServiceTest {
                     && tileId.equals(boardCell.getTileId())));
     }
 
+    @Test
+    public void uiSnapshotPreservesLocalBlankAssignmentForRackDisplay() {
+        ClientGameContext context = createContextWithGuestBlankRackTile();
+        LanClientService service = new LanClientService(context, new NoOpLanClientTransport());
+        String blankTileId = context.getLatestSnapshot().getCurrentRackTiles().stream()
+            .filter(rackTile -> rackTile.isBlank() && rackTile.getTileId() != null)
+            .findFirst()
+            .orElseThrow()
+            .getTileId();
+
+        service.assignBlankTileLetter(blankTileId, 'q');
+
+        GameSessionSnapshot uiSnapshot = service.getUiSnapshot();
+
+        assertEquals(
+            Character.valueOf('Q'),
+            uiSnapshot.getCurrentRackTiles().stream()
+                .filter(rackTile -> blankTileId.equals(rackTile.getTileId()))
+                .findFirst()
+                .orElseThrow()
+                .getAssignedLetter());
+        assertEquals(
+            Character.valueOf('Q'),
+            uiSnapshot.getCurrentRackTiles().stream()
+                .filter(rackTile -> blankTileId.equals(rackTile.getTileId()))
+                .findFirst()
+                .orElseThrow()
+                .getDisplayLetter());
+    }
+
     private ClientGameContext createContext(String currentPlayerId, String localPlayerId) {
         GameConfig config = createConfig();
         GameSessionSnapshot initialSnapshot = createViewerSnapshot(config, currentPlayerId, localPlayerId);
@@ -123,6 +154,19 @@ public class LanClientServiceTest {
                 new PlayerConfig("Guest", PlayerType.LAN)),
             DictionaryType.AM,
             null);
+    }
+
+    private ClientGameContext createContextWithGuestBlankRackTile() {
+        GameConfig config = createConfig();
+        Player host = new Player(HOST_PLAYER_ID, "Host", PlayerType.LOCAL);
+        Player guest = new Player(GUEST_PLAYER_ID, "Guest", PlayerType.LAN);
+        guest.getRack().setTileAt(0, new Tile("blank-1", ' ', 0, true));
+        guest.getRack().setTileAt(1, new Tile("tile-a", 'A', 1, false));
+        GameSession session = new GameSession("session-blank", config, new GameState(List.of(host, guest)));
+        session.setSessionStatus(SessionStatus.IN_PROGRESS);
+        session.getGameState().advanceToNextActivePlayer();
+        GameSessionSnapshot snapshot = GameSessionSnapshotFactory.fromSessionForViewer(session, GUEST_PLAYER_ID);
+        return new ClientGameContext(config, snapshot, GUEST_PLAYER_ID);
     }
 
     private static final class NoOpLanClientTransport implements LanClientTransport {

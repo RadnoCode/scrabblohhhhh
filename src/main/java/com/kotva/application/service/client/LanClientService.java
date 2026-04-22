@@ -72,6 +72,12 @@ public class LanClientService {
         return draftService.removeDraftTile(tileId);
     }
 
+    public void assignBlankTileLetter(String tileId, char assignedLetter) {
+        ensureInteractiveEditingAllowed();
+        clearStatusMessage();
+        draftService.assignBlankTileLetter(tileId, assignedLetter);
+    }
+
     public PreviewResult recallAllDraftTiles() {
         ensureInteractiveEditingAllowed();
         clearStatusMessage();

@@ -18,7 +18,11 @@ public final class TurnDraftActionMapper {
         List<ActionPlacement> placements = new ArrayList<>(turnDraft.getPlacements().size());
         for (DraftPlacement placement : turnDraft.getPlacements()) {
             Objects.requireNonNull(placement, "draft placement cannot be null.");
-            placements.add(new ActionPlacement(placement.getTileId(), placement.getPosition()));
+            placements.add(
+                new ActionPlacement(
+                    placement.getTileId(),
+                    placement.getPosition(),
+                    placement.getAssignedLetter()));
         }
         return PlayerAction.place(playerId, placements);
     }

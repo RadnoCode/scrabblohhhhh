@@ -17,6 +17,8 @@ import com.kotva.domain.endgame.GameEndReason;
 import com.kotva.application.session.GameConfig;
 import com.kotva.application.session.GameSession;
 import com.kotva.application.session.PlayerConfig;
+import com.kotva.domain.action.ActionPlacement;
+import com.kotva.domain.action.PlayerAction;
 import com.kotva.domain.model.GameState;
 import com.kotva.domain.model.Player;
 import com.kotva.domain.model.Position;
@@ -239,6 +241,34 @@ public class GameApplicationServiceImplSubmitDraftTest {
     }
 
         @Test
+    public void executeRemoteCommandUsesAssignedLettersForBlankPlacements() {
+        RecordingSettlementService settlementService = new RecordingSettlementService();
+        GameSession session = createInProgressSession(settlementService);
+        GameApplicationServiceImpl service =
+        new GameApplicationServiceImpl(new ClockServiceImpl(), new StubDictionaryRepository(Set.of("AT")));
+        Player currentPlayer = session.getGameState().requireCurrentActivePlayer();
+        TileBag tileBag = session.getGameState().getTileBag();
+        Tile tileA = drawTileWithLetter(tileBag, 'A');
+        Tile blank = drawBlankTile(tileBag);
+        currentPlayer.getRack().setTileAt(0, tileA);
+        currentPlayer.getRack().setTileAt(1, blank);
+
+        PlayerAction action = PlayerAction.place(
+            currentPlayer.getPlayerId(),
+            List.of(
+                new ActionPlacement(tileA.getTileID(), new Position(7, 7)),
+                new ActionPlacement(blank.getTileID(), new Position(7, 8), 't')));
+
+        GameActionResult result = service.executeRemoteCommand(session, action, "remote-submit-1");
+
+        assertTrue(result.isSuccess());
+        Tile committedBlank = session.getGameState().getBoard().getCell(new Position(7, 8)).getPlacedTile();
+        assertNotNull(committedBlank);
+        assertEquals(Character.valueOf('T'), committedBlank.getAssignedLetter());
+        assertTrue(committedBlank.isFixed());
+    }
+
+        @Test
     public void draftEditingUpdatesOnlyDraftAndPreview() {
         RecordingSettlementService settlementService = new RecordingSettlementService();
         GameSession session = createInProgressSession(settlementService);
@@ -247,9 +277,10 @@ public class GameApplicationServiceImplSubmitDraftTest {
         Tile tile = drawTileWithLetter(session.getGameState().getTileBag(), 'A');
 
         PreviewResult placed = service.placeDraftTile(session, tile.getTileID(), new Position(7, 7));
-        assertTrue(placed.isValid());
+        assertFalse(placed.isValid());
         assertEquals(0, placed.getEstimatedScore());
         assertFalse(placed.getHighlights().isEmpty());
+        assertEquals("At least one new word must be formed", placed.getMessages().get(0));
         assertEquals(1, session.getTurnDraft().getPlacements().size());
         assertNotNull(session.getTurnDraft().getPreviewResult());
 
@@ -478,13 +509,23 @@ public class GameApplicationServiceImplSubmitDraftTest {
     }
 
     private static class StubDictionaryRepository extends DictionaryRepository {
+        private final Set<String> acceptedWords;
+
+        private StubDictionaryRepository() {
+            this(Set.of("AT"));
+        }
+
+        private StubDictionaryRepository(Set<String> acceptedWords) {
+            this.acceptedWords = acceptedWords;
+        }
+
             @Override
         public void loadDictionary(DictionaryType dictionaryType) {
         }
 
             @Override
         public Set<String> getDictionary() {
-            return Set.of("AT");
+            return acceptedWords;
         }
 
             @Override
@@ -494,7 +535,7 @@ public class GameApplicationServiceImplSubmitDraftTest {
 
             @Override
         public boolean isAccepted(String word) {
-            return "AT".equalsIgnoreCase(word);
+            return acceptedWords.contains(word.toUpperCase());
         }
     }
 

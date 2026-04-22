@@ -912,10 +912,20 @@ public class GameController implements GameActionPort {
         }
     }
 
+    static GameActionResult resolveLatestActionResult(GameRuntime gameRuntime) {
+        if (gameRuntime == null || !gameRuntime.hasSession()) {
+            return null;
+        }
+        GameSession session = gameRuntime.getSession();
+        if (session != null) {
+            return session.getLatestActionResult();
+        }
+        GameSessionSnapshot snapshot = gameRuntime.getSessionSnapshot();
+        return snapshot == null ? null : snapshot.getLatestActionResult();
+    }
+
     private GameActionResult latestActionResult() {
-        return gameRuntime != null && gameRuntime.hasSession()
-            ? gameRuntime.getSession().getLatestActionResult()
-            : null;
+        return resolveLatestActionResult(gameRuntime);
     }
 
     private boolean wasRejected(GameActionResult latestBeforeAction) {

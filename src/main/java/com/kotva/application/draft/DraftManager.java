@@ -14,8 +14,11 @@ public class DraftManager {
             existingPlacement.setPosition(position);
         }
         else{
-
-            turnDraft.getPlacements().add(new DraftPlacement(tileId, position));
+            turnDraft.getPlacements().add(
+                new DraftPlacement(
+                    tileId,
+                    position,
+                    turnDraft.getAssignedLettersByTileId().get(tileId)));
         }
     }
 

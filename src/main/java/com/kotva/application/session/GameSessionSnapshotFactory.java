@@ -86,12 +86,13 @@ public final class GameSessionSnapshotFactory {
 
         PreviewSnapshot previewSnapshot = buildPreviewSnapshot(turnDraft.getPreviewResult());
         List<DraftPlacementSnapshot> draftPlacements = buildDraftPlacements(turnDraft);
+        List<RackTileSnapshot> visibleRackTiles = buildVisibleRackTiles(baseSnapshot, turnDraft);
         List<BoardCellRenderSnapshot> boardCells =
-                buildBoardCells(baseSnapshot, turnDraft, previewSnapshot);
+                buildBoardCells(baseSnapshot, turnDraft, previewSnapshot, visibleRackTiles);
         return copyOf(
                 baseSnapshot,
                 boardCells,
-                baseSnapshot.getVisibleRackTiles(),
+                visibleRackTiles,
                 draftPlacements,
                 previewSnapshot,
                 baseSnapshot.getAiRuntimeSnapshot(),
@@ -507,10 +508,34 @@ public final class GameSessionSnapshotFactory {
         return boardCells;
     }
 
+    private static List<RackTileSnapshot> buildVisibleRackTiles(
+            GameSessionSnapshot baseSnapshot,
+            TurnDraft turnDraft) {
+        List<RackTileSnapshot> visibleRackTiles = new ArrayList<>();
+        for (RackTileSnapshot visibleRackTile : baseSnapshot.getVisibleRackTiles()) {
+            Character assignedLetter = turnDraft.getAssignedLettersByTileId().get(visibleRackTile.getTileId());
+            if (!visibleRackTile.isBlank() || assignedLetter == null) {
+                visibleRackTiles.add(visibleRackTile);
+                continue;
+            }
+
+            visibleRackTiles.add(new RackTileSnapshot(
+                    visibleRackTile.getSlotIndex(),
+                    visibleRackTile.getTileId(),
+                    visibleRackTile.getLetter(),
+                    assignedLetter,
+                    visibleRackTile.getScore(),
+                    true,
+                    assignedLetter));
+        }
+        return visibleRackTiles;
+    }
+
     private static List<BoardCellRenderSnapshot> buildBoardCells(
             GameSessionSnapshot baseSnapshot,
             TurnDraft turnDraft,
-            PreviewSnapshot previewSnapshot) {
+            PreviewSnapshot previewSnapshot,
+            List<RackTileSnapshot> visibleRackTiles) {
         Map<BoardPositionKey, DraftPlacement> draftPlacementsByPosition = new HashMap<>();
         for (DraftPlacement placement : turnDraft.getPlacements()) {
             if (placement == null || placement.getPosition() == null) {
@@ -524,7 +549,7 @@ public final class GameSessionSnapshotFactory {
         }
 
         Map<String, RackTileSnapshot> visibleRackTilesById = new HashMap<>();
-        for (RackTileSnapshot visibleRackTile : baseSnapshot.getVisibleRackTiles()) {
+        for (RackTileSnapshot visibleRackTile : visibleRackTiles) {
             if (visibleRackTile.getTileId() != null) {
                 visibleRackTilesById.put(visibleRackTile.getTileId(), visibleRackTile);
             }

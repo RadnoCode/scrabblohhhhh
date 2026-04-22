@@ -7,6 +7,7 @@ import com.kotva.application.draft.TurnDraftActionMapper;
 import com.kotva.application.preview.PreviewResult;
 import com.kotva.application.session.GameSessionSnapshot;
 import com.kotva.application.session.GameSessionSnapshotFactory;
+import com.kotva.application.session.RackTileSnapshot;
 import com.kotva.domain.action.PlayerAction;
 import com.kotva.domain.model.Position;
 import com.kotva.policy.SessionStatus;
@@ -52,6 +53,32 @@ public class ClientDraftService {
         ensureEditingAllowed();
         draftManager.removeTile(turnDraft, tileId);
         return refreshPreview();
+    }
+
+    public void assignBlankTileLetter(String tileId, char assignedLetter) {
+        ensureEditingAllowed();
+        Objects.requireNonNull(tileId, "tileId cannot be null.");
+        char normalizedLetter = Character.toUpperCase(assignedLetter);
+        if (normalizedLetter < 'A' || normalizedLetter > 'Z') {
+            throw new IllegalArgumentException("Assigned letter must be between A and Z.");
+        }
+
+        RackTileSnapshot rackTileSnapshot = context.getLatestSnapshot().getVisibleRackTiles().stream()
+            .filter(visibleRackTile -> tileId.equals(visibleRackTile.getTileId()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Unknown tileId: " + tileId));
+        if (!rackTileSnapshot.isBlank()) {
+            throw new IllegalArgumentException("Tile is not a blank tile: " + tileId);
+        }
+
+        turnDraft.getAssignedLettersByTileId().put(tileId, normalizedLetter);
+        DraftPlacement draftPlacement = draftManager.findPlacementByTileId(turnDraft, tileId);
+        if (draftPlacement != null) {
+            draftPlacement.setAssignedLetter(normalizedLetter);
+            refreshPreview();
+            return;
+        }
+        turnDraft.setPreviewResult(null);
     }
 
     public PreviewResult recallAllDraftTiles() {
