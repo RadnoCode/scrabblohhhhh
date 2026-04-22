@@ -42,8 +42,13 @@ public class QuackleNativeBridgeSmokeTest {
             AiMove move = moveOptions.moves().get(0);
             assertEquals(move, engine.chooseMove(snapshot));
             assertNotNull(move.action());
-            if (move.action() == AiMove.Action.PLACE) {
-                assertTrue(!move.placements().isEmpty());
+            for (AiMove candidate : moveOptions.moves()) {
+                if (candidate.action() != AiMove.Action.PLACE) {
+                    continue;
+                }
+                assertTrue(!candidate.placements().isEmpty());
+                assertTrue(containsCenter(candidate));
+                assertTrue(allPlacementsWithinBoard(candidate));
             }
         }
     }
@@ -70,7 +75,24 @@ public class QuackleNativeBridgeSmokeTest {
             assertEquals(AiMove.Action.PLACE, moveOptions.moves().get(0).action());
             assertTrue(
                 moveOptions.moves().stream().anyMatch(move -> move.action() == AiMove.Action.PLACE));
+            assertTrue(
+                moveOptions.moves().stream()
+                    .filter(move -> move.action() == AiMove.Action.PLACE)
+                    .allMatch(QuackleNativeBridgeSmokeTest::allPlacementsWithinBoard));
         }
+    }
+
+    private static boolean containsCenter(AiMove move) {
+        return move.placements().stream().anyMatch(placement -> placement.row() == 7 && placement.col() == 7);
+    }
+
+    private static boolean allPlacementsWithinBoard(AiMove move) {
+        return move.placements().stream()
+            .allMatch(placement ->
+                placement.row() >= 0
+                && placement.row() < AiPositionSnapshot.BOARD_SIDE
+                && placement.col() >= 0
+                && placement.col() < AiPositionSnapshot.BOARD_SIDE);
     }
 
     private static List<AiPositionSnapshot.BoardCell> emptyBoard() {

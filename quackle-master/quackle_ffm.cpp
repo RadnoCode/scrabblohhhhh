@@ -11,6 +11,7 @@
 #include "alphabetparameters.h"
 #include "bag.h"
 #include "board.h"
+#include "boardparameters.h"
 #include "computerplayer.h"
 #include "datamanager.h"
 #include "game.h"
@@ -86,6 +87,61 @@ struct EngineConfig {
     std::string dataDir;
     std::string dictionaryKey;
     std::string difficultyKey;
+};
+
+// The app models a standard 15x15 Scrabble board. Quackle's default
+// EnglishBoard is a 13x17 variant, so the bridge must override it explicitly.
+struct StandardScrabbleBoard : public Quackle::BoardParameters {
+    StandardScrabbleBoard() {
+        m_width = kBoardSide;
+        m_height = kBoardSide;
+        m_startRow = 7;
+        m_startColumn = 7;
+        m_name = MARK_UV("Scrabble Board");
+
+        const int letterm[kBoardSide][kBoardSide] = {
+            {1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1},
+            {1, 1, 1, 1, 1, 3, 1, 1, 1, 3, 1, 1, 1, 1, 1},
+            {1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1},
+            {2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2},
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            {1, 3, 1, 1, 1, 3, 1, 1, 1, 3, 1, 1, 1, 3, 1},
+            {1, 1, 2, 1, 1, 1, 2, 1, 2, 1, 1, 1, 2, 1, 1},
+            {1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1},
+            {1, 1, 2, 1, 1, 1, 2, 1, 2, 1, 1, 1, 2, 1, 1},
+            {1, 3, 1, 1, 1, 3, 1, 1, 1, 3, 1, 1, 1, 3, 1},
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            {2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2},
+            {1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1},
+            {1, 1, 1, 1, 1, 3, 1, 1, 1, 3, 1, 1, 1, 1, 1},
+            {1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1}
+        };
+
+        const int wordm[kBoardSide][kBoardSide] = {
+            {3, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 3},
+            {1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1},
+            {1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1},
+            {1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1},
+            {1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1},
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            {3, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 3},
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            {1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1},
+            {1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1},
+            {1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1},
+            {1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1},
+            {3, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 3}
+        };
+
+        for (int row = 0; row < kBoardSide; ++row) {
+            for (int col = 0; col < kBoardSide; ++col) {
+                m_letterMultipliers[row][col] = letterm[row][col];
+                m_wordMultipliers[row][col] = wordm[row][col];
+            }
+        }
+    }
 };
 
 std::mutex g_engineMutex;
@@ -286,6 +342,7 @@ bool ensureDataManagerLoaded(const EngineConfig &config, std::string *error) {
     g_dataManager->setAppDataDirectory(config.dataDir);
     g_dataManager->setUserDataDirectory(config.dataDir);
     g_dataManager->setBackupLexicon("default_english");
+    g_dataManager->setBoardParameters(new StandardScrabbleBoard());
 
     const std::string dawgFile =
             Quackle::LexiconParameters::findDictionaryFile(config.dictionaryKey + ".dawg");

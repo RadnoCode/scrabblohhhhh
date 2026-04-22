@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class QuackleNativeBridge {
     private static final long ERROR_BUFFER_CAPACITY = 1024L;
     private static final int MAX_MOVE_OPTION_COUNT = 10;
+    private static final int MAX_PLACEMENT_COUNT = 7;
     private static final Set<Path> PRELOADED_NATIVE_DEPENDENCIES =
     ConcurrentHashMap.newKeySet();
 
@@ -392,10 +393,19 @@ public final class QuackleNativeBridge {
             if (actionValue == 0) {
                 return new AiMove(AiMove.Action.PASS, List.of(), score, equity, win);
             }
+            if (actionValue != 1) {
+                throw new IllegalStateException("Unsupported native AI action: " + actionValue);
+            }
 
             int placementCount = result.get(ValueLayout.JAVA_INT, RESULT_PLACEMENT_COUNT_OFFSET);
-            List<AiMove.Placement> placements = new ArrayList<>(placementCount);
-            for (int index = 0; index < placementCount; index++) {
+            int boundedPlacementCount = Math.max(0, Math.min(placementCount, MAX_PLACEMENT_COUNT));
+            if (placementCount != boundedPlacementCount) {
+                throw new IllegalStateException(
+                    "Unsupported native AI placement count: " + placementCount);
+            }
+
+            List<AiMove.Placement> placements = new ArrayList<>(boundedPlacementCount);
+            for (int index = 0; index < boundedPlacementCount; index++) {
                 MemorySegment placement = result.asSlice(
                     RESULT_PLACEMENTS_OFFSET + index * PLACEMENT_LAYOUT.byteSize(),
                     PLACEMENT_LAYOUT.byteSize());
@@ -422,9 +432,21 @@ public final class QuackleNativeBridge {
                 MemorySegment moveResult = resultList.asSlice(
                     RESULT_LIST_MOVES_OFFSET + index * RESULT_LAYOUT.byteSize(),
                     RESULT_LAYOUT.byteSize());
-                moves.add(decodeMove(moveResult));
+                try {
+                    moves.add(decodeMove(moveResult));
+                } catch (RuntimeException exception) {
+                    logSkippedInvalidMove(index, exception);
+                }
             }
             return new AiMoveOptionSet(prioritizePlayableMoves(moves));
+        }
+
+        private static void logSkippedInvalidMove(int moveIndex, RuntimeException exception) {
+            System.err.println(
+                "Skipping invalid native AI move option "
+                + (moveIndex + 1)
+                + ": "
+                + exception.getMessage());
         }
 
         private static List<AiMove> prioritizePlayableMoves(List<AiMove> moves) {
