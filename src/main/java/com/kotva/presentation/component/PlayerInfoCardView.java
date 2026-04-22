@@ -1,18 +1,24 @@
 package com.kotva.presentation.component;
 
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 
 public class PlayerInfoCardView extends StackPane {
     private static final double CARD_WIDTH = 288;
     private static final double CARD_HEIGHT = 96;
-    private static final double AVATAR_SIZE = 56;
+    private static final double AVATAR_WIDTH = 82;
+    private static final double AVATAR_HEIGHT = 60;
+    private static final double AVATAR_X = 10;
+    private static final double AVATAR_Y = 10;
+    private static final double NAME_X = 89;
+    private static final double NAME_Y = 29;
+    private static final double NAME_WIDTH = 108;
+    private static final double SCORE_VALUE_X = 141;
+    private static final double SCORE_VALUE_Y = 53;
+    private static final double STEP_MARK_X = 90;
+    private static final double STEP_MARK_Y = 70;
 
     private final Label avatarLabel;
     private final Label playerNameLabel;
@@ -37,13 +43,14 @@ public class PlayerInfoCardView extends StackPane {
         setPrefSize(CARD_WIDTH, CARD_HEIGHT);
         setMinSize(CARD_WIDTH, CARD_HEIGHT);
         setMaxSize(CARD_WIDTH, CARD_HEIGHT);
-        setPadding(new Insets(10, 16, 10, 14));
+        setPadding(new Insets(0));
 
         StackPane avatarPane = new StackPane(avatarLabel);
         avatarPane.getStyleClass().add("game-player-avatar");
-        avatarPane.setPrefSize(AVATAR_SIZE, AVATAR_SIZE);
-        avatarPane.setMinSize(AVATAR_SIZE, AVATAR_SIZE);
-        avatarPane.setMaxSize(AVATAR_SIZE, AVATAR_SIZE);
+        avatarPane.setPrefSize(AVATAR_WIDTH, AVATAR_HEIGHT);
+        avatarPane.setMinSize(AVATAR_WIDTH, AVATAR_HEIGHT);
+        avatarPane.setMaxSize(AVATAR_WIDTH, AVATAR_HEIGHT);
+        avatarPane.relocate(AVATAR_X, AVATAR_Y);
 
         avatarLabel.getStyleClass().add("game-player-avatar-text");
 
@@ -52,27 +59,24 @@ public class PlayerInfoCardView extends StackPane {
         playerScoreLabel.getStyleClass().add("game-player-score");
         stepMarkTitleLabel.getStyleClass().add("game-player-step-mark-title");
         stepMarkValueLabel.getStyleClass().add("game-player-step-mark-value");
+        playerNameLabel.setPrefWidth(NAME_WIDTH);
+        playerNameLabel.setMinWidth(NAME_WIDTH);
+        playerNameLabel.setMaxWidth(NAME_WIDTH);
+        playerNameLabel.relocate(NAME_X, NAME_Y);
+        playerIdLabel.setManaged(false);
+        playerIdLabel.setVisible(false);
 
-        Region scoreSpacer = new Region();
-        HBox.setHgrow(scoreSpacer, Priority.ALWAYS);
+        playerScoreLabel.relocate(SCORE_VALUE_X, SCORE_VALUE_Y);
+        stepMarkTitleLabel.relocate(STEP_MARK_X, STEP_MARK_Y);
+        stepMarkValueLabel.relocate(STEP_MARK_X + 53, STEP_MARK_Y);
 
-        Region leaderPlaceholder = new Region();
-        leaderPlaceholder.getStyleClass().add("game-player-lead-placeholder");
-        leaderPlaceholder.setPrefSize(18, 12);
-        leaderPlaceholder.setMinSize(18, 12);
-        leaderPlaceholder.setMaxSize(18, 12);
-
-        HBox scoreRow = new HBox(4, playerScoreLabel, scoreSpacer, leaderPlaceholder);
-        scoreRow.setAlignment(Pos.CENTER_LEFT);
-
-        HBox stepMarkRow = new HBox(2, stepMarkTitleLabel, stepMarkValueLabel);
-        stepMarkRow.setAlignment(Pos.CENTER_LEFT);
-
-        VBox textColumn = new VBox(1, playerNameLabel, playerIdLabel, scoreRow, stepMarkRow);
-        textColumn.setAlignment(Pos.CENTER_LEFT);
-
-        HBox content = new HBox(18, avatarPane, textColumn);
-        content.setAlignment(Pos.CENTER_LEFT);
+        Pane content = new Pane(
+            avatarPane,
+            playerNameLabel,
+            playerScoreLabel,
+            stepMarkTitleLabel,
+            stepMarkValueLabel);
+        content.setPrefSize(CARD_WIDTH, CARD_HEIGHT);
         getChildren().add(content);
     }
 
@@ -85,7 +89,7 @@ public class PlayerInfoCardView extends StackPane {
         boolean active) {
         playerNameLabel.setText(playerName);
         playerIdLabel.setText(playerId);
-        playerScoreLabel.setText("Score  " + score);
+        playerScoreLabel.setText(String.valueOf(score));
         stepMarkValueLabel.setText(stepMarkText);
         avatarLabel.setText(buildInitials(playerName));
         updateStateClasses(currentTurn, active);

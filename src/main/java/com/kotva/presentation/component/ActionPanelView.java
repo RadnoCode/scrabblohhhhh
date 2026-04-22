@@ -6,16 +6,16 @@ import javafx.scene.layout.StackPane;
 
 public class ActionPanelView extends StackPane {
     private static final String HIGHLIGHT_STYLE = "action-panel-button-highlight";
-    private static final double PANEL_WIDTH = 188;
+    private static final double PANEL_WIDTH = 276;
     private static final double PANEL_HEIGHT = 276;
-    private static final double BUTTON_WIDTH = 160;
+    private static final double BUTTON_WIDTH = 234;
     private static final double BUTTON_HEIGHT = 40;
 
     private static final double SKIP_CENTER_Y = 43.8;
     private static final double REARRANGE_CENTER_Y = 92.9;
-    private static final double RECALL_CENTER_Y = 137.9;
+    private static final double RECALL_CENTER_Y = 139.8;
     private static final double RESIGN_CENTER_Y = 190.0;
-    private static final double SUBMIT_CENTER_Y = 237.8;
+    private static final double SUBMIT_CENTER_Y = 237.9;
 
     private final WorkbenchButton skipTurnButton;
     private final WorkbenchButton rearrangeButton;
