@@ -30,6 +30,7 @@ public class SliderButton extends CommonButton {
         leftLabel.getStyleClass().add("setting-item-label");
         slider.getStyleClass().add("slider-button-control");
         valueLabel.getStyleClass().add("slider-value-label");
+        valueLabel.setAlignment(Pos.CENTER_RIGHT);
 
         slider.setPrefWidth(136);
         slider.valueProperty().addListener((observable, oldValue, newValue) -> {

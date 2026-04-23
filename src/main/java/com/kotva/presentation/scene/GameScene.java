@@ -34,6 +34,7 @@ public class GameScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
     private static final double SIDE_CARD_GAP = 12;
+    private static final double SIDE_COLUMN_WIDTH = TutorialOverlayView.CARD_WIDTH;
 
     public GameScene(GameController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -84,6 +85,9 @@ public class GameScene extends Scene {
 
         VBox leftColumn = new VBox(10, leftTopCard, leftBottomCard, leftSpacer, leftBottomGroup);
         leftColumn.setAlignment(Pos.TOP_CENTER);
+        leftColumn.setPrefWidth(SIDE_COLUMN_WIDTH);
+        leftColumn.setMinWidth(SIDE_COLUMN_WIDTH);
+        leftColumn.setMaxWidth(SIDE_COLUMN_WIDTH);
         leftColumn.setPrefHeight(boardHeight);
         leftColumn.setMinHeight(boardHeight);
         leftColumn.setMaxHeight(boardHeight);
@@ -109,13 +113,13 @@ public class GameScene extends Scene {
         StackPane rightTopSlot = new StackPane(rightInfoCards, tutorialOverlayView);
         rightTopSlot.setAlignment(Pos.TOP_CENTER);
         rightTopSlot.setPrefSize(
-            PlayerInfoCardView.CARD_WIDTH,
+            SIDE_COLUMN_WIDTH,
             PlayerInfoCardView.CARD_HEIGHT * 2 + SIDE_CARD_GAP);
         rightTopSlot.setMinSize(
-            PlayerInfoCardView.CARD_WIDTH,
+            SIDE_COLUMN_WIDTH,
             PlayerInfoCardView.CARD_HEIGHT * 2 + SIDE_CARD_GAP);
         rightTopSlot.setMaxSize(
-            PlayerInfoCardView.CARD_WIDTH,
+            SIDE_COLUMN_WIDTH,
             PlayerInfoCardView.CARD_HEIGHT * 2 + SIDE_CARD_GAP);
 
         VBox rightColumn = new VBox(12, rightTopSlot, rightSpacer, actionPanel);

@@ -93,7 +93,7 @@
     -fx-padding: 4 12 4 12;
     -fx-font-size: 22px;
     -fx-font-weight: 700;
-    -fx-alignment: CENTER_LEFT;
+    -fx-alignment: CENTER_RIGHT;
     -fx-display-caret: true;
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
@@ -138,11 +138,14 @@
     -fx-border-color: transparent;
     -fx-padding: 4 12 4 12;
     -fx-cursor: hand;
+    -fx-alignment: CENTER_RIGHT;
 }
 
 .switch-button-value {
     -fx-font-size: 22px;
     -fx-font-weight: 700;
+    -fx-alignment: CENTER_RIGHT;
+    -fx-text-alignment: right;
 }
 
 .switch-trigger-dark {
@@ -175,6 +178,8 @@
     -fx-font-weight: 800;
     -fx-min-width: 38;
     -fx-padding: 0 0 0 40;
+    -fx-alignment: CENTER_RIGHT;
+    -fx-text-alignment: right;
 }
 
 .locked-button {

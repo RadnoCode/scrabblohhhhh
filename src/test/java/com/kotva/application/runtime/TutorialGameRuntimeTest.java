@@ -48,7 +48,7 @@ public class TutorialGameRuntimeTest {
         runtime.placeDraftTile(tileC.getTileID(), new Position(0, 0));
 
         assertFalse(runtime.getSession().getLatestActionResult().isSuccess());
-        assertTrue(runtime.getSession().getLatestActionResult().getMessage().contains("高亮提示"));
+        assertTrue(runtime.getSession().getLatestActionResult().getMessage().contains("highlighted position"));
 
         runtime.placeDraftTile(tileC.getTileID(), new Position(7, 6));
         runtime.placeDraftTile(findRackTile(runtime, 'A').getTileID(), new Position(7, 7));
@@ -129,7 +129,7 @@ public class TutorialGameRuntimeTest {
 
         runtime.placeDraftTile(findRackTile(runtime, 'D').getTileID(), new Position(7, 6));
         assertFalse(runtime.getSession().getLatestActionResult().isSuccess());
-        assertTrue(runtime.getSession().getLatestActionResult().getMessage().contains("教程"));
+        assertTrue(runtime.getSession().getLatestActionResult().getMessage().contains("tutorial step"));
 
         runtime.recordTutorialEvent(TutorialUiEvent.REARRANGE_USED);
         runtime.placeDraftTile(findRackTile(runtime, 'D').getTileID(), new Position(7, 6));
@@ -139,6 +139,7 @@ public class TutorialGameRuntimeTest {
         GameSessionSnapshot finalSnapshot = runtime.getSessionSnapshot();
         assertEquals(8, finalSnapshot.getTutorial().getStepNumber());
         assertTrue(finalSnapshot.getTutorial().isShowReturnHomeButton());
+        assertFalse(finalSnapshot.getTutorial().isShowExitButton());
     }
 
     private void advanceToLegalityStep(TutorialGameRuntime runtime) {

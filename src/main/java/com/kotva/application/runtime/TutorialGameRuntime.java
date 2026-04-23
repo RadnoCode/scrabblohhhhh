@@ -105,11 +105,11 @@ final class TutorialGameRuntime implements GameRuntime {
     @Override
     public void placeDraftTile(String tileId, Position position) {
         if (!isBoardEditEnabled()) {
-            reject(ActionType.PLACE_TILE, "这一阶段只能按照教程要求操作。");
+            reject(ActionType.PLACE_TILE, "You cannot place draft tiles during this tutorial step.");
             return;
         }
         if (!isAllowedPlacement(tileId, position)) {
-            reject(ActionType.PLACE_TILE, "请把棋子拖到高亮提示的位置。");
+            reject(ActionType.PLACE_TILE, "Please drag the tile to the highlighted position.");
             return;
         }
 
@@ -120,15 +120,15 @@ final class TutorialGameRuntime implements GameRuntime {
     @Override
     public void moveDraftTile(String tileId, Position position) {
         if (!isBoardEditEnabled()) {
-            reject(ActionType.PLACE_TILE, "这一阶段只能按照教程要求操作。");
+            reject(ActionType.PLACE_TILE, "You cannot move draft tiles during this tutorial step.");
             return;
         }
         if (lockedPresetDraftTileIds.contains(tileId)) {
-            reject(ActionType.PLACE_TILE, "这个提示棋子不能移动。");
+            reject(ActionType.PLACE_TILE, "This preset draft tile cannot be moved.");
             return;
         }
         if (!isAllowedPlacement(tileId, position)) {
-            reject(ActionType.PLACE_TILE, "请把棋子拖到高亮提示的位置。");
+            reject(ActionType.PLACE_TILE, "Please drag the tile to the highlighted position.");
             return;
         }
 
@@ -139,11 +139,11 @@ final class TutorialGameRuntime implements GameRuntime {
     @Override
     public void removeDraftTile(String tileId) {
         if (!isBoardEditEnabled()) {
-            reject(ActionType.PLACE_TILE, "这一阶段不能收回棋子。");
+            reject(ActionType.PLACE_TILE, "You cannot remove draft tiles during this tutorial step.");
             return;
         }
         if (lockedPresetDraftTileIds.contains(tileId)) {
-            reject(ActionType.PLACE_TILE, "这个提示棋子不能移除。");
+            reject(ActionType.PLACE_TILE, "This preset draft tile cannot be removed.");
             return;
         }
 
@@ -152,7 +152,7 @@ final class TutorialGameRuntime implements GameRuntime {
 
     @Override
     public void recallAllDraftTiles() {
-        reject(ActionType.PLACE_TILE, "本教程步骤不需要 Recall。");
+        reject(ActionType.PLACE_TILE, "You cannot recall all draft tiles during this tutorial step.");
     }
 
     @Override
@@ -164,7 +164,7 @@ final class TutorialGameRuntime implements GameRuntime {
     public void submitDraft(String clientActionId) {
         TutorialStepDefinition step = getCurrentStep();
         if (!resolveEnabledActions(step).contains(TutorialActionKey.SUBMIT)) {
-            reject(ActionType.PLACE_TILE, "请先完成当前教程要求。");
+            reject(ActionType.PLACE_TILE, "Please complete the current tutorial requirement first.");
             return;
         }
 
@@ -185,7 +185,7 @@ final class TutorialGameRuntime implements GameRuntime {
 
     @Override
     public void passTurn(String clientActionId) {
-        reject(ActionType.PASS_TURN, "这一阶段只介绍 Skip，不会真的执行跳过。");
+        reject(ActionType.PASS_TURN, "This stage only introduces Skip, it will not actually execute the skip.");
     }
 
     @Override
@@ -195,7 +195,7 @@ final class TutorialGameRuntime implements GameRuntime {
 
     @Override
     public void resign(String clientActionId) {
-        reject(ActionType.LOSE, "这一阶段只介绍 Resign，不会真的退出教程。");
+        reject(ActionType.LOSE, "This stage only introduces Resign, it will not actually exit the tutorial.");
     }
 
     @Override
@@ -479,7 +479,7 @@ final class TutorialGameRuntime implements GameRuntime {
             step.title(),
             step.body(),
             step.advanceCondition() == TutorialAdvanceCondition.TAP,
-            true,
+            step.advanceCondition() != TutorialAdvanceCondition.RETURN_HOME,
             step.advanceCondition() == TutorialAdvanceCondition.RETURN_HOME,
             step.dimNonTargetBoardCells(),
             step.dimNonTargetRackSlots(),

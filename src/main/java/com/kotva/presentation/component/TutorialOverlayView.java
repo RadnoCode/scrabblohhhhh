@@ -14,8 +14,13 @@ import javafx.scene.Node;
 import javafx.scene.shape.Rectangle;
 
 public class TutorialOverlayView extends StackPane {
-    private static final double CARD_WIDTH = PlayerInfoCardView.CARD_WIDTH;
+    public static final double CARD_WIDTH = PlayerInfoCardView.CARD_WIDTH + 32;
     private static final double CARD_HEIGHT = PlayerInfoCardView.CARD_HEIGHT * 2 + 12;
+    private static final double CARD_PADDING = 14;
+    private static final double ACTION_ROW_GAP = 8;
+    private static final double BUTTON_WIDTH = 124;
+    private static final double BUTTON_HEIGHT = 32;
+    private static final double CONTENT_WIDTH = CARD_WIDTH - CARD_PADDING * 2;
 
     private final StackPane blockerPane;
     private final VBox card;
@@ -25,7 +30,6 @@ public class TutorialOverlayView extends StackPane {
     private final Label hintLabel;
     private final WorkbenchButton exitButton;
     private final WorkbenchButton returnHomeButton;
-    private HBox topActionRow;
     private HBox bottomActionRow;
     private boolean tapToContinue;
 
@@ -55,7 +59,7 @@ public class TutorialOverlayView extends StackPane {
         blockerPane.setMouseTransparent(true);
 
         card.getStyleClass().add("tutorial-overlay-card");
-        card.setPadding(new Insets(14));
+        card.setPadding(new Insets(CARD_PADDING));
         card.setAlignment(Pos.TOP_LEFT);
         card.setPrefSize(CARD_WIDTH, CARD_HEIGHT);
         card.setMinSize(CARD_WIDTH, CARD_HEIGHT);
@@ -67,13 +71,13 @@ public class TutorialOverlayView extends StackPane {
         titleLabel.getStyleClass().add("tutorial-overlay-title");
         bodyLabel.getStyleClass().add("tutorial-overlay-body");
         bodyLabel.setWrapText(true);
-        bodyLabel.setMaxWidth(CARD_WIDTH - 28);
+        bodyLabel.setMaxWidth(CONTENT_WIDTH);
         hintLabel.getStyleClass().add("tutorial-overlay-hint");
         hintLabel.setWrapText(true);
-        hintLabel.setMaxWidth(CARD_WIDTH - 28);
+        hintLabel.setMaxWidth(CONTENT_WIDTH - BUTTON_WIDTH - ACTION_ROW_GAP);
 
-        exitButton.setWorkbenchSize(124, 32);
-        returnHomeButton.setWorkbenchSize(124, 32);
+        exitButton.setWorkbenchSize(BUTTON_WIDTH, BUTTON_HEIGHT);
+        returnHomeButton.setWorkbenchSize(BUTTON_WIDTH, BUTTON_HEIGHT);
         exitButton.getStyleClass().add("tutorial-overlay-button");
         returnHomeButton.getStyleClass().add("tutorial-overlay-button");
 
@@ -90,16 +94,15 @@ public class TutorialOverlayView extends StackPane {
 
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
-        topActionRow = new HBox(8, hintLabel, returnHomeButton);
-        topActionRow.setAlignment(Pos.CENTER_LEFT);
-        bottomActionRow = new HBox(exitButton);
+        Region bottomSpacer = new Region();
+        HBox.setHgrow(bottomSpacer, Priority.ALWAYS);
+        bottomActionRow = new HBox(ACTION_ROW_GAP, hintLabel, bottomSpacer, returnHomeButton, exitButton);
         bottomActionRow.setAlignment(Pos.CENTER_RIGHT);
 
         card.getChildren().addAll(
             progressLabel,
             titleLabel,
             bodyLabel,
-            topActionRow,
             spacer,
             bottomActionRow);
         getChildren().addAll(blockerPane, card);
@@ -139,14 +142,14 @@ public class TutorialOverlayView extends StackPane {
         hintLabel.setManaged(tapToContinue);
         blockerPane.setVisible(false);
         blockerPane.setMouseTransparent(!tapToContinue);
-        exitButton.setVisible(safeModel.isShowExitButton());
-        exitButton.setManaged(safeModel.isShowExitButton());
-        returnHomeButton.setVisible(safeModel.isShowReturnHomeButton());
-        returnHomeButton.setManaged(safeModel.isShowReturnHomeButton());
-        topActionRow.setVisible(tapToContinue || safeModel.isShowReturnHomeButton());
-        topActionRow.setManaged(tapToContinue || safeModel.isShowReturnHomeButton());
-        bottomActionRow.setVisible(safeModel.isShowExitButton());
-        bottomActionRow.setManaged(safeModel.isShowExitButton());
+        boolean showReturnHomeButton = safeModel.isShowReturnHomeButton();
+        boolean showExitButton = safeModel.isShowExitButton() && !showReturnHomeButton;
+        exitButton.setVisible(showExitButton);
+        exitButton.setManaged(showExitButton);
+        returnHomeButton.setVisible(showReturnHomeButton);
+        returnHomeButton.setManaged(showReturnHomeButton);
+        bottomActionRow.setVisible(tapToContinue || showExitButton || showReturnHomeButton);
+        bottomActionRow.setManaged(tapToContinue || showExitButton || showReturnHomeButton);
     }
 
     private void handleCardClicked(MouseEvent event) {

@@ -40,8 +40,9 @@ public class SwitchButton extends CommonButton {
 
         leftLabel.getStyleClass().add("setting-item-label");
         valueLabel.getStyleClass().add("switch-button-value");
+        valueLabel.setAlignment(Pos.CENTER_RIGHT);
         switchTrigger.getStyleClass().add("switch-trigger");
-        switchTrigger.setAlignment(Pos.CENTER_LEFT);
+        switchTrigger.setAlignment(Pos.CENTER_RIGHT);
         setSwitchTriggerSize(DEFAULT_SWITCH_TRIGGER_WIDTH, DEFAULT_SWITCH_TRIGGER_HEIGHT);
         applySwitchTriggerTone();
 
