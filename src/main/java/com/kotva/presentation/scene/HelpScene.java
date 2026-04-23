@@ -5,12 +5,15 @@ import com.kotva.presentation.component.HelpIconView;
 import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.controller.HelpController;
 import com.kotva.presentation.viewmodel.HelpViewModel;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -37,8 +40,23 @@ public class HelpScene extends Scene {
         BorderPane.setMargin(titleBanner, new Insets(42, 100, 18, 100));
         root.setTop(titleBanner);
 
-        HelpIconView helpIconView = new HelpIconView();
-        helpIconView.setPrefSize(280, 280);
+        // Create ImageView for the lightbulb icon
+        javafx.scene.Node helpIconNode;
+        try {
+            ImageView helpImageView = new ImageView();
+            Image helpImage = new Image(HelpScene.class.getResourceAsStream("/images/help/lightbulb.png"));
+            helpImageView.setImage(helpImage);
+            helpImageView.setPreserveRatio(true);
+            helpImageView.setFitWidth(280);
+            helpImageView.setFitHeight(280);
+            helpIconNode = helpImageView;
+        } catch (Exception e) {
+            // Fallback to the original HelpIconView if image not found
+            System.err.println("Help image not found, using default icon: " + e.getMessage());
+            HelpIconView helpIconView = new HelpIconView();
+            helpIconView.setPrefSize(280, 280);
+            helpIconNode = helpIconView;
+        }
 
         Label helpTextLabel = new Label(viewModel.getHelpText());
         helpTextLabel.setWrapText(true);
@@ -52,14 +70,14 @@ public class HelpScene extends Scene {
 
         StackPane helpPanel = new StackPane(helpScrollPane);
         helpPanel.getStyleClass().add("help-panel");
-        helpPanel.setPrefSize(590, 330);
+        helpPanel.setPrefSize(590, 230);  // Changed from 330 to 230 (reduced by 100px)
 
         Region spacer = new Region();
-        spacer.setMinWidth(56);
+        spacer.setMinWidth(156);  // Changed from 56 to 156 (increased by 100px to move scrollpane right)
 
-        HBox contentBox = new HBox(helpIconView, spacer, helpPanel);
+        HBox contentBox = new HBox(helpIconNode, spacer, helpPanel);
         contentBox.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(contentBox, new Insets(8, 100, 48, 100));
+        BorderPane.setMargin(contentBox, new Insets(58, 100, 48, 100));  // Changed top margin from 8 to 108 (increased by 100px)
         root.setCenter(contentBox);
 
         BackButton backButton = new BackButton();
