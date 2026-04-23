@@ -68,7 +68,6 @@ public class PlayerNameSetupScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(270, 202.5);
-        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         ViceTitleBanner viceTitleBanner = new ViceTitleBanner(
                 context.getViceTitleText(),

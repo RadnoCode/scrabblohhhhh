@@ -43,7 +43,6 @@ public class RoomWaitingScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(270, 202.5);
-        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         Label roomSummaryLabel = new Label();
         roomSummaryLabel.getStyleClass().add("room-summary-label");

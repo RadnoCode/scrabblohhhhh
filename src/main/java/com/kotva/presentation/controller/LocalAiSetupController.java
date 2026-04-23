@@ -31,7 +31,7 @@ public class LocalAiSetupController {
         this.viewModel = new GameBranchSetupViewModel(
             "SCRABBLE",
             "Play With Robot",
-            "Select Game Time",
+            "Enter Game Time",
             "Dictionary",
             "Difficulty");
     }

@@ -25,8 +25,6 @@ import javafx.scene.layout.VBox;
 public class LocalAiSetupScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
-    private static final double DICTIONARY_TRIGGER_WIDTH = 232;
-    private static final double DICTIONARY_TRIGGER_HEIGHT = 40;
     private static final String VICE_TITLE_IMAGE_PATH = "/images/vice-title/play-with-robot.png";
     private static final double VICE_TITLE_WIDTH = 180;
     private static final double VICE_TITLE_HEIGHT = 90;
@@ -53,7 +51,6 @@ public class LocalAiSetupScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(270, 202.5);
-        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText(), VICE_TITLE_IMAGE_PATH);
         viceTitleBanner.setPrefSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
@@ -68,17 +65,16 @@ public class LocalAiSetupScene extends Scene {
 
         InputButton firstButton = new InputButton(viewModel.getFirstOptionText());
         firstButton.enableNumericOnlyInput();
-        InputButton stepTimeButton = new InputButton("Select Step Time (s)");
+        InputButton stepTimeButton = new InputButton("Enter Step Time(s)");
         stepTimeButton.enableNumericOnlyInput();
         SwitchButton secondButton = new SwitchButton(viewModel.getSecondOptionText());
-        secondButton.setSwitchTriggerSize(DICTIONARY_TRIGGER_WIDTH, DICTIONARY_TRIGGER_HEIGHT);
         SwitchButton thirdButton = new SwitchButton(viewModel.getThirdOptionText());
         CommonButton goButton = new CommonButton("Go!");
-        firstButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
-        stepTimeButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
-        secondButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
-        thirdButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
-        goButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
+        LocalSetupButtonStyle.configureInputButton(firstButton, LocalSetupButtonStyle.DARK_BACKGROUND);
+        LocalSetupButtonStyle.configureInputButton(stepTimeButton, LocalSetupButtonStyle.MEDIUM_BACKGROUND);
+        LocalSetupButtonStyle.configureSwitchButton(secondButton, LocalSetupButtonStyle.LIGHT_BACKGROUND);
+        LocalSetupButtonStyle.configureSwitchButton(thirdButton, LocalSetupButtonStyle.PLAYER_BACKGROUND);
+        LocalSetupButtonStyle.configureContinueButton(goButton);
         controller.bindActions(
             firstButton,
             stepTimeButton,

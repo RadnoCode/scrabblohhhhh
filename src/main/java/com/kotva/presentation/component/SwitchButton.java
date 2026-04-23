@@ -4,6 +4,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 
@@ -49,6 +50,12 @@ public class SwitchButton extends CommonButton {
         switchTrigger.setOnMousePressed(event -> {
             triggerSwitch();
             event.consume();
+        });
+        addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+            if (!isSwitchTriggerTarget(event.getTarget())) {
+                triggerSwitch();
+                event.consume();
+            }
         });
 
         BorderPane content = new BorderPane();
@@ -100,7 +107,10 @@ public class SwitchButton extends CommonButton {
         }
     }
 
-    public boolean isSwitchTriggerTarget(Node node) {
+    public boolean isSwitchTriggerTarget(Object target) {
+        if (!(target instanceof Node node)) {
+            return false;
+        }
         Node current = node;
         while (current != null) {
             if (current == switchTrigger) {

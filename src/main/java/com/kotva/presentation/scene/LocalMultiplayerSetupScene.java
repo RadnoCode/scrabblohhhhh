@@ -71,7 +71,6 @@ public class LocalMultiplayerSetupScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(270, 202.5);
-        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText(), VICE_TITLE_IMAGE_PATH);
         viceTitleBanner.setPrefSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
@@ -86,7 +85,7 @@ public class LocalMultiplayerSetupScene extends Scene {
 
         InputButton firstButton = new InputButton(viewModel.getFirstOptionText());
         firstButton.enableNumericOnlyInput();
-        InputButton stepTimeButton = new InputButton("Select Step Time (s)");
+        InputButton stepTimeButton = new InputButton("Enter Step Time(s)");
         stepTimeButton.enableNumericOnlyInput();
         SwitchButton secondButton = new SwitchButton(viewModel.getSecondOptionText());
         SwitchButton thirdButton = new SwitchButton(viewModel.getThirdOptionText());

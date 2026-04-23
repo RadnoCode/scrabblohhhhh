@@ -9,7 +9,7 @@ import java.util.Objects;
 public final class SettlementViewModel {
     private static final String DEFAULT_REASON_CAPTION = "GAME END REASON";
     private static final String DEFAULT_PODIUM_TEXT = "PODIUM";
-    private static final String DEFAULT_HOME_BUTTON_TEXT = "Homepage";
+    private static final String DEFAULT_HOME_BUTTON_TEXT = "Return to Home";
     private static final String DEFAULT_EXPORT_BUTTON_TEXT = "Save PNG";
 
     private final String reasonCaptionText;

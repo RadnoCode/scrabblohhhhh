@@ -42,7 +42,6 @@ public class ModeSelectScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(270, 202.5);
-        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         CommonButton withFriendsButton = new CommonButton(viewModel.getWithFriendsText());
         CommonButton withRobotButton = new CommonButton(viewModel.getWithRobotText());

@@ -3,7 +3,6 @@ package com.kotva.presentation.scene;
 import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.SettlementScoreChartView;
 import com.kotva.presentation.component.TransientMessageView;
-import com.kotva.presentation.component.WorkbenchButton;
 import com.kotva.presentation.controller.SettlementController;
 import com.kotva.presentation.viewmodel.SettlementViewModel;
 import javafx.geometry.Insets;
@@ -20,6 +19,8 @@ import javafx.scene.layout.VBox;
 public class SettlementScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
+    private static final double ACTION_BUTTON_WIDTH = 188;
+    private static final double ACTION_BUTTON_HEIGHT = 46;
 
     public SettlementScene(SettlementController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -73,15 +74,12 @@ public class SettlementScene extends Scene {
         TransientMessageView messageView = new TransientMessageView();
         messageView.getStyleClass().add("settlement-export-message");
 
-        CommonButton exportButton = new WorkbenchButton(viewModel.getExportButtonText());
-        exportButton.getStyleClass().add("settlement-action-button");
-        CommonButton homeButton = new WorkbenchButton(viewModel.getHomeButtonText());
-        homeButton.getStyleClass().add("settlement-action-button");
+        CommonButton exportButton = createActionButton(viewModel.getExportButtonText());
+        CommonButton homeButton = createActionButton(viewModel.getHomeButtonText());
 
         HBox actionBar = new HBox(12, exportButton, homeButton);
         actionBar.setAlignment(Pos.CENTER_RIGHT);
-        BorderPane.setMargin(actionBar, new Insets(0, 32, 28, 32));
-        root.setBottom(actionBar);
+        actionBar.setMaxWidth(Region.USE_PREF_SIZE);
 
         controller.bindActions(homeButton, exportButton, sceneRoot, messageView);
         installResponsiveLayout(
@@ -97,8 +95,20 @@ public class SettlementScene extends Scene {
             messageView);
 
         StackPane.setAlignment(messageView, Pos.TOP_CENTER);
-        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, messageView);
+        StackPane.setAlignment(actionBar, Pos.BOTTOM_RIGHT);
+        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, messageView, actionBar);
         return sceneRoot;
+    }
+
+    private static CommonButton createActionButton(String text) {
+        CommonButton button = new CommonButton(text);
+        button.setScaleX(1);
+        button.setScaleY(1);
+        button.setTemplateBackgroundEnabled(false);
+        button.setButtonContentAlignment(Pos.CENTER);
+        button.applyButtonSize(ACTION_BUTTON_WIDTH, ACTION_BUTTON_HEIGHT);
+        button.getStyleClass().add("settlement-action-button");
+        return button;
     }
 
     private static void installResponsiveLayout(
@@ -122,7 +132,6 @@ public class SettlementScene extends Scene {
             double cardWidth = ResponsiveLayoutUtil.clamp(width * (compact ? 0.88 : 0.70), 360, 860);
             double chartWidth = Math.max(280, cardWidth - 56);
             double topWidth = ResponsiveLayoutUtil.clamp(width * 0.72, 320, 780);
-            double actionWidth = width - 64;
 
             BorderPane.setMargin(
                 topBox,
@@ -142,8 +151,8 @@ public class SettlementScene extends Scene {
             chartCard.setMaxWidth(cardWidth);
             scoreChartView.setChartWidth(chartWidth);
 
-            actionBar.setPrefWidth(actionWidth);
-            BorderPane.setMargin(actionBar, new Insets(0, 32, shortHeight ? 18 : 28, 32));
+            StackPane.setMargin(actionBar, new Insets(0, 32, shortHeight ? 18 : 28, 0));
+            actionBar.toFront();
 
             double messageWidth = ResponsiveLayoutUtil.clamp(width * 0.42, 260, 460);
             messageView.setPrefWidth(messageWidth);

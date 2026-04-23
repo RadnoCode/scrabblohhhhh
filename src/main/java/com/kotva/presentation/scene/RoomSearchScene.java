@@ -29,7 +29,7 @@ public class RoomSearchScene extends Scene {
     private static final double DEFAULT_HEIGHT = 800;
     private static final double ROOM_LIST_WIDTH = 420;
     private static final double ROOM_LIST_HEIGHT = 168;
-    private static final double RIGHT_COLUMN_OFFSET_X = 28;
+    private static final double RIGHT_COLUMN_OFFSET_X = 98;
     private static final double RIGHT_COLUMN_OFFSET_Y = 50;
 
     public RoomSearchScene(RoomSearchController controller) {
@@ -50,7 +50,6 @@ public class RoomSearchScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(270, 202.5);
-        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         SearchIconView searchIconView = new SearchIconView();
         TextField searchField = new TextField();

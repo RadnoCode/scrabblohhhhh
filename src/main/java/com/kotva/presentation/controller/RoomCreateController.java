@@ -38,8 +38,8 @@ public class RoomCreateController {
         this.viewModel = new GameBranchSetupViewModel(
                 "SCRABBLE",
                 "Create Room",
-                "Select Game Time",
-                "Language",
+                "Enter Game Time",
+                "Dictionary",
                 "Number of Player");
     }
 

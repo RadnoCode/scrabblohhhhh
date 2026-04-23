@@ -17,3 +17,68 @@
 .local-setup-button .setting-item-label {
     -fx-opacity: 0;
 }
+
+.local-themed-setup-button {
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-border-color: transparent;
+}
+
+.local-themed-setup-button-dark {
+    -fx-background-color: #004782;
+}
+
+.local-themed-setup-button-medium {
+    -fx-background-color: #3a9bd8;
+}
+
+.local-themed-setup-button-light {
+    -fx-background-color: #abd3e7;
+}
+
+.local-themed-setup-button-player {
+    -fx-background-color: #7fc3e5;
+}
+
+.local-themed-continue-button {
+    -fx-background-color: #ffd24d;
+    -fx-border-color: rgba(255, 255, 255, 0.95);
+    -fx-border-width: 2;
+    -fx-border-style: dashed;
+}
+
+.local-themed-setup-button .common-button-label,
+.local-themed-setup-button .setting-item-label {
+    -fx-opacity: 1;
+    -fx-text-fill: #e5af46;
+}
+
+.local-themed-setup-button .common-button-label {
+    -fx-padding: 0;
+}
+
+.local-themed-setup-button .setting-item-label {
+    -fx-font-size: 26px;
+    -fx-padding: 0 0 0 20;
+}
+
+.local-themed-setup-button .input-button-field,
+.local-themed-setup-button .switch-trigger {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: rgba(255, 255, 255, 0.95);
+    -fx-border-radius: 0;
+    -fx-border-style: dashed;
+    -fx-border-width: 2;
+}
+
+.local-themed-setup-button .input-button-field:focused,
+.local-themed-setup-button .switch-trigger:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.10);
+}
+
+.local-themed-continue-button .common-button-label {
+    -fx-text-fill: #ff9c1a;
+    -fx-font-size: 35px;
+    -fx-font-weight: 800;
+}

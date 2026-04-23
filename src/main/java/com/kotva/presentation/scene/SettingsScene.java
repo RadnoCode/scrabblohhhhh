@@ -3,8 +3,11 @@ package com.kotva.presentation.scene;
 import com.kotva.presentation.component.BackButton;
 import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.SettingsGearIconView;
+import com.kotva.presentation.component.SettingsValueButton;
+import com.kotva.presentation.component.SliderButton;
 import com.kotva.presentation.component.TitleBanner;
 import com.kotva.presentation.controller.SettingsController;
+import com.kotva.presentation.viewmodel.SettingsViewModel;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -21,7 +24,6 @@ public class SettingsScene extends Scene {
     private static final double FEATURED_ICON_WIDTH = 270;
     private static final double FEATURED_ICON_HEIGHT = 202.5;
     private static final double SETTINGS_BUTTON_WIDTH = 420;
-    private static final String MUSIC_BUTTON_IMAGE_PATH = "/images/settings/buttons/music.png";
     private static final String ID_BUTTON_IMAGE_PATH = "/images/settings/buttons/id.png";
 
     public SettingsScene(SettingsController controller) {
@@ -44,14 +46,19 @@ public class SettingsScene extends Scene {
         settingsGearIconView.setMinSize(FEATURED_ICON_WIDTH, FEATURED_ICON_HEIGHT);
         settingsGearIconView.setMaxSize(FEATURED_ICON_WIDTH, FEATURED_ICON_HEIGHT);
 
-        CommonButton musicButton = new CommonButton();
-        CommonButton idButton = new CommonButton();
-        configureSettingsButton(musicButton, MUSIC_BUTTON_IMAGE_PATH);
+        SettingsViewModel viewModel = controller.getViewModel();
+        SliderButton soundEffectButton = new SliderButton("SoundEffect");
+        SettingsValueButton idButton = new SettingsValueButton(viewModel.getUserId());
+        soundEffectButton.getStyleClass().add("settings-sound-effect-button");
+        soundEffectButton.applyTemplateSize(SETTINGS_BUTTON_WIDTH);
+        soundEffectButton.setSliderWidth(104);
+        soundEffectButton.setSliderRightOffset(124);
+        controller.bindSoundEffectSlider(soundEffectButton);
         configureSettingsButton(idButton, ID_BUTTON_IMAGE_PATH);
 
         VBox settingColumn = new VBox(20);
         settingColumn.setAlignment(Pos.CENTER_LEFT);
-        settingColumn.getChildren().addAll(musicButton, idButton);
+        settingColumn.getChildren().addAll(soundEffectButton, idButton);
 
         Region spacer = new Region();
         spacer.setMinWidth(60);

@@ -32,8 +32,6 @@ public class RoomCreateScene extends Scene {
     private static final String VICE_TITLE_IMAGE_PATH = "/images/vice-title/nickname.png";
     private static final double VICE_TITLE_WIDTH = 180;
     private static final double VICE_TITLE_HEIGHT = 90;
-    private static final double DICTIONARY_TRIGGER_WIDTH = 232;
-    private static final double DICTIONARY_TRIGGER_HEIGHT = 40;
     private static final double BUTTON_PANEL_OFFSET_X = 100;
 
     public RoomCreateScene(RoomCreateController controller) {
@@ -57,7 +55,6 @@ public class RoomCreateScene extends Scene {
 
         CardStackIconView cardStackIconView = new CardStackIconView();
         cardStackIconView.setPrefSize(270, 202.5);
-        cardStackIconView.installPlayBeforeButtonActions(sceneRoot);
 
         ViceTitleBanner viceTitleBanner = new ViceTitleBanner(viewModel.getViceTitleText(), VICE_TITLE_IMAGE_PATH);
         viceTitleBanner.setPrefSize(VICE_TITLE_WIDTH, VICE_TITLE_HEIGHT);
@@ -73,18 +70,18 @@ public class RoomCreateScene extends Scene {
         InputButton roomNameButton = new InputButton("Room Name");
         InputButton firstButton = new InputButton(viewModel.getFirstOptionText());
         firstButton.enableNumericOnlyInput();
-        InputButton stepTimeButton = new InputButton("Select Step Time (s)");
+        InputButton stepTimeButton = new InputButton("Enter Step Time(s)");
         stepTimeButton.enableNumericOnlyInput();
         SwitchButton secondButton = new SwitchButton(viewModel.getSecondOptionText());
-        secondButton.setSwitchTriggerSize(DICTIONARY_TRIGGER_WIDTH, DICTIONARY_TRIGGER_HEIGHT);
         SwitchButton thirdButton = new SwitchButton(viewModel.getThirdOptionText());
         thirdButton.getStyleClass().add("compact-setting-label");
         CommonButton goButton = new CommonButton("Go!");
-        firstButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
-        stepTimeButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
-        secondButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
-        thirdButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
-        goButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
+        LocalSetupButtonStyle.configureInputButton(roomNameButton, LocalSetupButtonStyle.DARK_BACKGROUND);
+        LocalSetupButtonStyle.configureInputButton(firstButton, LocalSetupButtonStyle.DARK_BACKGROUND);
+        LocalSetupButtonStyle.configureInputButton(stepTimeButton, LocalSetupButtonStyle.MEDIUM_BACKGROUND);
+        LocalSetupButtonStyle.configureSwitchButton(secondButton, LocalSetupButtonStyle.LIGHT_BACKGROUND);
+        LocalSetupButtonStyle.configureSwitchButton(thirdButton, LocalSetupButtonStyle.PLAYER_BACKGROUND);
+        LocalSetupButtonStyle.configureContinueButton(goButton);
         controller.bindActions(
             roomNameButton,
             firstButton,

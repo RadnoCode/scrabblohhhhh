@@ -13,6 +13,7 @@ import com.kotva.application.service.SettlementServiceImpl;
 import com.kotva.infrastructure.AudioManager;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.infrastructure.dictionary.TutorialDictionaryRepository;
+import com.kotva.infrastructure.settings.AppSettings;
 import com.kotva.infrastructure.settings.SettingsRepository;
 import java.util.Objects;
 import java.util.Random;
@@ -99,6 +100,9 @@ public class AppContext {
     public AudioManager getAudioManager() {
         if (audioManager == null) {
             audioManager = new AudioManager();
+            AppSettings settings = settingsRepository.load();
+            audioManager.setBGMVolume(settings.getMusicVolume());
+            audioManager.setSFXVolume(settings.getSfxVolume());
         }
         return audioManager;
     }

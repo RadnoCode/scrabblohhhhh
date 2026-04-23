@@ -31,7 +31,7 @@ public class LocalMultiplayerSetupController {
         this.viewModel = new GameBranchSetupViewModel(
             "SCRABBLE",
             "Play With Friends",
-            "Select Game Time",
+            "Enter Game Time",
             "Dictionary",
             "Number of Player");
     }

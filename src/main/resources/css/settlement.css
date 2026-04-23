@@ -135,7 +135,24 @@
 }
 
 .settlement-action-button {
-    -fx-pref-width: 176;
+    -fx-background-color: linear-gradient(to bottom, #0e5f98, #084b7d);
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255, 255, 255, 0.92);
+    -fx-border-radius: 14;
+    -fx-border-width: 2;
+    -fx-padding: 0;
+}
+
+.settlement-action-button:hover {
+    -fx-background-color: linear-gradient(to bottom, #1570ad, #0b578f);
+}
+
+.settlement-action-button .common-button-label {
+    -fx-text-fill: #ffd24d;
+    -fx-font-size: 17px;
+    -fx-font-weight: 800;
+    -fx-padding: 0;
+    -fx-opacity: 1;
 }
 
 .settlement-export-message {

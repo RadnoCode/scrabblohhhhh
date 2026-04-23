@@ -84,6 +84,14 @@ public class CommonButton extends Button {
         refreshBackgroundImage();
     }
 
+    public void setTemplateBackgroundEnabled(boolean templateBackgroundEnabled) {
+        setTemplateEnabled(templateBackgroundEnabled);
+    }
+
+    public void setButtonContentAlignment(Pos alignment) {
+        contentHolder.setAlignment(alignment == null ? Pos.CENTER_LEFT : alignment);
+    }
+
     public void setCustomBackgroundImage(String imagePath) {
         if (imagePath == null || imagePath.isBlank()) {
             customBackgroundImage = null;

@@ -1,11 +1,13 @@
 package com.kotva.presentation.component;
 
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 
 public class InputButton extends CommonButton {
@@ -44,6 +46,13 @@ public class InputButton extends CommonButton {
         textField.setContextMenu(null);
         textField.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, ContextMenuEvent::consume);
         applyInputFieldTone();
+
+        addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+            if (!isTextFieldTarget(event.getTarget())) {
+                focusInputField();
+                event.consume();
+            }
+        });
 
         BorderPane content = new BorderPane();
         content.getStyleClass().add("setting-item-content");
@@ -92,6 +101,28 @@ public class InputButton extends CommonButton {
                 String nextText = change.getControlNewText();
                 return nextText.matches("\\d*") ? change : null;
             }));
+    }
+
+    private void focusInputField() {
+        textField.requestFocus();
+        textField.positionCaret(textField.getText() == null ? 0 : textField.getText().length());
+    }
+
+    private boolean isTextFieldTarget(Object target) {
+        if (!(target instanceof Node node)) {
+            return false;
+        }
+        Node current = node;
+        while (current != null) {
+            if (current == textField) {
+                return true;
+            }
+            if (current == this) {
+                return false;
+            }
+            current = current.getParent();
+        }
+        return false;
     }
 
     private void applyInputFieldTone() {

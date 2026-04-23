@@ -1,6 +1,7 @@
 package com.kotva.presentation.component;
 
 import javafx.geometry.Pos;
+import javafx.geometry.Insets;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
@@ -11,6 +12,7 @@ public class SliderButton extends CommonButton {
     private final Label leftLabel;
     private final Slider slider;
     private final Label valueLabel;
+    private HBox sliderBox;
     private ValueChangeListener valueChangeListener;
 
     public SliderButton(String labelText) {
@@ -41,7 +43,7 @@ public class SliderButton extends CommonButton {
                 }
             });
 
-        HBox sliderBox = new HBox(10, slider, valueLabel);
+        sliderBox = new HBox(10, slider, valueLabel);
         sliderBox.setAlignment(Pos.CENTER_RIGHT);
 
         BorderPane content = new BorderPane();
@@ -57,6 +59,16 @@ public class SliderButton extends CommonButton {
     public void setSliderValue(double value) {
         slider.setValue(value);
         valueLabel.setText(String.valueOf((int) Math.round(value)));
+    }
+
+    public void setSliderWidth(double width) {
+        slider.setMinWidth(width);
+        slider.setPrefWidth(width);
+        slider.setMaxWidth(width);
+    }
+
+    public void setSliderRightOffset(double rightOffset) {
+        BorderPane.setMargin(sliderBox, new Insets(0, rightOffset, 0, 0));
     }
 
     public void setOnValueChanged(ValueChangeListener valueChangeListener) {

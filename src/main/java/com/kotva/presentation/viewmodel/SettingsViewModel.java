@@ -2,12 +2,12 @@ package com.kotva.presentation.viewmodel;
 
 public class SettingsViewModel {
     private String playerName;
-    private double musicVolume;
+    private double soundEffectVolume;
     private final String userId;
 
-    public SettingsViewModel(String playerName, double musicVolume, String userId) {
+    public SettingsViewModel(String playerName, double soundEffectVolume, String userId) {
         this.playerName = playerName;
-        this.musicVolume = musicVolume;
+        this.soundEffectVolume = soundEffectVolume;
         this.userId = userId;
     }
 
@@ -19,12 +19,12 @@ public class SettingsViewModel {
         this.playerName = playerName;
     }
 
-    public double getMusicVolume() {
-        return musicVolume;
+    public double getSoundEffectVolume() {
+        return soundEffectVolume;
     }
 
-    public void setMusicVolume(double musicVolume) {
-        this.musicVolume = musicVolume;
+    public void setSoundEffectVolume(double soundEffectVolume) {
+        this.soundEffectVolume = soundEffectVolume;
     }
 
     public String getUserId() {
