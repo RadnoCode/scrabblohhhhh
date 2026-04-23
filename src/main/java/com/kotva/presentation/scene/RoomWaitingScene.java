@@ -24,6 +24,9 @@ import javafx.scene.layout.VBox;
 public class RoomWaitingScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
+    private static final double CARD_STACK_WIDTH = 270;
+    private static final double CARD_STACK_HEIGHT = 202.5;
+    private static final double CARD_STACK_TO_ROOM_PANEL_GAP = 220;
 
     public RoomWaitingScene(RoomWaitingController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -42,7 +45,7 @@ public class RoomWaitingScene extends Scene {
         root.setTop(titleBanner);
 
         CardStackIconView cardStackIconView = new CardStackIconView();
-        cardStackIconView.setPrefSize(270, 202.5);
+        cardStackIconView.setPrefSize(CARD_STACK_WIDTH, CARD_STACK_HEIGHT);
 
         Label roomSummaryLabel = new Label();
         roomSummaryLabel.getStyleClass().add("room-summary-label");
@@ -78,7 +81,9 @@ public class RoomWaitingScene extends Scene {
         rightColumn.setAlignment(Pos.TOP_CENTER);
 
         Region spacer = new Region();
-        spacer.setMinWidth(56);
+        spacer.setPrefWidth(CARD_STACK_TO_ROOM_PANEL_GAP);
+        spacer.setMinWidth(CARD_STACK_TO_ROOM_PANEL_GAP);
+        spacer.setMaxWidth(CARD_STACK_TO_ROOM_PANEL_GAP);
 
         HBox contentBox = new HBox(cardStackIconView, spacer, rightColumn);
         contentBox.setAlignment(Pos.CENTER);
