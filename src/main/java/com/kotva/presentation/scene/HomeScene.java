@@ -124,10 +124,11 @@ public class HomeScene extends Scene {
         StackPane overlay = new StackPane();
         overlay.getStyleClass().add("home-tutorial-overlay");
 
-        VBox card = new VBox(16);
+        VBox card = new VBox(14);
         card.getStyleClass().add("home-tutorial-card");
-        card.setAlignment(Pos.CENTER_LEFT);
+        card.setAlignment(Pos.TOP_LEFT);
         card.setMaxWidth(520);
+        card.setMaxHeight(Region.USE_PREF_SIZE);
         card.setPadding(new Insets(28));
 
         Label titleLabel = new Label("It seems you play for the first time!");
@@ -140,6 +141,8 @@ public class HomeScene extends Scene {
 
         CommonButton startButton = new CommonButton("Start Tutorial");
         CommonButton skipButton = new CommonButton("Skip for Now");
+        startButton.getStyleClass().add("home-tutorial-prompt-button");
+        skipButton.getStyleClass().add("home-tutorial-prompt-button");
         startButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
         skipButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
         startButton.applyTemplateSize(280);

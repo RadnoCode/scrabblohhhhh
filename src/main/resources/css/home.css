@@ -40,3 +40,13 @@
     -fx-text-fill: #4c566a;
     -fx-font-size: 16px;
 }
+
+.home-tutorial-prompt-button {
+    -fx-padding: 0;
+}
+
+.home-tutorial-prompt-button .common-button-label {
+    -fx-font-size: 28px;
+    -fx-padding: 0 0 0 40;
+    -fx-translate-y: -1;
+}
