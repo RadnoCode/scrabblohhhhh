@@ -35,6 +35,8 @@ public class GameScene extends Scene {
     private static final double DEFAULT_HEIGHT = 800;
     private static final double SIDE_CARD_GAP = 12;
     private static final double SIDE_COLUMN_WIDTH = TutorialOverlayView.CARD_WIDTH;
+    private static final double MESSAGE_OVERLAY_TOP_INSET = 96;
+    private static final double MESSAGE_OVERLAY_HORIZONTAL_INSET = 180;
 
     public GameScene(GameController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -58,11 +60,23 @@ public class GameScene extends Scene {
         rackHandoffLayer.setPickOnBounds(false);
 
         TitleBanner titleBanner = new TitleBanner(viewModel.getTitleText());
-        TransientMessageView messageView = new TransientMessageView();
-        VBox topBox = new VBox(6, titleBanner, messageView);
+        VBox topBox = new VBox(titleBanner);
         topBox.setAlignment(Pos.CENTER);
         BorderPane.setMargin(topBox, new Insets(18, 180, 8, 180));
         contentRoot.setTop(topBox);
+
+        TransientMessageView messageView = new TransientMessageView();
+        StackPane transientMessageLayer = new StackPane(messageView);
+        transientMessageLayer.setMouseTransparent(true);
+        transientMessageLayer.setPickOnBounds(false);
+        StackPane.setAlignment(messageView, Pos.TOP_CENTER);
+        StackPane.setMargin(
+            messageView,
+            new Insets(
+                MESSAGE_OVERLAY_TOP_INSET,
+                MESSAGE_OVERLAY_HORIZONTAL_INSET,
+                0,
+                MESSAGE_OVERLAY_HORIZONTAL_INSET));
 
         AiStatusBannerView aiStatusBannerView = new AiStatusBannerView();
         BoardView boardView = new BoardView();
@@ -168,6 +182,7 @@ public class GameScene extends Scene {
 
         root.getChildren().addAll(
             contentRoot,
+            transientMessageLayer,
             blankTilePickerLayer,
             dragOverlay,
             rackHandoffLayer);
