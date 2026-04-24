@@ -513,6 +513,7 @@ public final class GameSessionSnapshotFactory {
             TurnDraft turnDraft) {
         List<RackTileSnapshot> visibleRackTiles = new ArrayList<>();
         for (RackTileSnapshot visibleRackTile : baseSnapshot.getVisibleRackTiles()) {
+            
             Character assignedLetter = turnDraft.getAssignedLettersByTileId().get(visibleRackTile.getTileId());
             if (!visibleRackTile.isBlank() || assignedLetter == null) {
                 visibleRackTiles.add(visibleRackTile);
