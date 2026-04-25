@@ -1,5 +1,6 @@
 package com.kotva.application.draft;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,8 +8,9 @@ import java.util.Map;
 
 import com.kotva.application.preview.PreviewResult;
 
-public class TurnDraft
+public class TurnDraft implements Serializable
 {
+    private static final long serialVersionUID = 1L;
 
     private List<DraftPlacement> placements;  // List of tile placements for the current turn (in this turn, we put how many tiles on the board and where they are placed)
     private Map<String, Integer> originalRackSlots;  //record the original rack slots of the tiles being moved, so that we can restore them if the draft is cancelled or invalid

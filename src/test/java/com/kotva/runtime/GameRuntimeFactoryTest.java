@@ -13,6 +13,7 @@ import com.kotva.application.service.GameSetupService;
 import com.kotva.application.service.GameSetupServiceImpl;
 import com.kotva.application.setup.NewGameRequest;
 import com.kotva.domain.endgame.GameEndReason;
+import com.kotva.infrastructure.save.SaveGameRepository;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.mode.GameMode;
 import com.kotva.policy.DictionaryType;
@@ -21,9 +22,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 public class GameRuntimeFactoryTest {
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
         @Test
     public void hotSeatRuntimeRunsGameThroughRuntimeBoundary() {
@@ -111,14 +116,57 @@ public class GameRuntimeFactoryTest {
         assertTrue(runtime instanceof HostGameRuntime);
     }
 
+        @Test
+    public void hotSeatRuntimeSaveLoadRestoresRoundProgress() throws Exception {
+        SaveGameRepository saveGameRepository =
+            new SaveGameRepository(temporaryFolder.newFile("withfriends-save.kotvasave").toPath());
+        GameRuntimeFactory runtimeFactory = createRuntimeFactory(saveGameRepository);
+        NewGameRequest request =
+        new NewGameRequest(
+            GameMode.HOT_SEAT,
+            2,
+            List.of("Alice", "Bob"),
+            DictionaryType.AM,
+            null);
+
+        GameRuntime runtime = runtimeFactory.create(request);
+        runtime.start(request);
+        runtime.passTurn();
+        String expectedCurrentPlayerId =
+            runtime.getSession().getGameState().requireCurrentActivePlayer().getPlayerId();
+
+        runtime.saveGame();
+        runtime.passTurn();
+        assertEquals(SessionStatus.COMPLETED, runtime.getSession().getSessionStatus());
+
+        GameRuntime loadedRuntime = runtimeFactory.create(request);
+        loadedRuntime.start(request);
+        loadedRuntime.loadGame();
+
+        assertEquals(1, loadedRuntime.getSessionSnapshot().getTurnNumber());
+        assertEquals(
+            expectedCurrentPlayerId,
+            loadedRuntime.getSession().getGameState().requireCurrentActivePlayer().getPlayerId());
+
+        loadedRuntime.passTurn();
+        assertEquals(SessionStatus.COMPLETED, loadedRuntime.getSession().getSessionStatus());
+        assertEquals(
+            GameEndReason.ALL_PLAYERS_PASSED,
+            loadedRuntime.getSession().getGameState().getGameEndReason());
+    }
+
     private static GameRuntimeFactory createRuntimeFactory() {
+        return createRuntimeFactory(new SaveGameRepository());
+    }
+
+    private static GameRuntimeFactory createRuntimeFactory(SaveGameRepository saveGameRepository) {
         ClockService clockService = new ClockServiceImpl();
         DictionaryRepository dictionaryRepository = new StubDictionaryRepository();
         GameSetupService gameSetupService =
         new GameSetupServiceImpl(dictionaryRepository, clockService, new Random(11L));
         GameApplicationService gameApplicationService =
         new GameApplicationServiceImpl(clockService, dictionaryRepository);
-        return new GameRuntimeFactory(gameSetupService, gameApplicationService);
+        return new GameRuntimeFactory(gameSetupService, gameApplicationService, saveGameRepository);
     }
 
     private static class StubDictionaryRepository extends DictionaryRepository {

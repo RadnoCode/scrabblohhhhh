@@ -3,6 +3,7 @@ package com.kotva.application.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -17,6 +18,7 @@ import com.kotva.mode.GameMode;
 import com.kotva.policy.AiDifficulty;
 import com.kotva.policy.ClockPhase;
 import com.kotva.policy.DictionaryType;
+import com.kotva.policy.GameRuleset;
 import com.kotva.policy.PlayerType;
 import com.kotva.policy.SessionStatus;
 import java.util.Collections;
@@ -50,6 +52,8 @@ public class GameSetupServiceImplTest {
             .allMatch(playerConfig -> playerConfig.getPlayerType() == PlayerType.LOCAL));
         assertEquals(60_000L, config.getTimeControlConfig().getMainTimeMillis());
         assertEquals(10_000L, config.getTimeControlConfig().getByoYomiMillisPerTurn());
+        assertEquals(GameRuleset.TRADITIONAL_SCRABBLE, config.getRuleset());
+        assertNull(config.getTargetScore());
     }
 
         @Test
@@ -112,6 +116,34 @@ public class GameSetupServiceImplTest {
             DictionaryType.AM,
             null)));
 
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+            service.buildConfig(
+            new NewGameRequest(
+            GameMode.HOT_SEAT,
+            2,
+            List.of("Alice", "Bob"),
+            DictionaryType.AM,
+            null,
+            null,
+            GameRuleset.SCRIBBLE,
+            null)));
+
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+            service.buildConfig(
+            new NewGameRequest(
+            GameMode.HOT_SEAT,
+            2,
+            List.of("Alice", "Bob"),
+            DictionaryType.AM,
+            null,
+            null,
+            GameRuleset.SCRIBBLE,
+            0)));
+
         GameConfig localAiConfig =
         service.buildConfig(
             new NewGameRequest(
@@ -125,6 +157,34 @@ public class GameSetupServiceImplTest {
         assertEquals(PlayerType.LOCAL, localAiConfig.getPlayers().get(0).getPlayerType());
         assertEquals(PlayerType.AI, localAiConfig.getPlayers().get(1).getPlayerType());
         assertEquals(AiDifficulty.HARD, localAiConfig.getAiDifficulty());
+    }
+
+        @Test
+    public void startNewGameCreatesScribbleSessionWithInfiniteBagAndTargetScore() {
+        GameSetupServiceImpl service =
+        new GameSetupServiceImpl(new StubDictionaryRepository(), new ClockServiceImpl(), new Random(7L));
+
+        GameSession session =
+        service.startNewGame(
+            new NewGameRequest(
+            GameMode.HOT_SEAT,
+            2,
+            List.of("Alice", "Bob"),
+            DictionaryType.AM,
+            null,
+            null,
+            GameRuleset.SCRIBBLE,
+            100));
+
+        assertEquals(GameRuleset.SCRIBBLE, session.getConfig().getRuleset());
+        assertEquals(Integer.valueOf(100), session.getConfig().getTargetScore());
+        assertEquals(Integer.valueOf(100), session.getGameState().getTargetScore());
+        assertTrue(session.getGameState().getTileBag().isInfiniteSupply());
+        assertEquals(Integer.MAX_VALUE, session.getGameState().getTileBag().size());
+        assertTrue(!session.getGameState().getTileBag().isEmpty());
+        for (Player player : session.getGameState().getPlayers()) {
+            assertEquals(7, countRackTiles(player));
+        }
     }
 
         @Test

@@ -4,10 +4,13 @@ import com.kotva.domain.action.ActionType;
 import com.kotva.domain.action.PlayerAction;
 import com.kotva.domain.model.GameState;
 import com.kotva.domain.model.Player;
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 
-public class EndGameChecker {
+public class EndGameChecker implements Serializable {
+    private static final long serialVersionUID = 1L;
+
 
     public Optional<GameEndReason> evaluate(
         GameState gameState,
@@ -24,12 +27,18 @@ public class EndGameChecker {
         }
 
         if (action.type() == ActionType.PLACE_TILE
+            && gameState.hasTargetScore()
+            && actingPlayer.getScore() >= gameState.getTargetScore()) {
+            return Optional.of(GameEndReason.TARGET_SCORE_REACHED);
+        }
+
+        if (action.type() == ActionType.PLACE_TILE
             && gameState.getTileBag().isEmpty()
             && actingPlayer.getRack().isEmpty()) {
             return Optional.of(GameEndReason.TILE_BAG_EMPTY_AND_PLAYER_FINISHED);
         }
 
-        if (roundComplete && allPassedInRound) {
+        if (!gameState.hasTargetScore() && roundComplete && allPassedInRound) {
             return Optional.of(GameEndReason.ALL_PLAYERS_PASSED);
         }
 

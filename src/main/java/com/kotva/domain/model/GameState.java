@@ -1,10 +1,13 @@
 package com.kotva.domain.model;
 
 import com.kotva.domain.endgame.GameEndReason;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-public class GameState {
+public class GameState implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final Board board;
     private final TileBag tileBag;
     private final List<Player> players;
@@ -12,15 +15,25 @@ public class GameState {
     private boolean gameOver;
     private GameEndReason gameEndReason;
     private boolean firstMoveMade;
+    private final Integer targetScore;
 
     public GameState(List<Player> players) {
+        this(players, new TileBag(), null);
+    }
+
+    public GameState(List<Player> players, TileBag tileBag) {
+        this(players, tileBag, null);
+    }
+
+    public GameState(List<Player> players, TileBag tileBag, Integer targetScore) {
         this.players = List.copyOf(players);
         this.board = new Board();
-        this.tileBag = new TileBag();
+        this.tileBag = Objects.requireNonNull(tileBag, "tileBag cannot be null.");
         this.currentPlayerIndex = 0;
         this.gameOver = false;
         this.gameEndReason = null;
         this.firstMoveMade = false;
+        this.targetScore = targetScore;
     }
 
     public Board getBoard() {
@@ -121,6 +134,14 @@ public class GameState {
 
     public GameEndReason getGameEndReason() {
         return gameEndReason;
+    }
+
+    public Integer getTargetScore() {
+        return targetScore;
+    }
+
+    public boolean hasTargetScore() {
+        return targetScore != null;
     }
 
     public void initialDraw() {

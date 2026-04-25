@@ -7,9 +7,12 @@ import com.kotva.application.service.SettlementServiceImpl;
 import com.kotva.application.turn.TurnCoordinator;
 import com.kotva.domain.model.GameState;
 import com.kotva.policy.SessionStatus;
+import java.io.Serializable;
 import java.util.Objects;
 
-public class GameSession {
+public class GameSession implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final String sessionId;
     private final GameConfig config;
     private final GameState gameState;

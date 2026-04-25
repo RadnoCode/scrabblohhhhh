@@ -1,6 +1,10 @@
 package com.kotva.domain.model;
 
-public class Tile {
+import java.io.Serializable;
+
+public class Tile implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final String tileID;
     private char letter;
     private final int score;

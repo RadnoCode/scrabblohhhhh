@@ -1,8 +1,11 @@
 package com.kotva.application.preview;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class PreviewResult {
+public class PreviewResult implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private boolean valid; // Indicates if the move is valid
     private int estimatedScore; // Estimated score for the move
     private List<PreviewWord> words; // List of words formed by the move

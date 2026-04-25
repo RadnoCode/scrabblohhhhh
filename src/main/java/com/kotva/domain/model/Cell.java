@@ -2,8 +2,10 @@
 package com.kotva.domain.model;
 
 import com.kotva.policy.BonusType;
+import java.io.Serializable;
 
-public class Cell {
+public class Cell implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private final Position position;
 

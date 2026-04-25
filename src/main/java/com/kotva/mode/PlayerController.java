@@ -12,10 +12,13 @@ import com.kotva.domain.action.PlayerAction;
 import com.kotva.domain.model.Position;
 import com.kotva.infrastructure.network.CommandEnvelope;
 import com.kotva.policy.PlayerType;
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-public class PlayerController {
+public class PlayerController implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final PlayerType type;
     private final String playerId;
 

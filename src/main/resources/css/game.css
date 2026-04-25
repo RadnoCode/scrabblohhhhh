@@ -18,6 +18,22 @@
     -fx-alignment: center;
 }
 
+.game-save-load-row {
+    -fx-alignment: center;
+}
+
+.game-utility-button {
+    -fx-padding: 0;
+}
+
+.game-utility-button .common-button-label {
+    -fx-text-fill: #3f4b63;
+    -fx-font-size: 14px;
+    -fx-font-weight: 800;
+    -fx-padding: 0;
+    -fx-opacity: 1;
+}
+
 .game-board-shell {
     -fx-padding: 0;
 }

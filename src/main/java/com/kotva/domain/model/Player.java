@@ -2,9 +2,12 @@ package com.kotva.domain.model;
 
 import com.kotva.mode.PlayerController;
 import com.kotva.policy.PlayerType;
+import java.io.Serializable;
 import java.util.Objects;
 
-public class Player {
+public class Player implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final String playerId;
     private final String playerName;
     private int score;

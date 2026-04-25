@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import com.kotva.domain.action.PlayerAction;
 import com.kotva.domain.model.GameState;
 import com.kotva.domain.model.Player;
+import com.kotva.domain.model.TileBag;
 import com.kotva.policy.PlayerType;
 import java.util.List;
 import java.util.Optional;
@@ -57,6 +58,44 @@ public class EndGameCheckerTest {
 
         assertTrue(result.isPresent());
         assertEquals(GameEndReason.ALL_PLAYERS_PASSED, result.get());
+    }
+
+        @Test
+    public void placedActionEndsGameWhenTargetScoreIsReached() {
+        Player first = new Player("p1", "Alice", PlayerType.LOCAL);
+        Player second = new Player("p2", "Bob", PlayerType.LOCAL);
+        GameState gameState = new GameState(List.of(first, second), TileBag.infinite(), 100);
+        first.addScore(100);
+
+        Optional<GameEndReason> result =
+        checker.evaluate(gameState, first, PlayerAction.place("p1", List.of()), false, false);
+
+        assertTrue(result.isPresent());
+        assertEquals(GameEndReason.TARGET_SCORE_REACHED, result.get());
+    }
+
+        @Test
+    public void infiniteTileBagDoesNotTriggerEmptyBagEndCondition() {
+        Player first = new Player("p1", "Alice", PlayerType.LOCAL);
+        Player second = new Player("p2", "Bob", PlayerType.LOCAL);
+        GameState gameState = new GameState(List.of(first, second), TileBag.infinite(), null);
+
+        Optional<GameEndReason> result =
+        checker.evaluate(gameState, first, PlayerAction.place("p1", List.of()), false, false);
+
+        assertFalse(result.isPresent());
+    }
+
+        @Test
+    public void targetScoreGameDoesNotEndWhenAllPlayersPass() {
+        Player first = new Player("p1", "Alice", PlayerType.LOCAL);
+        Player second = new Player("p2", "Bob", PlayerType.LOCAL);
+        GameState gameState = new GameState(List.of(first, second), TileBag.infinite(), 100);
+
+        Optional<GameEndReason> result =
+        checker.evaluate(gameState, first, PlayerAction.pass("p1"), true, true);
+
+        assertFalse(result.isPresent());
     }
 
         @Test

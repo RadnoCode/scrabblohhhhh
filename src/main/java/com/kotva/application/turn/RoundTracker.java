@@ -1,6 +1,10 @@
 package com.kotva.application.turn;
 
-public class RoundTracker {
+import java.io.Serializable;
+
+public class RoundTracker implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private int activePlayerCountInRound;
     private int finishedTurnCount;
     private int passCount;

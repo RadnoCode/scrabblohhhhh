@@ -26,6 +26,8 @@ public final class PlayerNameSetupContext {
     private final String stepTimeSecondsLabel;
     private final String languageLabel;
     private final String playerCountLabel;
+    private final String rulesetLabel;
+    private final String targetScoreLabel;
     private final String endpoint;
     private final List<String> cardTitles;
     private final List<String> defaultNames;
@@ -40,6 +42,8 @@ public final class PlayerNameSetupContext {
             String stepTimeSecondsLabel,
             String languageLabel,
             String playerCountLabel,
+            String rulesetLabel,
+            String targetScoreLabel,
             String endpoint,
             List<String> cardTitles,
             List<String> defaultNames) {
@@ -57,6 +61,8 @@ public final class PlayerNameSetupContext {
         this.languageLabel = Objects.requireNonNull(languageLabel, "languageLabel cannot be null.");
         this.playerCountLabel =
                 Objects.requireNonNull(playerCountLabel, "playerCountLabel cannot be null.");
+        this.rulesetLabel = normalizeRulesetLabel(rulesetLabel);
+        this.targetScoreLabel = normalizeTargetScoreLabel(targetScoreLabel);
         this.endpoint = endpoint == null ? "" : endpoint.trim();
         this.cardTitles = List.copyOf(Objects.requireNonNull(cardTitles, "cardTitles cannot be null."));
         this.defaultNames =
@@ -71,18 +77,36 @@ public final class PlayerNameSetupContext {
             String stepTimeSecondsLabel,
             String languageLabel,
             String playerCountLabel) {
+        return forHotSeat(
+                gameTimeLabel,
+                stepTimeSecondsLabel,
+                languageLabel,
+                playerCountLabel,
+                "Traditional Scrabble",
+                null);
+    }
+
+    public static PlayerNameSetupContext forHotSeat(
+            String gameTimeLabel,
+            String stepTimeSecondsLabel,
+            String languageLabel,
+            String playerCountLabel,
+            String rulesetLabel,
+            String targetScoreLabel) {
         int playerCount = Integer.parseInt(playerCountLabel);
         List<String> titles = buildSequentialLabels("Player ", playerCount);
         return new PlayerNameSetupContext(
                 Flow.HOT_SEAT,
                 "Player Nicknames",
                 "",
-                buildSettingsSummary(gameTimeLabel, languageLabel, playerCountLabel),
+                buildSettingsSummary(gameTimeLabel, languageLabel, playerCountLabel, rulesetLabel, targetScoreLabel),
                 "Start Game",
                 gameTimeLabel,
                 stepTimeSecondsLabel,
                 languageLabel,
                 playerCountLabel,
+                rulesetLabel,
+                targetScoreLabel,
                 "",
                 titles,
                 titles);
@@ -105,6 +129,8 @@ public final class PlayerNameSetupContext {
                 stepTimeSecondsLabel,
                 languageLabel,
                 playerCountLabel,
+                "Traditional Scrabble",
+                null,
                 "",
                 List.of("Host"),
                 List.of("Host"));
@@ -131,6 +157,8 @@ public final class PlayerNameSetupContext {
                 "30",
                 languageLabel == null ? "--" : languageLabel,
                 playerCountLabel == null ? "--" : playerCountLabel,
+                "Traditional Scrabble",
+                null,
                 normalizedEndpoint,
                 List.of("Player"),
                 List.of("Guest"));
@@ -180,6 +208,14 @@ public final class PlayerNameSetupContext {
         return playerCountLabel;
     }
 
+    public String getRulesetLabel() {
+        return rulesetLabel;
+    }
+
+    public String getTargetScoreLabel() {
+        return targetScoreLabel;
+    }
+
     public int getActivePlayerCount() {
         if (flow != Flow.HOT_SEAT) {
             return cardTitles.size();
@@ -225,6 +261,42 @@ public final class PlayerNameSetupContext {
                 + formatGameTimeLabel(gameTimeLabel)
                 + " | "
                 + formatPlayerCountLabel(playerCountLabel);
+    }
+
+    private static String buildSettingsSummary(
+            String gameTimeLabel,
+            String languageLabel,
+            String playerCountLabel,
+            String rulesetLabel,
+            String targetScoreLabel) {
+        String baseSummary =
+                formatRulesetLabel(rulesetLabel)
+                + " | "
+                + formatLanguageLabel(languageLabel)
+                + " | "
+                + formatGameTimeLabel(gameTimeLabel)
+                + " | "
+                + formatPlayerCountLabel(playerCountLabel);
+        if (isScribbleRuleset(rulesetLabel) && isMeaningful(targetScoreLabel)) {
+            return baseSummary + " | Target " + targetScoreLabel.trim();
+        }
+        return baseSummary;
+    }
+
+    private static String formatRulesetLabel(String rulesetLabel) {
+        return isMeaningful(rulesetLabel) ? rulesetLabel.trim() : "Traditional Scrabble";
+    }
+
+    private static boolean isScribbleRuleset(String rulesetLabel) {
+        return isMeaningful(rulesetLabel) && "Scribble".equalsIgnoreCase(rulesetLabel.trim());
+    }
+
+    private static String normalizeRulesetLabel(String rulesetLabel) {
+        return isMeaningful(rulesetLabel) ? rulesetLabel.trim() : "Traditional Scrabble";
+    }
+
+    private static String normalizeTargetScoreLabel(String targetScoreLabel) {
+        return targetScoreLabel == null ? "" : targetScoreLabel.trim();
     }
 
     private static String formatGameTimeLabel(String gameTimeLabel) {

@@ -1,9 +1,11 @@
 package com.kotva.domain.model;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
-public class Rack {
+public class Rack implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private final RackSlot[] slots;
 

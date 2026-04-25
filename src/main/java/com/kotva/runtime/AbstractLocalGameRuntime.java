@@ -251,6 +251,10 @@ abstract class AbstractLocalGameRuntime implements GameRuntime {
         return Objects.requireNonNull(session, "session cannot be null.");
     }
 
+    protected final void setSession(GameSession session) {
+        this.session = Objects.requireNonNull(session, "session cannot be null.");
+    }
+
     protected final PlayerController requireCurrentPlayerController() {
         Player currentPlayer = resolveCurrentPlayer();
         if (currentPlayer == null) {

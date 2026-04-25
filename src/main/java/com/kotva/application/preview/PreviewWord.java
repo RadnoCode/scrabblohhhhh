@@ -1,12 +1,15 @@
 package com.kotva.application.preview;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
 import com.kotva.domain.model.Position;
 import com.kotva.policy.WordType;
 
-public class PreviewWord {
+public class PreviewWord implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final String word;
     private final boolean valid;
     private final int scoreContribution;

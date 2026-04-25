@@ -5,7 +5,9 @@ import com.kotva.application.service.AiRuntimeBootstrapper;
 import com.kotva.application.service.AiSessionRuntimeFactory;
 import com.kotva.application.service.GameApplicationService;
 import com.kotva.application.service.GameSetupService;
+import com.kotva.application.session.GameSession;
 import com.kotva.application.setup.NewGameRequest;
+import com.kotva.infrastructure.save.SaveGameRepository;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -13,6 +15,7 @@ public final class GameRuntimeFactory {
     private final GameSetupService gameSetupService;
     private final GameApplicationService gameApplicationService;
     private final Supplier<AiRuntimeBootstrapper> aiRuntimeBootstrapperSupplier;
+    private final SaveGameRepository saveGameRepository;
 
     public GameRuntimeFactory(
         GameSetupService gameSetupService,
@@ -20,13 +23,33 @@ public final class GameRuntimeFactory {
         this(
             gameSetupService,
             gameApplicationService,
-            () -> new AiSessionRuntimeFactory(new QuackleNativeBridge()));
+            () -> new AiSessionRuntimeFactory(new QuackleNativeBridge()),
+            new SaveGameRepository());
     }
 
     GameRuntimeFactory(
         GameSetupService gameSetupService,
         GameApplicationService gameApplicationService,
         Supplier<AiRuntimeBootstrapper> aiRuntimeBootstrapperSupplier) {
+        this(gameSetupService, gameApplicationService, aiRuntimeBootstrapperSupplier, new SaveGameRepository());
+    }
+
+    public GameRuntimeFactory(
+        GameSetupService gameSetupService,
+        GameApplicationService gameApplicationService,
+        SaveGameRepository saveGameRepository) {
+        this(
+            gameSetupService,
+            gameApplicationService,
+            () -> new AiSessionRuntimeFactory(new QuackleNativeBridge()),
+            saveGameRepository);
+    }
+
+    GameRuntimeFactory(
+        GameSetupService gameSetupService,
+        GameApplicationService gameApplicationService,
+        Supplier<AiRuntimeBootstrapper> aiRuntimeBootstrapperSupplier,
+        SaveGameRepository saveGameRepository) {
         this.gameSetupService =
         Objects.requireNonNull(gameSetupService, "gameSetupService cannot be null.");
         this.gameApplicationService = Objects.requireNonNull(
@@ -34,6 +57,9 @@ public final class GameRuntimeFactory {
         this.aiRuntimeBootstrapperSupplier = Objects.requireNonNull(
             aiRuntimeBootstrapperSupplier,
             "aiRuntimeBootstrapperSupplier cannot be null.");
+        this.saveGameRepository = Objects.requireNonNull(
+            saveGameRepository,
+            "saveGameRepository cannot be null.");
     }
 
     public GameRuntime create(NewGameRequest request) {
@@ -49,7 +75,8 @@ public final class GameRuntimeFactory {
         return switch (launchSpec.getGameMode()) {
             case HOT_SEAT -> new HotSeatGameRuntime(
                     gameSetupService,
-                    gameApplicationService);
+                    gameApplicationService,
+                    saveGameRepository);
             case HUMAN_VS_AI -> new LocalAiGameRuntime(
                     gameSetupService,
                     gameApplicationService,
@@ -60,5 +87,13 @@ public final class GameRuntimeFactory {
                             gameSetupService,
                             gameApplicationService);
         };
+    }
+
+    public GameRuntime createHotSeatFromSave(GameSession session) {
+        return new HotSeatGameRuntime(
+            gameSetupService,
+            gameApplicationService,
+            saveGameRepository,
+            Objects.requireNonNull(session, "session cannot be null."));
     }
 }

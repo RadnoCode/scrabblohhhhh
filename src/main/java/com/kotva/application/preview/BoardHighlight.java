@@ -1,8 +1,11 @@
 package com.kotva.application.preview;
 
 import com.kotva.domain.model.Position;
+import java.io.Serializable;
 
-public class BoardHighlight {
+public class BoardHighlight implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final Position position;
     private final HighlightType highlightType;
 

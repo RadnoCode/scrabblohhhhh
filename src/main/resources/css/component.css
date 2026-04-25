@@ -172,6 +172,14 @@
     -fx-font-size: 16px;
 }
 
+.ruleset-compact .setting-item-label {
+    -fx-font-size: 16px;
+}
+
+.ruleset-compact .switch-button-value {
+    -fx-font-size: 16px;
+}
+
 .slider-value-label {
     -fx-text-fill: #f4d85a;
     -fx-font-size: 30px;

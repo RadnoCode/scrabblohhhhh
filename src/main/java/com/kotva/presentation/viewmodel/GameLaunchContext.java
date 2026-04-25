@@ -8,6 +8,7 @@ import com.kotva.application.setup.NewGameRequest;
 import com.kotva.mode.GameMode;
 import com.kotva.policy.AiDifficulty;
 import com.kotva.policy.DictionaryType;
+import com.kotva.policy.GameRuleset;
 import com.kotva.tutorial.TutorialScriptId;
 import java.util.ArrayList;
 import java.util.List;
@@ -98,20 +99,42 @@ public class GameLaunchContext {
         String languageLabel,
         String playerCountLabel,
         List<String> playerNames) {
+        return forLocalMultiplayer(
+            gameTimeLabel,
+            stepTimeSecondsLabel,
+            languageLabel,
+            playerCountLabel,
+            playerNames,
+            GameRuleset.TRADITIONAL_SCRABBLE.getSetupLabel(),
+            null);
+    }
+
+    public static GameLaunchContext forLocalMultiplayer(
+        String gameTimeLabel,
+        String stepTimeSecondsLabel,
+        String languageLabel,
+        String playerCountLabel,
+        List<String> playerNames,
+        String rulesetLabel,
+        String targetScoreLabel) {
         int playerCount = Integer.parseInt(playerCountLabel);
+        GameRuleset ruleset = GameRuleset.fromSetupLabel(rulesetLabel);
         NewGameRequest request = new NewGameRequest(
             GameMode.HOT_SEAT,
             playerCount,
             playerNames,
             mapDictionaryType(languageLabel),
-            mapTimeControl(gameTimeLabel, stepTimeSecondsLabel));
+            mapTimeControl(gameTimeLabel, stepTimeSecondsLabel),
+            null,
+            ruleset,
+            ruleset == GameRuleset.SCRIBBLE ? mapTargetScore(targetScoreLabel) : null);
         return new GameLaunchContext(
             LaunchKind.STANDARD_GAME,
             RuntimeLaunchSpec.forLocal(request),
             null,
             request,
             null,
-            "Local Multiplayer",
+            ruleset == GameRuleset.SCRIBBLE ? "Scribble" : "Local Multiplayer",
             gameTimeLabel,
             languageLabel,
             playerCountLabel,
@@ -311,6 +334,24 @@ public class GameLaunchContext {
         int minutes = parseGameTimeMinutes(gameTimeLabel);
         int stepTimeSeconds = parseStepTimeSeconds(stepTimeSecondsLabel);
         return new TimeControlConfig(minutes * 60L * 1000L, stepTimeSeconds * 1000L);
+    }
+
+    private static Integer mapTargetScore(String targetScoreLabel) {
+        if (targetScoreLabel == null) {
+            return null;
+        }
+
+        String digitsOnly = targetScoreLabel.replaceAll("[^0-9]", "");
+        if (digitsOnly.isEmpty()) {
+            return null;
+        }
+
+        try {
+            int targetScore = Integer.parseInt(digitsOnly);
+            return targetScore > 0 ? targetScore : null;
+        } catch (NumberFormatException exception) {
+            return null;
+        }
     }
 
     private static int parseGameTimeMinutes(String gameTimeLabel) {

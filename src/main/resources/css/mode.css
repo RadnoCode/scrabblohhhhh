@@ -62,6 +62,15 @@
     -fx-padding: 0 0 0 20;
 }
 
+.local-themed-setup-button.compact-setting-label .setting-item-label,
+.local-themed-setup-button.ruleset-compact .setting-item-label {
+    -fx-font-size: 16px;
+}
+
+.local-themed-setup-button.ruleset-compact .switch-button-value {
+    -fx-font-size: 16px;
+}
+
 .local-themed-setup-button .input-button-field,
 .local-themed-setup-button .switch-trigger {
     -fx-background-color: transparent;
@@ -81,4 +90,21 @@
     -fx-text-fill: #ff9c1a;
     -fx-font-size: 35px;
     -fx-font-weight: 800;
+}
+
+.local-save-load-button {
+    -fx-background-color: rgba(255, 250, 238, 0.92);
+    -fx-background-radius: 8;
+    -fx-border-color: rgba(40, 79, 127, 0.55);
+    -fx-border-radius: 8;
+    -fx-border-width: 1.5;
+    -fx-padding: 0;
+}
+
+.local-save-load-button .common-button-label {
+    -fx-text-fill: #284f7f;
+    -fx-font-size: 18px;
+    -fx-font-weight: 800;
+    -fx-padding: 0;
+    -fx-opacity: 1;
 }

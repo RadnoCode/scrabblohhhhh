@@ -2,8 +2,10 @@
 package com.kotva.domain.model;
 
 import com.kotva.policy.BonusType;
+import java.io.Serializable;
 
-public class Board {
+public class Board implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     public static final int SIZE = 15;
 

@@ -4,6 +4,7 @@ import com.kotva.presentation.component.ActionPanelView;
 import com.kotva.presentation.component.AiStatusBannerView;
 import com.kotva.presentation.component.BlankTilePickerView;
 import com.kotva.presentation.component.BoardView;
+import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.component.PlayerInfoCardView;
 import com.kotva.presentation.component.PreviewPanelView;
 import com.kotva.presentation.component.RackView;
@@ -60,7 +61,18 @@ public class GameScene extends Scene {
         rackHandoffLayer.setPickOnBounds(false);
 
         TitleBanner titleBanner = new TitleBanner(viewModel.getTitleText());
-        VBox topBox = new VBox(titleBanner);
+        CommonButton saveButton = createUtilityButton("Save");
+        CommonButton loadButton = createUtilityButton("Load");
+        saveButton.setOnAction(event -> controller.onSaveGameRequested());
+        loadButton.setOnAction(event -> controller.onLoadGameRequested());
+        HBox saveLoadRow = new HBox(8, saveButton, loadButton);
+        saveLoadRow.getStyleClass().add("game-save-load-row");
+        saveLoadRow.setAlignment(Pos.CENTER);
+        boolean showSaveLoad = controller.shouldShowSaveLoadControls();
+        saveLoadRow.setVisible(showSaveLoad);
+        saveLoadRow.setManaged(showSaveLoad);
+
+        VBox topBox = new VBox(8, titleBanner, saveLoadRow);
         topBox.setAlignment(Pos.CENTER);
         BorderPane.setMargin(topBox, new Insets(18, 180, 8, 180));
         contentRoot.setTop(topBox);
@@ -195,5 +207,13 @@ public class GameScene extends Scene {
         getStylesheets().add(getClass().getResource("/css/theme.css").toExternalForm());
         getStylesheets().add(getClass().getResource("/css/component.css").toExternalForm());
         getStylesheets().add(getClass().getResource("/css/game.css").toExternalForm());
+    }
+
+    private static CommonButton createUtilityButton(String text) {
+        CommonButton button = new CommonButton(text);
+        button.getStyleClass().add("game-utility-button");
+        button.setButtonContentAlignment(Pos.CENTER);
+        button.applyButtonSize(112, 36);
+        return button;
     }
 }

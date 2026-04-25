@@ -1,8 +1,11 @@
 package com.kotva.application.draft;
 
 import com.kotva.domain.model.Position;
+import java.io.Serializable;
 
-public class DraftPlacement {
+public class DraftPlacement implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String tileId;
     private Position position;
     private Character assignedLetter;

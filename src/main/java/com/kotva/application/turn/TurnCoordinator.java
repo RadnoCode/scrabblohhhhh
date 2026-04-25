@@ -8,10 +8,13 @@ import com.kotva.domain.endgame.EndGameChecker;
 import com.kotva.domain.endgame.GameEndReason;
 import com.kotva.domain.model.GameState;
 import com.kotva.domain.model.Player;
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 
-public class TurnCoordinator {
+public class TurnCoordinator implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final GameState gameState;
     private final SettlementService settlementService;
     private final RoundTracker roundTracker;

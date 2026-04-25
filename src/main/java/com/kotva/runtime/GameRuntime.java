@@ -11,6 +11,18 @@ import java.util.function.Consumer;
 public interface GameRuntime {
     void start(NewGameRequest request);
 
+    default boolean supportsSaveGame() {
+        return false;
+    }
+
+    default void saveGame() {
+        throw new IllegalStateException("Save game is not available.");
+    }
+
+    default void loadGame() {
+        throw new IllegalStateException("Load game is not available.");
+    }
+
     default boolean requiresBackgroundRefresh() {
         return false;
     }

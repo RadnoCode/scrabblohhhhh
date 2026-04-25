@@ -100,6 +100,19 @@ public class GameController implements GameActionPort {
         return draftState;
     }
 
+    public boolean shouldShowSaveLoadControls() {
+        if (launchContext.getRequest() != null) {
+            return launchContext.getRequest().getGameMode() == GameMode.HOT_SEAT;
+        }
+        if (!launchContext.hasProvidedRuntime()) {
+            return false;
+        }
+        GameRuntime providedRuntime = launchContext.requireProvidedRuntime();
+        GameSession providedSession = providedRuntime.getSession();
+        return providedSession != null
+            && providedSession.getConfig().getGameMode() == GameMode.HOT_SEAT;
+    }
+
     public String getPendingClientActionId() {
         return pendingClientActionId;
     }
@@ -134,7 +147,9 @@ public class GameController implements GameActionPort {
 
         if (launchContext.hasProvidedRuntime()) {
             gameRuntime = launchContext.requireProvidedRuntime();
-            gameRuntime.start(launchContext.getRequest());
+            if (!gameRuntime.hasSession()) {
+                gameRuntime.start(launchContext.getRequest());
+            }
         } else if (launchContext.getLaunchKind() == LaunchKind.TUTORIAL) {
             gameRuntime = tutorialRuntimeFactory.create(launchContext.getTutorialScriptId());
             gameRuntime.start(null);
@@ -148,6 +163,9 @@ public class GameController implements GameActionPort {
         clearClientActionTracking();
 
         GameSessionSnapshot firstSnapshot = gameRuntime.getSessionSnapshot();
+        if (launchContext.hasProvidedRuntime() && shouldShowSaveLoadControls()) {
+            suppressActionFeedback(firstSnapshot);
+        }
         boolean shouldPoll = shouldStartPolling(gameRuntime);
         if (gameRuntime.isSessionInProgress() && shouldPoll) {
             // Prime the baseline before polling can drive either local clocks or LAN snapshot refreshes.
@@ -912,6 +930,13 @@ public class GameController implements GameActionPort {
         }
     }
 
+    private void suppressActionFeedback(GameSessionSnapshot snapshot) {
+        if (snapshot == null || snapshot.getLatestActionResult() == null) {
+            return;
+        }
+        lastPresentedActionResultId = snapshot.getLatestActionResult().getActionId();
+    }
+
     static GameActionResult resolveLatestActionResult(GameRuntime gameRuntime) {
         if (gameRuntime == null || !gameRuntime.hasSession()) {
             return null;
@@ -922,6 +947,52 @@ public class GameController implements GameActionPort {
         }
         GameSessionSnapshot snapshot = gameRuntime.getSessionSnapshot();
         return snapshot == null ? null : snapshot.getLatestActionResult();
+    }
+
+    public void onSaveGameRequested() {
+        if (gameRuntime == null || !gameRuntime.supportsSaveGame()) {
+            pushImmediateMessage("Save is only available in with-friends mode.");
+            return;
+        }
+        if (!gameRuntime.hasSession()) {
+            pushImmediateMessage("There is no active game to save.");
+            return;
+        }
+
+        try {
+            tickClockBeforeActionIfNeeded();
+            gameRuntime.saveGame();
+            pushImmediateMessage("With-friends game saved.");
+        } catch (RuntimeException exception) {
+            pushImmediateMessage(exception.getMessage());
+        }
+    }
+
+    public void onLoadGameRequested() {
+        if (gameRuntime == null || !gameRuntime.supportsSaveGame()) {
+            pushImmediateMessage("Load is only available in with-friends mode.");
+            return;
+        }
+
+        try {
+            stopPolling();
+            gameRuntime.loadGame();
+            clearClientActionTracking();
+            GameSessionSnapshot snapshot = gameRuntime.getSessionSnapshot();
+            suppressActionFeedback(snapshot);
+            boolean shouldPoll = shouldStartPolling(gameRuntime);
+            lastTickNanos = gameRuntime.isSessionInProgress() && shouldPoll ? System.nanoTime() : 0L;
+            renderSnapshot(snapshot);
+            startPollingIfNeeded(shouldPoll);
+            pushImmediateMessage("With-friends game loaded.");
+        } catch (RuntimeException exception) {
+            boolean shouldPoll = shouldStartPolling(gameRuntime);
+            lastTickNanos = gameRuntime != null && gameRuntime.isSessionInProgress() && shouldPoll
+                ? System.nanoTime()
+                : 0L;
+            startPollingIfNeeded(shouldPoll);
+            pushImmediateMessage(exception.getMessage());
+        }
     }
 
     private GameActionResult latestActionResult() {
@@ -948,8 +1019,33 @@ public class GameController implements GameActionPort {
             || Objects.equals(latestActionResult.getNextPlayerId(), latestActionResult.getPlayerId())) {
             return false;
         }
-        return launchContext.getRequest() != null
-            && launchContext.getRequest().getGameMode() == GameMode.HOT_SEAT;
+        return isHotSeatGameMode();
+    }
+
+    private void startPollingIfNeeded(boolean shouldPoll) {
+        if (gameRuntime == null || !gameRuntime.isSessionInProgress() || !shouldPoll) {
+            return;
+        }
+        uiScheduler = new UiScheduler(POLLING_INTERVAL, this::pollSnapshot);
+        uiScheduler.start();
+    }
+
+    private void pushImmediateMessage(String message) {
+        viewModel.pushTransientMessage(message == null || message.isBlank()
+            ? "Save/load operation failed."
+            : message);
+        if (renderer != null) {
+            renderer.refresh();
+        }
+    }
+
+    private boolean isHotSeatGameMode() {
+        if (launchContext.getRequest() != null) {
+            return launchContext.getRequest().getGameMode() == GameMode.HOT_SEAT;
+        }
+        return gameRuntime != null
+            && gameRuntime.getSession() != null
+            && gameRuntime.getSession().getConfig().getGameMode() == GameMode.HOT_SEAT;
     }
 
     private String buildCurrentRackDebugText() {

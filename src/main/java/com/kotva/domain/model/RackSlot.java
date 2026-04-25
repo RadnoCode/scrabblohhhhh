@@ -1,6 +1,10 @@
 package com.kotva.domain.model;
 
-public class RackSlot {
+import java.io.Serializable;
+
+public class RackSlot implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private int index;
     private Tile tile;
 

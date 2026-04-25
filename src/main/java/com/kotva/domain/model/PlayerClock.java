@@ -1,9 +1,12 @@
 package com.kotva.domain.model;
 
 import com.kotva.policy.ClockPhase;
+import java.io.Serializable;
 import java.util.Objects;
 
-public class PlayerClock {
+public class PlayerClock implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private long mainTimeRemainingMillis;
     private final long byoYomiPerTurnMillis;
     private long byoYomiRemainingMillis;

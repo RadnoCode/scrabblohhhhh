@@ -126,7 +126,9 @@ public class PlayerNameSetupController {
                         context.getStepTimeSecondsLabel(),
                         context.getLanguageLabel(),
                         context.getPlayerCountLabel(),
-                        playerNames));
+                        playerNames,
+                        context.getRulesetLabel(),
+                        context.getTargetScoreLabel()));
     }
 
     private void createLanLobby(String hostPlayerName, TransientMessageView messageView) {

@@ -8,6 +8,7 @@ import com.kotva.application.setup.NewGameRequest;
 import com.kotva.domain.model.GameState;
 import com.kotva.domain.model.Player;
 import com.kotva.domain.model.PlayerClock;
+import com.kotva.domain.model.TileBag;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.mode.GameMode;
 import com.kotva.mode.PlayerController;
@@ -61,6 +62,9 @@ public class GameSetupServiceImpl implements GameSetupService {
         if (request.getDictionaryType() == null) {
             throw new IllegalArgumentException("dictionaryType cannot be null.");
         }
+        if (request.getRuleset().isScribbleRuleset() && !isValidTargetScore(request.getTargetScore())) {
+            throw new IllegalArgumentException("Scribble requires a positive target score.");
+        }
 
         List<String> playerNames = request.getPlayerNames();
         if (playerNames.size() != playerCount) {
@@ -84,7 +88,9 @@ public class GameSetupServiceImpl implements GameSetupService {
             players,
             request.getDictionaryType(),
             request.getTimeControlConfig(),
-            request.getAiDifficulty());
+            request.getAiDifficulty(),
+            request.getRuleset(),
+            request.getRuleset().isScribbleRuleset() ? request.getTargetScore() : null);
     }
 
         @Override
@@ -105,7 +111,8 @@ public class GameSetupServiceImpl implements GameSetupService {
         List<Player> players = createPlayers(config);
         Collections.shuffle(players, random);
 
-        GameState gameState = new GameState(players);
+        TileBag tileBag = config.hasInfiniteTileBag() ? TileBag.infinite() : new TileBag();
+        GameState gameState = new GameState(players, tileBag, config.getTargetScore());
         gameState.initialDraw();
 
         GameSession session = new GameSession(UUID.randomUUID().toString(), config, gameState);
@@ -160,5 +167,9 @@ public class GameSetupServiceImpl implements GameSetupService {
         case HUMAN_VS_AI -> playerIndex == 0 ? PlayerType.LOCAL : PlayerType.AI;
         case LAN_MULTIPLAYER -> playerIndex == 0 ? PlayerType.LOCAL : PlayerType.LAN;
         };
+    }
+
+    private boolean isValidTargetScore(Integer targetScore) {
+        return targetScore != null && targetScore > 0;
     }
 }

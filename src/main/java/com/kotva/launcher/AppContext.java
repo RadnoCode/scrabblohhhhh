@@ -13,6 +13,7 @@ import com.kotva.application.service.SettlementServiceImpl;
 import com.kotva.infrastructure.AudioManager;
 import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.infrastructure.dictionary.TutorialDictionaryRepository;
+import com.kotva.infrastructure.save.SaveGameRepository;
 import com.kotva.infrastructure.settings.AppSettings;
 import com.kotva.infrastructure.settings.SettingsRepository;
 import java.util.Objects;
@@ -23,6 +24,7 @@ public class AppContext {
     private final SettlementService settlementService;
     private final DictionaryRepository dictionaryRepository;
     private final SettingsRepository settingsRepository;
+    private final SaveGameRepository saveGameRepository;
     private final GameApplicationService gameApplicationService;
     private final GameSetupService gameSetupService;
     private final GameRuntimeFactory gameRuntimeFactory;
@@ -35,6 +37,7 @@ public class AppContext {
             new SettlementServiceImpl(),
             new DictionaryRepository(),
             new SettingsRepository(),
+            new SaveGameRepository(),
             new Random());
     }
 
@@ -44,6 +47,22 @@ public class AppContext {
         DictionaryRepository dictionaryRepository,
         SettingsRepository settingsRepository,
         Random random) {
+        this(
+            clockService,
+            settlementService,
+            dictionaryRepository,
+            settingsRepository,
+            new SaveGameRepository(),
+            random);
+    }
+
+    public AppContext(
+        ClockService clockService,
+        SettlementService settlementService,
+        DictionaryRepository dictionaryRepository,
+        SettingsRepository settingsRepository,
+        SaveGameRepository saveGameRepository,
+        Random random) {
         this.clockService = Objects.requireNonNull(clockService, "clockService cannot be null.");
         this.settlementService =
         Objects.requireNonNull(settlementService, "settlementService cannot be null.");
@@ -51,6 +70,8 @@ public class AppContext {
         Objects.requireNonNull(dictionaryRepository, "dictionaryRepository cannot be null.");
         this.settingsRepository =
         Objects.requireNonNull(settingsRepository, "settingsRepository cannot be null.");
+        this.saveGameRepository =
+        Objects.requireNonNull(saveGameRepository, "saveGameRepository cannot be null.");
         Random nonNullRandom = Objects.requireNonNull(random, "random cannot be null.");
         this.gameApplicationService =
         new GameApplicationServiceImpl(this.clockService, this.dictionaryRepository);
@@ -58,7 +79,8 @@ public class AppContext {
         new GameSetupServiceImpl(this.dictionaryRepository, this.clockService, nonNullRandom);
         this.gameRuntimeFactory = new GameRuntimeFactory(
             this.gameSetupService,
-            this.gameApplicationService);
+            this.gameApplicationService,
+            this.saveGameRepository);
         this.tutorialRuntimeFactory = new TutorialRuntimeFactory(
             new GameApplicationServiceImpl(
                 this.clockService,
@@ -75,6 +97,10 @@ public class AppContext {
 
     public SettingsRepository getSettingsRepository() {
         return settingsRepository;
+    }
+
+    public SaveGameRepository getSaveGameRepository() {
+        return saveGameRepository;
     }
 
     public SettlementService getSettlementService() {
