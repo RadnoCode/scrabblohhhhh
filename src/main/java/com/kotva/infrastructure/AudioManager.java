@@ -4,6 +4,9 @@ import java.net.URL;
 import java.util.Objects;
 import javafx.scene.media.AudioClip;
 
+/**
+ * Plays UI sound effects.
+ */
 public final class AudioManager {
     private static final String AUDIO_BASE_PATH = "/audio/";
 

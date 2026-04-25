@@ -19,6 +19,9 @@ import com.kotva.infrastructure.settings.SettingsRepository;
 import java.util.Objects;
 import java.util.Random;
 
+/**
+ * Creates and stores the main services used by the app.
+ */
 public class AppContext {
     private final ClockService clockService;
     private final SettlementService settlementService;

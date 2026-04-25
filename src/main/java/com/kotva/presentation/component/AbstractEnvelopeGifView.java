@@ -24,6 +24,9 @@ import javax.imageio.stream.ImageInputStream;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+/**
+ * Base class for animated envelope views on the home page.
+ */
 abstract class AbstractEnvelopeGifView extends StackPane implements HomeEnvelopeAnimation {
     private static final double ENVELOPE_WIDTH = 495;
     private static final double ENVELOPE_HEIGHT = 372;

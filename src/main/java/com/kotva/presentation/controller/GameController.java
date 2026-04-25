@@ -52,6 +52,9 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.TextInputDialog;
 import javafx.util.Duration;
 
+/**
+ * Controls the main game screen.
+ */
 public class GameController implements GameActionPort {
     private static final Duration POLLING_INTERVAL = Duration.millis(100);
     private static final int RACK_SLOT_COUNT = 7;

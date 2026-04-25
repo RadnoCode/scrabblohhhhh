@@ -9,6 +9,9 @@ import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
 import com.kotva.presentation.viewmodel.GameLaunchContext;
 
+/**
+ * Controls the robot game setup screen.
+ */
 public class LocalAiSetupController {
     private static final String DEFAULT_GAME_TIME_MINUTES = "15";
     private static final String DEFAULT_STEP_TIME_SECONDS = "30";

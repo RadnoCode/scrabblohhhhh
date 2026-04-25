@@ -6,6 +6,9 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 
+/**
+ * A button that shows a locked option.
+ */
 public class LockedButton extends CommonButton {
     private final Label leftLabel;
     private final Label valueLabel;

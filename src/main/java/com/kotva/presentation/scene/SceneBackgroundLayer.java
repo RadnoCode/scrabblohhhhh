@@ -4,6 +4,9 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 
+/**
+ * Creates the scene background.
+ */
 final class SceneBackgroundLayer {
     private static final String BACKGROUND_IMAGE_PATH = "/images/home/Background.png";
 

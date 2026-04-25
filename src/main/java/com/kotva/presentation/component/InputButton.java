@@ -10,6 +10,9 @@ import javafx.scene.control.TextFormatter;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 
+/**
+ * A button with a text input field.
+ */
 public class InputButton extends CommonButton {
     private static final double DEFAULT_INPUT_FIELD_WIDTH = 172;
     private static final double DEFAULT_INPUT_FIELD_HEIGHT = 40;

@@ -8,6 +8,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
 
+/**
+ * Shows the preview result for the current move.
+ */
 public class PreviewPanelView extends StackPane {
     private static final String VALID_STYLE = "game-preview-panel-valid";
     private static final String INVALID_STYLE = "game-preview-panel-invalid";

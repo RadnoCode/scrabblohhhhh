@@ -6,6 +6,9 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 
+/**
+ * Shows one setting and its value.
+ */
 public class SettingsValueButton extends CommonButton {
     private static final double VALUE_WIDTH = 190;
     private static final double VALUE_RIGHT_OFFSET = 104;

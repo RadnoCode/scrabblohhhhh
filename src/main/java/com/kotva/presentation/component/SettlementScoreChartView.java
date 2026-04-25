@@ -13,6 +13,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+/**
+ * Shows the final score chart.
+ */
 public final class SettlementScoreChartView extends VBox {
     private static final double DEFAULT_CHART_WIDTH = 720;
     private static final double MIN_FILL_RATIO = 0.18;

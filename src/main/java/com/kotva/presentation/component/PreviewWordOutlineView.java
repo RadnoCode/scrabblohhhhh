@@ -5,6 +5,9 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
 
+/**
+ * Draws the outline for preview words.
+ */
 public class PreviewWordOutlineView extends Pane {
     private static final String BASE_CLASS = "game-board-word-outline";
     private static final String VALID_CLASS = "game-board-word-outline-valid";

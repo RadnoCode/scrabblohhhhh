@@ -4,6 +4,9 @@ import com.kotva.presentation.viewmodel.GameViewModel;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 
+/**
+ * Shows one Scrabble tile.
+ */
 public class TileView extends StackPane {
     private final double tileSize;
     private final Label letterLabel;

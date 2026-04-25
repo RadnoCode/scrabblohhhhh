@@ -1,5 +1,8 @@
 package com.kotva.presentation.viewmodel;
 
+/**
+ * Stores data for the settings screen.
+ */
 public class SettingsViewModel {
     private String playerName;
     private double soundEffectVolume;

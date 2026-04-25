@@ -36,6 +36,9 @@ import java.util.Deque;
 import java.util.Objects;
 import javafx.stage.Stage;
 
+/**
+ * Changes between JavaFX scenes.
+ */
 public class SceneNavigator {
     private final Stage stage;
     private final AppContext appContext;

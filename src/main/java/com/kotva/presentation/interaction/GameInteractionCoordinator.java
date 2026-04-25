@@ -20,6 +20,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.util.Duration;
 
+/**
+ * Handles drag and drop in the game screen.
+ */
 public class GameInteractionCoordinator {
     private static final Duration PICKER_HIDE_DELAY = Duration.millis(120);
     private static final double PICKER_TOP_OFFSET = 10;

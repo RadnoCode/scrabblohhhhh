@@ -13,6 +13,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.Node;
 import javafx.scene.shape.Rectangle;
 
+/**
+ * Shows tutorial text and buttons.
+ */
 public class TutorialOverlayView extends StackPane {
     public static final double CARD_WIDTH = PlayerInfoCardView.CARD_WIDTH + 32;
     private static final double CARD_HEIGHT = PlayerInfoCardView.CARD_HEIGHT * 2 + 12;
