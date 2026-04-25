@@ -17,6 +17,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -30,13 +31,19 @@ public class LocalMultiplayerSetupScene extends Scene {
         "/images/local-multiplayer/buttons/bottom-select-game-time.png";
     private static final String STEP_TIME_BUTTON_IMAGE_PATH =
         "/images/local-multiplayer/buttons/bottom-select-step-time.png";
+    private static final String GAME_TYPE_BUTTON_IMAGE_PATH =
+        "/images/local-multiplayer/buttons/bottom-game-type.png";
+    private static final String TARGET_SCORE_BUTTON_IMAGE_PATH =
+        "/images/local-multiplayer/buttons/bottom-target-score.png";
     private static final String DICTIONARY_BUTTON_IMAGE_PATH =
         "/images/local-multiplayer/buttons/bottom-dictionary.png";
     private static final String PLAYER_COUNT_BUTTON_IMAGE_PATH =
         "/images/local-multiplayer/buttons/bottom-number-of-player.png";
     private static final String CONTINUE_BUTTON_IMAGE_PATH =
         "/images/local-multiplayer/buttons/bottom-continue.png";
-    private static final double BUTTON_SCALE = 0.8;
+    private static final String LOAD_SAVE_BUTTON_IMAGE_PATH =
+        "/images/local-multiplayer/buttons/bottom-load-save.png";
+    private static final double BUTTON_SCALE = 0.8 * 0.7;
     private static final double VICE_TITLE_WIDTH = 180;
     private static final double VICE_TITLE_HEIGHT = 90;
     private static final double DEFAULT_SETUP_BUTTON_WIDTH = 420.0;
@@ -47,11 +54,10 @@ public class LocalMultiplayerSetupScene extends Scene {
     private static final double SETUP_INPUT_HEIGHT = 40 * BUTTON_SCALE;
     private static final double DICTIONARY_TRIGGER_WIDTH = 232 * BUTTON_SCALE;
     private static final double DICTIONARY_TRIGGER_HEIGHT = 40 * BUTTON_SCALE;
-    private static final double RULESET_TRIGGER_WIDTH = 224 * BUTTON_SCALE;
-    private static final double COMPACT_INPUT_WIDTH = 136 * BUTTON_SCALE;
-    private static final double COMPACT_BUTTON_HEIGHT = SETUP_BUTTON_HEIGHT * 0.74;
+    private static final double GAME_TYPE_TRIGGER_WIDTH = 240 * BUTTON_SCALE;
     private static final double CONTINUE_BUTTON_WIDTH = (DEFAULT_SETUP_BUTTON_HEIGHT * 591.0 / 238.0) * BUTTON_SCALE;
-    private static final double BUTTON_PANEL_OFFSET_X = 130;
+    private static final double SETUP_GRID_COLUMN_GAP = 12;
+    private static final double SETUP_GRID_WIDTH = SETUP_BUTTON_WIDTH * 2 + SETUP_GRID_COLUMN_GAP;
     private static final Insets CONTENT_MARGIN = new Insets(2, 100, 48, 100);
     private static final Insets MESSAGE_MARGIN = new Insets(172, 0, 0, 0);
 
@@ -82,19 +88,17 @@ public class LocalMultiplayerSetupScene extends Scene {
 
         HBox viceTitleBox = new HBox(viceTitleBanner);
         viceTitleBox.setAlignment(Pos.CENTER);
-        viceTitleBox.setPrefWidth(400);
-        viceTitleBox.setMinWidth(400);
-        viceTitleBox.setMaxWidth(400);
+        viceTitleBox.setPrefWidth(SETUP_GRID_WIDTH);
+        viceTitleBox.setMinWidth(SETUP_GRID_WIDTH);
+        viceTitleBox.setMaxWidth(SETUP_GRID_WIDTH);
 
         InputButton firstButton = new InputButton(viewModel.getFirstOptionText());
         firstButton.enableNumericOnlyInput();
         InputButton stepTimeButton = new InputButton("Enter Step Time(s)");
         stepTimeButton.enableNumericOnlyInput();
         SwitchButton rulesetButton = new SwitchButton("Game Type");
-        rulesetButton.getStyleClass().add("ruleset-compact");
         InputButton targetScoreButton = new InputButton("Target Score");
         targetScoreButton.enableNumericOnlyInput();
-        targetScoreButton.getStyleClass().add("compact-setting-label");
         SwitchButton secondButton = new SwitchButton(viewModel.getSecondOptionText());
         SwitchButton thirdButton = new SwitchButton(viewModel.getThirdOptionText());
         thirdButton.getStyleClass().add("compact-setting-label");
@@ -102,15 +106,14 @@ public class LocalMultiplayerSetupScene extends Scene {
         CommonButton loadButton = new CommonButton("Load Save");
         configureSetupButton(firstButton, GAME_TIME_BUTTON_IMAGE_PATH);
         configureSetupButton(stepTimeButton, STEP_TIME_BUTTON_IMAGE_PATH);
-        configureCompactSetupButton(rulesetButton, "local-themed-setup-button-medium");
-        rulesetButton.setSwitchTriggerSize(RULESET_TRIGGER_WIDTH, SETUP_INPUT_HEIGHT);
-        configureCompactSetupButton(targetScoreButton, "local-themed-setup-button-light");
+        configureSetupButton(rulesetButton, GAME_TYPE_BUTTON_IMAGE_PATH);
+        rulesetButton.setSwitchTriggerSize(GAME_TYPE_TRIGGER_WIDTH, SETUP_INPUT_HEIGHT);
+        configureSetupButton(targetScoreButton, TARGET_SCORE_BUTTON_IMAGE_PATH);
         configureSetupButton(secondButton, DICTIONARY_BUTTON_IMAGE_PATH);
         secondButton.setSwitchTriggerSize(DICTIONARY_TRIGGER_WIDTH, DICTIONARY_TRIGGER_HEIGHT);
         configureSetupButton(thirdButton, PLAYER_COUNT_BUTTON_IMAGE_PATH);
-        configureSetupButton(goButton, CONTINUE_BUTTON_IMAGE_PATH);
-        goButton.applyButtonSize(CONTINUE_BUTTON_WIDTH, SETUP_BUTTON_HEIGHT);
-        configureLoadButton(loadButton);
+        configureActionButton(goButton, CONTINUE_BUTTON_IMAGE_PATH);
+        configureActionButton(loadButton, LOAD_SAVE_BUTTON_IMAGE_PATH);
         controller.bindActions(
             firstButton,
             stepTimeButton,
@@ -122,26 +125,30 @@ public class LocalMultiplayerSetupScene extends Scene {
             loadButton,
             messageView);
 
-        VBox buttonColumn = new VBox(7);
-        buttonColumn.setAlignment(Pos.CENTER);
-        buttonColumn.getStyleClass().add("mode-button-column");
-        buttonColumn.setTranslateX(BUTTON_PANEL_OFFSET_X);
-        buttonColumn.setTranslateY(-22);
-        buttonColumn.getChildren().addAll(
-            viceTitleBox,
-            firstButton,
-            stepTimeButton,
-            rulesetButton,
-            targetScoreButton,
-            secondButton,
-            thirdButton,
-            goButton,
-            loadButton);
+        GridPane setupGrid = new GridPane();
+        setupGrid.setHgap(SETUP_GRID_COLUMN_GAP);
+        setupGrid.setVgap(7);
+        setupGrid.setAlignment(Pos.CENTER);
+        setupGrid.add(firstButton, 0, 0);
+        setupGrid.add(rulesetButton, 1, 0);
+        setupGrid.add(stepTimeButton, 0, 1);
+        setupGrid.add(targetScoreButton, 1, 1);
+        setupGrid.add(secondButton, 0, 2);
+        setupGrid.add(thirdButton, 0, 3);
+        setupGrid.add(goButton, 0, 4);
+        setupGrid.add(loadButton, 1, 4);
+
+        VBox buttonPanel = new VBox(7);
+        buttonPanel.setAlignment(Pos.CENTER);
+        buttonPanel.getStyleClass().add("mode-button-column");
+        buttonPanel.setTranslateX(200);
+        buttonPanel.setTranslateY(-22);
+        buttonPanel.getChildren().addAll(viceTitleBox, setupGrid);
 
         Region spacer = new Region();
         spacer.setMinWidth(56);
 
-        HBox contentBox = new HBox(cardStackIconView, spacer, buttonColumn);
+        HBox contentBox = new HBox(cardStackIconView, spacer, buttonPanel);
         contentBox.setAlignment(Pos.TOP_CENTER);
         BorderPane.setMargin(contentBox, CONTENT_MARGIN);
         root.setCenter(contentBox);
@@ -218,24 +225,11 @@ public class LocalMultiplayerSetupScene extends Scene {
         }
     }
 
-    private static void configureLoadButton(CommonButton button) {
-        button.setTemplateBackgroundEnabled(false);
-        button.getStyleClass().add("local-save-load-button");
+    private static void configureActionButton(CommonButton button, String imagePath) {
+        button.getStyleClass().add("local-setup-button");
+        button.setCustomBackgroundImage(imagePath);
         button.setButtonContentAlignment(Pos.CENTER);
-        button.applyButtonSize(CONTINUE_BUTTON_WIDTH, SETUP_BUTTON_HEIGHT * 0.74);
+        button.applyButtonSize(CONTINUE_BUTTON_WIDTH, SETUP_BUTTON_HEIGHT);
     }
 
-    private static void configureCompactSetupButton(CommonButton button, String toneClass) {
-        button.setTemplateBackgroundEnabled(false);
-        button.getStyleClass().addAll("local-themed-setup-button", toneClass);
-        button.setButtonContentAlignment(Pos.CENTER_LEFT);
-        button.applyButtonSize(SETUP_BUTTON_WIDTH, COMPACT_BUTTON_HEIGHT);
-        if (button instanceof InputButton inputButton) {
-            inputButton.setInputFieldTone(InputButton.InputFieldTone.LIGHT_SURFACE);
-            inputButton.setInputFieldSize(COMPACT_INPUT_WIDTH, SETUP_INPUT_HEIGHT);
-        }
-        if (button instanceof SwitchButton switchButton) {
-            switchButton.setSwitchTriggerTone(SwitchButton.SwitchTriggerTone.LIGHT_SURFACE);
-        }
-    }
 }

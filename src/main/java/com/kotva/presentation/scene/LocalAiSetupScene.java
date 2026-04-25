@@ -26,9 +26,26 @@ public class LocalAiSetupScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;
     private static final String VICE_TITLE_IMAGE_PATH = "/images/vice-title/play-with-robot.png";
+    private static final String GAME_TIME_BUTTON_IMAGE_PATH =
+        "/images/local-multiplayer/buttons/bottom-select-game-time.png";
+    private static final String STEP_TIME_BUTTON_IMAGE_PATH =
+        "/images/local-multiplayer/buttons/bottom-select-step-time.png";
+    private static final String DICTIONARY_BUTTON_IMAGE_PATH =
+        "/images/local-multiplayer/buttons/bottom-dictionary.png";
+    private static final String DIFFICULTY_BUTTON_IMAGE_PATH =
+        "/images/local-multiplayer/buttons/bottom-difficulty.png";
+    private static final String CONTINUE_BUTTON_IMAGE_PATH =
+        "/images/local-multiplayer/buttons/bottom-continue.png";
     private static final double VICE_TITLE_WIDTH = 180;
     private static final double VICE_TITLE_HEIGHT = 90;
     private static final double BUTTON_PANEL_OFFSET_X = 130;
+    private static final double SETUP_BUTTON_WIDTH = 420.0;
+    private static final double SETUP_BUTTON_HEIGHT = 420.0 / (1301.0 / 262.0);
+    private static final double SETUP_INPUT_WIDTH = 176;
+    private static final double SETUP_INPUT_HEIGHT = 40;
+    private static final double DICTIONARY_TRIGGER_WIDTH = 232;
+    private static final double DIFFICULTY_TRIGGER_WIDTH = 224;
+    private static final double CONTINUE_BUTTON_WIDTH = SETUP_BUTTON_HEIGHT * 591.0 / 238.0;
     private static final Insets CONTENT_MARGIN = new Insets(2, 100, 48, 100);
     private static final Insets MESSAGE_MARGIN = new Insets(172, 0, 0, 0);
 
@@ -70,11 +87,13 @@ public class LocalAiSetupScene extends Scene {
         SwitchButton secondButton = new SwitchButton(viewModel.getSecondOptionText());
         SwitchButton thirdButton = new SwitchButton(viewModel.getThirdOptionText());
         CommonButton goButton = new CommonButton("Go!");
-        LocalSetupButtonStyle.configureInputButton(firstButton, LocalSetupButtonStyle.DARK_BACKGROUND);
-        LocalSetupButtonStyle.configureInputButton(stepTimeButton, LocalSetupButtonStyle.MEDIUM_BACKGROUND);
-        LocalSetupButtonStyle.configureSwitchButton(secondButton, LocalSetupButtonStyle.LIGHT_BACKGROUND);
-        LocalSetupButtonStyle.configureSwitchButton(thirdButton, LocalSetupButtonStyle.PLAYER_BACKGROUND);
-        LocalSetupButtonStyle.configureContinueButton(goButton);
+        configureSetupButton(firstButton, GAME_TIME_BUTTON_IMAGE_PATH);
+        configureSetupButton(stepTimeButton, STEP_TIME_BUTTON_IMAGE_PATH);
+        configureSetupButton(secondButton, DICTIONARY_BUTTON_IMAGE_PATH);
+        secondButton.setSwitchTriggerSize(DICTIONARY_TRIGGER_WIDTH, SETUP_INPUT_HEIGHT);
+        configureSetupButton(thirdButton, DIFFICULTY_BUTTON_IMAGE_PATH);
+        thirdButton.setSwitchTriggerSize(DIFFICULTY_TRIGGER_WIDTH, SETUP_INPUT_HEIGHT);
+        configureActionButton(goButton, CONTINUE_BUTTON_IMAGE_PATH);
         controller.bindActions(
             firstButton,
             stepTimeButton,
@@ -144,5 +163,22 @@ public class LocalAiSetupScene extends Scene {
         getStylesheets().add(getClass().getResource("/css/theme.css").toExternalForm());
         getStylesheets().add(getClass().getResource("/css/component.css").toExternalForm());
         getStylesheets().add(getClass().getResource("/css/mode.css").toExternalForm());
+    }
+
+    private static void configureSetupButton(CommonButton button, String imagePath) {
+        button.getStyleClass().addAll("local-setup-button", "local-setup-button-large");
+        button.setCustomBackgroundImage(imagePath);
+        button.applyButtonSize(SETUP_BUTTON_WIDTH, SETUP_BUTTON_HEIGHT);
+        if (button instanceof InputButton inputButton) {
+            inputButton.setInputFieldTone(InputButton.InputFieldTone.DARK_SURFACE);
+            inputButton.setInputFieldSize(SETUP_INPUT_WIDTH, SETUP_INPUT_HEIGHT);
+        }
+    }
+
+    private static void configureActionButton(CommonButton button, String imagePath) {
+        button.getStyleClass().add("local-setup-button");
+        button.setCustomBackgroundImage(imagePath);
+        button.setButtonContentAlignment(Pos.CENTER);
+        button.applyButtonSize(CONTINUE_BUTTON_WIDTH, SETUP_BUTTON_HEIGHT);
     }
 }
