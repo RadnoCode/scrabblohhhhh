@@ -55,6 +55,7 @@ public class LocalMultiplayerSetupScene extends Scene {
     private static final double DICTIONARY_TRIGGER_WIDTH = 232 * BUTTON_SCALE;
     private static final double DICTIONARY_TRIGGER_HEIGHT = 40 * BUTTON_SCALE;
     private static final double GAME_TYPE_TRIGGER_WIDTH = 240 * BUTTON_SCALE;
+    private static final double PLAYER_COUNT_TRIGGER_WIDTH = 176 * BUTTON_SCALE;
     private static final double CONTINUE_BUTTON_WIDTH = (DEFAULT_SETUP_BUTTON_HEIGHT * 591.0 / 238.0) * BUTTON_SCALE;
     private static final double SETUP_GRID_COLUMN_GAP = 12;
     private static final double SETUP_GRID_WIDTH = SETUP_BUTTON_WIDTH * 2 + SETUP_GRID_COLUMN_GAP;
@@ -112,6 +113,7 @@ public class LocalMultiplayerSetupScene extends Scene {
         configureSetupButton(secondButton, DICTIONARY_BUTTON_IMAGE_PATH);
         secondButton.setSwitchTriggerSize(DICTIONARY_TRIGGER_WIDTH, DICTIONARY_TRIGGER_HEIGHT);
         configureSetupButton(thirdButton, PLAYER_COUNT_BUTTON_IMAGE_PATH);
+        thirdButton.setSwitchTriggerSize(PLAYER_COUNT_TRIGGER_WIDTH, SETUP_INPUT_HEIGHT);
         configureActionButton(goButton, CONTINUE_BUTTON_IMAGE_PATH);
         configureActionButton(loadButton, LOAD_SAVE_BUTTON_IMAGE_PATH);
         controller.bindActions(
@@ -141,7 +143,7 @@ public class LocalMultiplayerSetupScene extends Scene {
         VBox buttonPanel = new VBox(7);
         buttonPanel.setAlignment(Pos.CENTER);
         buttonPanel.getStyleClass().add("mode-button-column");
-        buttonPanel.setTranslateX(200);
+        buttonPanel.setTranslateX(100);
         buttonPanel.setTranslateY(-22);
         buttonPanel.getChildren().addAll(viceTitleBox, setupGrid);
 

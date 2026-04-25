@@ -112,6 +112,11 @@ public class HomeScene extends Scene {
             envelopeStack,
             List.of(playButton, tutorialButton, settingsButton, helpButton))
             .install();
+        new HomeLetterBurstAnimationManager(
+            sceneRoot,
+            envelopeStack,
+            List.of(playButton, tutorialButton, settingsButton, helpButton))
+            .install();
 
         sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root);
         if (controller.isTutorialPromptVisible()) {
