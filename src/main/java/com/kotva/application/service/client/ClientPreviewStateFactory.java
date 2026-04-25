@@ -12,10 +12,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Rebuilds a lightweight domain game state from a client snapshot for preview.
+ */
 final class ClientPreviewStateFactory {
+    /**
+     * Prevents creating this utility class.
+     */
     private ClientPreviewStateFactory() {
     }
 
+    /**
+     * Builds a preview game state from the latest snapshot.
+     *
+     * @param snapshot source snapshot
+     * @param localPlayerId local player id
+     * @return rebuilt game state
+     */
     static GameState fromSnapshot(GameSessionSnapshot snapshot, String localPlayerId) {
         Objects.requireNonNull(snapshot, "snapshot cannot be null.");
         Objects.requireNonNull(localPlayerId, "localPlayerId cannot be null.");
@@ -27,6 +40,13 @@ final class ClientPreviewStateFactory {
         return gameState;
     }
 
+    /**
+     * Builds players with the local player first.
+     *
+     * @param snapshot source snapshot
+     * @param localPlayerId local player id
+     * @return domain players
+     */
     private static List<Player> buildPlayers(GameSessionSnapshot snapshot, String localPlayerId) {
         List<Player> players = new ArrayList<>();
         GamePlayerSnapshot localPlayer = findPlayer(snapshot, localPlayerId);
@@ -48,6 +68,13 @@ final class ClientPreviewStateFactory {
         return players;
     }
 
+    /**
+     * Finds a player snapshot by id.
+     *
+     * @param snapshot source snapshot
+     * @param playerId player id
+     * @return player snapshot, or {@code null}
+     */
     private static GamePlayerSnapshot findPlayer(GameSessionSnapshot snapshot, String playerId) {
         for (GamePlayerSnapshot playerSnapshot : snapshot.getPlayers()) {
             if (Objects.equals(playerId, playerSnapshot.getPlayerId())) {
@@ -57,6 +84,12 @@ final class ClientPreviewStateFactory {
         return null;
     }
 
+    /**
+     * Converts a player snapshot into a domain player.
+     *
+     * @param snapshot player snapshot
+     * @return domain player
+     */
     private static Player toPlayer(GamePlayerSnapshot snapshot) {
         Player player =
                 new Player(
@@ -68,6 +101,12 @@ final class ClientPreviewStateFactory {
         return player;
     }
 
+    /**
+     * Restores committed board tiles from a snapshot.
+     *
+     * @param gameState game state to modify
+     * @param snapshot source snapshot
+     */
     private static void restoreBoard(GameState gameState, GameSessionSnapshot snapshot) {
         for (BoardCellRenderSnapshot boardCell : snapshot.getBoardCells()) {
             if (boardCell.isDraft()) {
@@ -82,12 +121,23 @@ final class ClientPreviewStateFactory {
         }
     }
 
+    /**
+     * Marks the first move as made when the restored board is not empty.
+     *
+     * @param gameState game state to update
+     */
     private static void restoreFirstMoveState(GameState gameState) {
         if (!gameState.getBoard().isEmpty()) {
             gameState.markFirstMoveMade();
         }
     }
 
+    /**
+     * Converts a rendered board cell into a domain tile.
+     *
+     * @param boardCell board cell snapshot
+     * @return domain tile
+     */
     private static Tile toBoardTile(BoardCellRenderSnapshot boardCell) {
         if (boardCell.isBlank()) {
             Tile tile = new Tile(boardCell.getTileId(), ' ', boardCell.getScore(), true);
@@ -103,6 +153,13 @@ final class ClientPreviewStateFactory {
                 false);
     }
 
+    /**
+     * Restores the local player's rack from visible rack tiles.
+     *
+     * @param gameState game state to modify
+     * @param snapshot source snapshot
+     * @param localPlayerId local player id
+     */
     private static void restoreRack(
             GameState gameState,
             GameSessionSnapshot snapshot,
@@ -123,6 +180,12 @@ final class ClientPreviewStateFactory {
         }
     }
 
+    /**
+     * Converts a rack snapshot into a domain tile.
+     *
+     * @param snapshot rack tile snapshot
+     * @return domain tile
+     */
     private static Tile toRackTile(RackTileSnapshot snapshot) {
         if (snapshot.isBlank()) {
             Tile tile = new Tile(snapshot.getTileId(), ' ', snapshot.getScore(), true);

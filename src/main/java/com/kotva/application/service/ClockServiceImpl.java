@@ -6,9 +6,17 @@ import com.kotva.domain.model.PlayerClock;
 import com.kotva.policy.ClockPhase;
 import java.util.Objects;
 
+/**
+ * Default implementation of player clock updates.
+ */
 public class ClockServiceImpl implements ClockService {
 
-        @Override
+    /**
+     * Starts the current player's clock phase.
+     *
+     * @param session game session
+     */
+    @Override
     public void startTurnClock(GameSession session) {
         PlayerClock clock = requireCurrentPlayer(session).getClock();
         if (!clock.isEnabled()) {
@@ -24,12 +32,23 @@ public class ClockServiceImpl implements ClockService {
         clock.resetByoYomiTurn();
     }
 
-        @Override
+    /**
+     * Stops the current turn clock.
+     *
+     * @param session game session
+     */
+    @Override
     public void stopTurnClock(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
     }
 
-        @Override
+    /**
+     * Consumes elapsed time from the current player's clock.
+     *
+     * @param session game session
+     * @param elapsedMillis elapsed time in milliseconds
+     */
+    @Override
     public void tick(GameSession session, long elapsedMillis) {
         if (elapsedMillis < 0) {
             throw new IllegalArgumentException("elapsedMillis cannot be negative.");
@@ -67,7 +86,12 @@ public class ClockServiceImpl implements ClockService {
         }
     }
 
-        @Override
+    /**
+     * Marks the current player as timed out.
+     *
+     * @param session game session
+     */
+    @Override
     public void handleTimeout(GameSession session) {
         Player currentPlayer = requireCurrentPlayer(session);
         PlayerClock clock = currentPlayer.getClock();
@@ -80,6 +104,12 @@ public class ClockServiceImpl implements ClockService {
         clock.setPhase(ClockPhase.TIMEOUT);
     }
 
+    /**
+     * Gets the current active player from the session.
+     *
+     * @param session game session
+     * @return current active player
+     */
     private Player requireCurrentPlayer(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
         return session.getGameState().requireCurrentActivePlayer();

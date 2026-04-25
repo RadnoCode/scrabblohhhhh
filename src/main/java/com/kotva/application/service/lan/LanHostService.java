@@ -13,11 +13,20 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Host-side service for executing LAN client commands.
+ */
 public class LanHostService {
     private final GameSession session;
     private final GameApplicationService gameApplicationService;
     private final Map<String, RemoteCommandResult> cachedResultsByCommandId;
 
+    /**
+     * Creates a LAN host service.
+     *
+     * @param session host game session
+     * @param gameApplicationService application service used to execute commands
+     */
     public LanHostService(GameSession session, GameApplicationService gameApplicationService) {
         this.session = Objects.requireNonNull(session, "session cannot be null.");
         this.gameApplicationService =
@@ -25,6 +34,12 @@ public class LanHostService {
         this.cachedResultsByCommandId = new LinkedHashMap<>();
     }
 
+    /**
+     * Handles a remote command and caches the result by command id.
+     *
+     * @param commandEnvelope command from a client
+     * @return remote command result
+     */
     public synchronized RemoteCommandResult handle(CommandEnvelope commandEnvelope) {
         Objects.requireNonNull(commandEnvelope, "commandEnvelope cannot be null.");
         RemoteCommandResult cachedResult = cachedResultsByCommandId.get(commandEnvelope.getCommandId());
@@ -37,10 +52,22 @@ public class LanHostService {
         return result;
     }
 
+    /**
+     * Builds a viewer-specific snapshot.
+     *
+     * @param viewerPlayerId player who will view the snapshot
+     * @return filtered snapshot
+     */
     public synchronized GameSessionSnapshot snapshotForViewer(String viewerPlayerId) {
         return GameSessionSnapshotFactory.fromSessionForViewer(session, viewerPlayerId);
     }
 
+    /**
+     * Validates and executes a remote command.
+     *
+     * @param commandEnvelope command from a client
+     * @return remote command result
+     */
     private RemoteCommandResult execute(CommandEnvelope commandEnvelope) {
         try {
             validateCommandEnvelope(commandEnvelope);
@@ -71,6 +98,11 @@ public class LanHostService {
         }
     }
 
+    /**
+     * Validates command session, player id, and turn number.
+     *
+     * @param commandEnvelope command to validate
+     */
     private void validateCommandEnvelope(CommandEnvelope commandEnvelope) {
         if (!Objects.equals(session.getSessionId(), commandEnvelope.getSessionId())) {
             throw new IllegalArgumentException("Command belongs to a different session.");
@@ -91,6 +123,12 @@ public class LanHostService {
         }
     }
 
+    /**
+     * Converts an exception into a readable command rejection message.
+     *
+     * @param exception exception raised by command handling
+     * @return readable message
+     */
     private String resolveMessage(RuntimeException exception) {
         if (exception == null || exception.getMessage() == null || exception.getMessage().isBlank()) {
             return "Host rejected the command due to an unexpected error.";

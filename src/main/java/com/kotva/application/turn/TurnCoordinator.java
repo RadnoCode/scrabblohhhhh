@@ -12,6 +12,9 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Coordinates turn changes and end-game checks after an action is applied.
+ */
 public class TurnCoordinator implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -23,6 +26,12 @@ public class TurnCoordinator implements Serializable {
     private boolean gameEnded;
     private SettlementResult settlementResult;
 
+    /**
+     * Creates a coordinator for one running game.
+     *
+     * @param gameState game state to update
+     * @param settlementService service used when the game ends
+     */
     public TurnCoordinator(GameState gameState, SettlementService settlementService) {
         this.gameState = Objects.requireNonNull(gameState, "gameState cannot be null.");
         this.settlementService =
@@ -36,6 +45,12 @@ public class TurnCoordinator implements Serializable {
         this.gameEnded = activePlayerCount <= 0 || gameState.isGameOver();
     }
 
+    /**
+     * Handles turn transition after a player action has been executed.
+     *
+     * @param action action that was just applied
+     * @return settlement result if the game ended, otherwise {@code null}
+     */
     public SettlementResult onActionApplied(PlayerAction action) {
         Objects.requireNonNull(action, "action cannot be null.");
         ensureGameNotEnded();
@@ -63,28 +78,56 @@ public class TurnCoordinator implements Serializable {
         return settlementResult;
     }
 
+    /**
+     * Gets the player who should act next.
+     *
+     * @return next active player
+     */
     public Player getNextPlayer() {
         return gameState.requireCurrentActivePlayer();
     }
 
+    /**
+     * Gets the number of actions already applied.
+     *
+     * @return turn number
+     */
     public int getTurnNumber() {
         return turnNumber;
     }
 
+    /**
+     * Checks whether the game has ended.
+     *
+     * @return {@code true} if the game ended
+     */
     public boolean isGameEnded() {
         return gameEnded;
     }
 
+    /**
+     * Gets the settlement result after the game ends.
+     *
+     * @return settlement result, or {@code null} while the game is running
+     */
     public SettlementResult getSettlementResult() {
         return settlementResult;
     }
 
+    /**
+     * Ensures no extra action is processed after the game has ended.
+     */
     private void ensureGameNotEnded() {
         if (gameEnded) {
             throw new IllegalStateException("Game already ended.");
         }
     }
 
+    /**
+     * Marks the game as ended and builds the settlement result.
+     *
+     * @param reason reason why the game ended
+     */
     private void endGame(GameEndReason reason) {
         if (gameEnded) {
             return;
