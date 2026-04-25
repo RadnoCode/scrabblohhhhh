@@ -1,8 +1,8 @@
 package com.kotva.presentation.viewmodel;
 
-import com.kotva.application.runtime.GameRuntime;
-import com.kotva.application.runtime.LanLaunchConfig;
-import com.kotva.application.runtime.RuntimeLaunchSpec;
+import com.kotva.runtime.GameRuntime;
+import com.kotva.runtime.LanLaunchConfig;
+import com.kotva.runtime.RuntimeLaunchSpec;
 import com.kotva.application.session.TimeControlConfig;
 import com.kotva.application.setup.NewGameRequest;
 import com.kotva.mode.GameMode;

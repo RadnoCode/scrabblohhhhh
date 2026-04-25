@@ -1,7 +1,7 @@
 package com.kotva.lan;
 
-import com.kotva.application.runtime.LanLaunchConfig;
-import com.kotva.application.runtime.LanRole;
+import com.kotva.runtime.LanLaunchConfig;
+import com.kotva.runtime.LanRole;
 import com.kotva.lan.message.GameInitializationMessage;
 import com.kotva.lan.message.JoinSessionMessage;
 import com.kotva.lan.message.LobbyStateMessage;

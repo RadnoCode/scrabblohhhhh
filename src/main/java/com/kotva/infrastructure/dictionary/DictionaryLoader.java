@@ -2,10 +2,11 @@ package com.kotva.infrastructure.dictionary;
 
 import com.kotva.policy.DictionaryType;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Locale;
 
@@ -17,10 +18,16 @@ public class DictionaryLoader {
     }
 
     public HashSet<String> load() {
-        Path dictionaryPath = resolveDictionaryPath(dictionaryType);
-        try {
+        String dictionaryPath = resolveDictionaryPath(dictionaryType);
+        try (InputStream inputStream = getClass().getResourceAsStream(dictionaryPath)) {
+            if (inputStream == null) {
+                throw new IllegalStateException("Dictionary resource not found: " + dictionaryPath);
+            }
             HashSet<String> dictionary = new HashSet<>();
-            for (String line : Files.readAllLines(dictionaryPath, StandardCharsets.UTF_8)) {
+            BufferedReader reader =
+                new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            String line;
+            while ((line = reader.readLine()) != null) {
                 String word = line.trim().toUpperCase(Locale.ROOT);
                 if (!word.isEmpty()) {
                     dictionary.add(word);
@@ -32,10 +39,10 @@ public class DictionaryLoader {
         }
     }
 
-    private Path resolveDictionaryPath(DictionaryType dictionaryType) {
+    private String resolveDictionaryPath(DictionaryType dictionaryType) {
         return switch (dictionaryType) {
-        case AM -> Path.of("src/resources/Dicts/North-America/NWL2018.txt");
-        case BR -> Path.of("src/resources/Dicts/British/CSW19.txt");
+        case AM -> "/Dicts/North-America/NWL2018.txt";
+        case BR -> "/Dicts/British/CSW19.txt";
         };
     }
 }

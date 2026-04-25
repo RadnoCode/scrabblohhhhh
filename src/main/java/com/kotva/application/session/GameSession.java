@@ -1,10 +1,10 @@
 package com.kotva.application.session;
 
-import com.kotva.application.TurnCoordinator;
 import com.kotva.application.draft.TurnDraft;
 import com.kotva.application.service.GameActionResult;
 import com.kotva.application.service.SettlementService;
 import com.kotva.application.service.SettlementServiceImpl;
+import com.kotva.application.turn.TurnCoordinator;
 import com.kotva.domain.model.GameState;
 import com.kotva.policy.SessionStatus;
 import java.util.Objects;

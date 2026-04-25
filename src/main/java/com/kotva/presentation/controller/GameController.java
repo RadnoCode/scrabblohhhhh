@@ -1,9 +1,9 @@
 package com.kotva.presentation.controller;
 
 import com.kotva.application.result.BoardCellSnapshot;
-import com.kotva.application.runtime.GameRuntime;
-import com.kotva.application.runtime.GameRuntimeFactory;
-import com.kotva.application.runtime.TutorialRuntimeFactory;
+import com.kotva.runtime.GameRuntime;
+import com.kotva.runtime.GameRuntimeFactory;
+import com.kotva.runtime.TutorialRuntimeFactory;
 import com.kotva.application.service.AiSessionRuntime;
 import com.kotva.application.service.GameActionResult;
 import com.kotva.application.session.AiRuntimeSnapshot;

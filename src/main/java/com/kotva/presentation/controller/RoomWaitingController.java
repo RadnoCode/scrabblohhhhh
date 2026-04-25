@@ -1,7 +1,7 @@
 package com.kotva.presentation.controller;
 
-import com.kotva.application.runtime.LobbyHostGameRuntime;
-import com.kotva.application.runtime.LanLaunchConfig;
+import com.kotva.runtime.LobbyHostGameRuntime;
+import com.kotva.runtime.LanLaunchConfig;
 import com.kotva.infrastructure.logging.AppLog;
 import com.kotva.lan.LanHostGameLaunch;
 import com.kotva.lan.LanLobbyPlayerSnapshot;

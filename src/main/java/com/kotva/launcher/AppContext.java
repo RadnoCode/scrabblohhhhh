@@ -1,7 +1,7 @@
 package com.kotva.launcher;
 
-import com.kotva.application.runtime.GameRuntimeFactory;
-import com.kotva.application.runtime.TutorialRuntimeFactory;
+import com.kotva.runtime.GameRuntimeFactory;
+import com.kotva.runtime.TutorialRuntimeFactory;
 import com.kotva.application.service.ClockService;
 import com.kotva.application.service.ClockServiceImpl;
 import com.kotva.application.service.GameApplicationService;

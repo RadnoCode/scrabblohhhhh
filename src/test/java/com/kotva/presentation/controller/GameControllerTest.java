@@ -6,7 +6,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import com.kotva.application.service.GameActionResult;
-import com.kotva.application.runtime.GameRuntime;
+import com.kotva.runtime.GameRuntime;
 import com.kotva.application.service.AiSessionRuntime;
 import com.kotva.application.session.GameConfig;
 import com.kotva.application.session.GameSessionSnapshotFactory;
