@@ -3,6 +3,9 @@ package com.kotva.lan.discovery;
 import com.kotva.lan.udp.DiscoveredRoom;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Encodes and decodes the request-response UDP discovery protocol.
+ */
 public final class LanDiscoveryCodec {
     public static final String PROTOCOL_PREFIX = "SCRABBLE_LAN_V2";
     public static final String PROTOCOL_VERSION = "2";
@@ -11,9 +14,18 @@ public final class LanDiscoveryCodec {
     private static final String SEPARATOR = "|";
     private static final String SEPARATOR_REGEX = "\\|";
 
+    /**
+     * Prevents creating this utility class.
+     */
     private LanDiscoveryCodec() {
     }
 
+    /**
+     * Encodes a discovery request.
+     *
+     * @param requestId unique request id
+     * @return UTF-8 packet bytes
+     */
     public static byte[] encodeRequest(String requestId) {
         String payload = String.join(
                 SEPARATOR,
@@ -24,10 +36,22 @@ public final class LanDiscoveryCodec {
         return payload.getBytes(StandardCharsets.UTF_8);
     }
 
+    /**
+     * Checks whether a raw packet is a discovery request.
+     *
+     * @param rawMessage raw packet text
+     * @return {@code true} if discovery request
+     */
     public static boolean isDiscoverRequest(String rawMessage) {
         return hasPrefix(rawMessage, TYPE_DISCOVER_REQUEST);
     }
 
+    /**
+     * Encodes a discovery response.
+     *
+     * @param room room information
+     * @return UTF-8 packet bytes
+     */
     public static byte[] encodeResponse(DiscoveredRoom room) {
         String payload = String.join(
                 SEPARATOR,
@@ -45,6 +69,12 @@ public final class LanDiscoveryCodec {
         return payload.getBytes(StandardCharsets.UTF_8);
     }
 
+    /**
+     * Decodes a discovery response.
+     *
+     * @param rawMessage raw packet text
+     * @return discovered room, or {@code null}
+     */
     public static DiscoveredRoom decodeResponse(String rawMessage) {
         if (!hasPrefix(rawMessage, TYPE_DISCOVER_RESPONSE)) {
             return null;
@@ -72,6 +102,13 @@ public final class LanDiscoveryCodec {
         }
     }
 
+    /**
+     * Checks the protocol prefix, type, and version.
+     *
+     * @param rawMessage raw packet text
+     * @param expectedType expected packet type
+     * @return {@code true} if header matches
+     */
     private static boolean hasPrefix(String rawMessage, String expectedType) {
         if (rawMessage == null || rawMessage.isBlank()) {
             return false;
@@ -83,6 +120,12 @@ public final class LanDiscoveryCodec {
                 && PROTOCOL_VERSION.equals(parts[2]);
     }
 
+    /**
+     * Escapes null and separator characters.
+     *
+     * @param value value to escape
+     * @return safe value
+     */
     private static String safe(String value) {
         if (value == null) {
             return "";

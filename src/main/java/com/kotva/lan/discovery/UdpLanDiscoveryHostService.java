@@ -12,6 +12,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+/**
+ * UDP host service that answers LAN discovery requests.
+ */
 public final class UdpLanDiscoveryHostService implements LanDiscoveryHostService {
     public static final int DISCOVERY_PORT = 5051;
     private static final int SOCKET_TIMEOUT_MILLIS = 1_000;
@@ -25,14 +28,28 @@ public final class UdpLanDiscoveryHostService implements LanDiscoveryHostService
     private DatagramSocket socket;
     private Thread workerThread;
 
+    /**
+     * Creates a discovery host using the default discovery port.
+     */
     public UdpLanDiscoveryHostService() {
         this(DISCOVERY_PORT);
     }
 
+    /**
+     * Creates a discovery host.
+     *
+     * @param discoveryPort UDP discovery port
+     */
     UdpLanDiscoveryHostService(int discoveryPort) {
         this.discoveryPort = discoveryPort;
     }
 
+    /**
+     * Starts listening for discovery requests.
+     *
+     * @param roomSupplier supplies current room information
+     * @throws IOException if the UDP socket cannot be opened
+     */
     @Override
     public void startHosting(Supplier<DiscoveredRoom> roomSupplier) throws IOException {
         Objects.requireNonNull(roomSupplier, "roomSupplier cannot be null.");
@@ -53,6 +70,11 @@ public final class UdpLanDiscoveryHostService implements LanDiscoveryHostService
         logger.info("LAN discovery host is listening on UDP port " + discoveryPort + ".");
     }
 
+    /**
+     * Main loop that receives discovery requests and sends responses.
+     *
+     * @param roomSupplier supplies current room information
+     */
     private void hostLoop(Supplier<DiscoveredRoom> roomSupplier) {
         byte[] buffer = new byte[1024];
         try {
@@ -95,6 +117,9 @@ public final class UdpLanDiscoveryHostService implements LanDiscoveryHostService
         }
     }
 
+    /**
+     * Stops hosting and closes the socket.
+     */
     @Override
     public void stop() {
         running.set(false);

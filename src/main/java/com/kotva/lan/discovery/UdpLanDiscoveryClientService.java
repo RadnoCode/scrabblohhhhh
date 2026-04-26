@@ -20,6 +20,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
+/**
+ * UDP client that actively sends discovery requests and collects room responses.
+ */
 public final class UdpLanDiscoveryClientService implements LanDiscoveryClientService {
     private static final Logger logger =
             Logger.getLogger(UdpLanDiscoveryClientService.class.getName());
@@ -36,14 +39,28 @@ public final class UdpLanDiscoveryClientService implements LanDiscoveryClientSer
     private List<BroadcastEndpoint> broadcastEndpoints;
     private Thread workerThread;
 
+    /**
+     * Creates a discovery client using the default discovery port.
+     */
     public UdpLanDiscoveryClientService() {
         this(UdpLanDiscoveryHostService.DISCOVERY_PORT);
     }
 
+    /**
+     * Creates a discovery client.
+     *
+     * @param discoveryPort UDP discovery port
+     */
     UdpLanDiscoveryClientService(int discoveryPort) {
         this.discoveryPort = discoveryPort;
     }
 
+    /**
+     * Starts scanning for LAN rooms.
+     *
+     * @param onUpdate callback receiving discovered rooms
+     * @throws IOException if the UDP socket cannot be opened
+     */
     @Override
     public void startScanning(Consumer<List<DiscoveredRoom>> onUpdate) throws IOException {
         Objects.requireNonNull(onUpdate, "onUpdate cannot be null.");
@@ -63,6 +80,11 @@ public final class UdpLanDiscoveryClientService implements LanDiscoveryClientSer
         workerThread.start();
     }
 
+    /**
+     * Main loop that sends discovery requests and receives responses.
+     *
+     * @param onUpdate callback receiving discovered rooms
+     */
     private void scanLoop(Consumer<List<DiscoveredRoom>> onUpdate) {
         byte[] buffer = new byte[1024];
         long nextDiscoverAtMillis = 0L;
@@ -115,6 +137,11 @@ public final class UdpLanDiscoveryClientService implements LanDiscoveryClientSer
         }
     }
 
+    /**
+     * Sends one discovery request to all broadcast targets.
+     *
+     * @throws IOException if the packet cannot be sent
+     */
     private void sendDiscoverRequests() throws IOException {
         byte[] payload = LanDiscoveryCodec.encodeRequest(UUID.randomUUID().toString());
         for (InetAddress broadcastAddress : resolveBroadcastTargets()) {
@@ -127,6 +154,12 @@ public final class UdpLanDiscoveryClientService implements LanDiscoveryClientSer
         }
     }
 
+    /**
+     * Resolves subnet broadcast targets.
+     *
+     * @return broadcast target addresses
+     * @throws IOException if fallback address cannot be resolved
+     */
     private List<InetAddress> resolveBroadcastTargets() throws IOException {
         if (!broadcastEndpoints.isEmpty()) {
             List<InetAddress> targets = new ArrayList<>(broadcastEndpoints.size());
@@ -141,11 +174,19 @@ public final class UdpLanDiscoveryClientService implements LanDiscoveryClientSer
         return targets;
     }
 
+    /**
+     * Removes rooms that have not responded recently.
+     */
     private void removeExpiredRooms() {
         long now = System.currentTimeMillis();
         roomsByKey.entrySet().removeIf(entry -> now - entry.getValue().lastSeenAtMillis() > ROOM_EXPIRE_MILLIS);
     }
 
+    /**
+     * Builds a sorted room list for the UI.
+     *
+     * @return discovered rooms
+     */
     private List<DiscoveredRoom> snapshotRooms() {
         List<DiscoveredRoom> rooms = new ArrayList<>(roomsByKey.values());
         rooms.sort(
@@ -156,6 +197,9 @@ public final class UdpLanDiscoveryClientService implements LanDiscoveryClientSer
         return rooms;
     }
 
+    /**
+     * Stops scanning and closes the socket.
+     */
     @Override
     public void stop() {
         running.set(false);
@@ -168,6 +212,9 @@ public final class UdpLanDiscoveryClientService implements LanDiscoveryClientSer
         broadcastEndpoints = List.of();
     }
 
+    /**
+     * Logs which broadcast addresses will be used.
+     */
     private void logBroadcastPlan() {
         if (!broadcastEndpoints.isEmpty()) {
             String targets = broadcastEndpoints.stream()

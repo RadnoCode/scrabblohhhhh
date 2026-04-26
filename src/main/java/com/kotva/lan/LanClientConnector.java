@@ -13,13 +13,28 @@ import java.net.Proxy;
 import java.net.Socket;
 import java.util.UUID;
 
+/**
+ * Opens TCP connections from a LAN client to a host.
+ */
 public final class LanClientConnector {
     public static final int CONNECT_TIMEOUT_MILLIS = 4_000;
     public static final int HANDSHAKE_TIMEOUT_MILLIS = 4_000;
 
+    /**
+     * Prevents creating this utility class.
+     */
     private LanClientConnector() {
     }
 
+    /**
+     * Joins a LAN lobby and returns a lobby client session.
+     *
+     * @param endpoint host endpoint text
+     * @param playerName player display name
+     * @return lobby client session
+     * @throws IOException if connection fails
+     * @throws ClassNotFoundException if a received message class is unknown
+     */
     public static LanLobbyClientSession joinLobby(String endpoint, String playerName)
             throws IOException, ClassNotFoundException {
         Endpoint resolvedEndpoint = Endpoint.parse(endpoint);
@@ -70,6 +85,14 @@ public final class LanClientConnector {
         }
     }
 
+    /**
+     * Connects directly to a LAN game launch.
+     *
+     * @param endpoint host endpoint text
+     * @return client launch config
+     * @throws IOException if connection fails
+     * @throws ClassNotFoundException if a received message class is unknown
+     */
     public static LanLaunchConfig connect(String endpoint) throws IOException, ClassNotFoundException {
         Endpoint resolvedEndpoint = Endpoint.parse(endpoint);
         Socket socket = openSocket(resolvedEndpoint);
@@ -110,6 +133,12 @@ public final class LanClientConnector {
         }
     }
 
+    /**
+     * Cleans user-entered endpoint text.
+     *
+     * @param endpoint raw endpoint text
+     * @return sanitized endpoint
+     */
     public static String sanitizeEndpointInput(String endpoint) {
         if (endpoint == null) {
             return "";
@@ -132,10 +161,22 @@ public final class LanClientConnector {
         return normalized;
     }
 
+    /**
+     * Normalizes an endpoint for display.
+     *
+     * @param endpoint raw endpoint text
+     * @return host:port display value
+     */
     public static String normalizeEndpointForDisplay(String endpoint) {
         return Endpoint.parse(endpoint).displayValue();
     }
 
+    /**
+     * Normalizes player name for joining a LAN room.
+     *
+     * @param playerName raw player name
+     * @return normalized player name
+     */
     private static String normalizePlayerName(String playerName) {
         if (playerName == null || playerName.isBlank()) {
             return "Guest";
@@ -143,6 +184,13 @@ public final class LanClientConnector {
         return playerName.trim();
     }
 
+    /**
+     * Opens a socket to the resolved endpoint.
+     *
+     * @param resolvedEndpoint endpoint object
+     * @return connected socket
+     * @throws IOException if the socket cannot connect
+     */
     private static Socket openSocket(Endpoint resolvedEndpoint) throws IOException {
         Socket socket = new Socket(Proxy.NO_PROXY);
         try {
@@ -157,7 +205,19 @@ public final class LanClientConnector {
         }
     }
 
+    /**
+     * Parsed host and port.
+     *
+     * @param host host name or IP
+     * @param port TCP port
+     */
     private record Endpoint(String host, int port) {
+        /**
+         * Parses endpoint text.
+         *
+         * @param endpoint raw endpoint text
+         * @return parsed endpoint
+         */
         private static Endpoint parse(String endpoint) {
             if (endpoint == null || endpoint.isBlank()) {
                 return new Endpoint("127.0.0.1", GameSessionBroker.DEFAULT_PORT);
@@ -185,6 +245,11 @@ public final class LanClientConnector {
             return new Endpoint(host.isEmpty() ? "127.0.0.1" : host, port);
         }
 
+        /**
+         * Builds display text.
+         *
+         * @return host:port text
+         */
         private String displayValue() {
             return host + ":" + port;
         }

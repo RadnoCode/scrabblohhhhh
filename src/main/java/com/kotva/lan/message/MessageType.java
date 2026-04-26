@@ -1,22 +1,29 @@
 package com.kotva.lan.message;
 
+/**
+ * Types of messages exchanged between LAN client and host.
+ */
 public enum MessageType {
-    //connection messages
-    JOIN_SESSION,  //client -> server, request to join a session
-    GAME_INITIALIZATION, //server -> client, sent a snapshot of the game state when a client joins a session
-
-    //waiting room messages
+    /** Client requests to join a session. */
+    JOIN_SESSION,
+    /** Host sends initial session information to a client. */
+    GAME_INITIALIZATION,
+    /** Host sends the latest lobby state. */
     LOBBY_STATE,
-    PLAYER_JOINED,  //server -> client, notify other clients that a new player has joined the session
-    PLAYER_DISCONNECTED,  //server -> client, sent when a player disconnects from the session
+    /** Host notifies clients that a player joined. */
+    PLAYER_JOINED,
+    /** Host notifies clients that a player disconnected. */
+    PLAYER_DISCONNECTED,
+    /** Host starts the game for clients. */
     GAME_START,
-
-    //gameplay messages
+    /** Client sends a gameplay command to the host. */
     COMMAND_REQUEST,
+    /** Host sends command execution result to a client. */
     COMMAND_RESULT,
+    /** Host sends an updated game snapshot. */
     SNAPSHOT_UPDATE,
-    PLAYER_ACTION,  //client -> server, sent when a player performs an action
-
-    //connection messages
-    GAME_OVER,  //server -> client, sent when the game ends
+    /** Client sends a player action. */
+    PLAYER_ACTION,
+    /** Host notifies clients that the game ended. */
+    GAME_OVER,
 }
