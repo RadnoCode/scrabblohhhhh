@@ -114,6 +114,9 @@ public class LocalGameSession {
 
     /**
      * Lightweight player information object, used for initialization messages/lobby messages.
+     *
+     * @param playerId player id
+     * @param playerName player display name
      */
     public record PlayerBrief(String playerId, String playerName) implements java.io.Serializable {
         private static final long serialVersionUID = 1L;

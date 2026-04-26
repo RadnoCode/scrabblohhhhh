@@ -10,12 +10,22 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Runs AI move requests on a background worker.
+ */
 public final class AiMoveService implements AutoCloseable {
     private final QuackleNativeBridge.Engine engine;
     private final ExecutorService executor;
     private final AtomicBoolean closing;
     private final AtomicInteger activeRequests;
 
+    /**
+     * Creates a move service for one AI engine.
+     *
+     * @param bridge native AI bridge
+     * @param dictionaryType dictionary used by the game
+     * @param difficulty AI difficulty
+     */
     public AiMoveService(
         QuackleNativeBridge bridge, DictionaryType dictionaryType, AiDifficulty difficulty) {
         Objects.requireNonNull(bridge, "bridge cannot be null.");
@@ -25,6 +35,12 @@ public final class AiMoveService implements AutoCloseable {
         this.executor = Executors.newSingleThreadExecutor(new AiThreadFactory());
     }
 
+    /**
+     * Requests AI move candidates for the given position.
+     *
+     * @param snapshot current AI position
+     * @return future with candidate moves
+     */
     public CompletableFuture<AiMoveOptionSet> requestMove(AiPositionSnapshot snapshot) {
         Objects.requireNonNull(snapshot, "snapshot cannot be null.");
         ensureOpen();
@@ -40,7 +56,7 @@ public final class AiMoveService implements AutoCloseable {
             }, executor);
     }
 
-        @Override
+    @Override
     public void close() {
         if (!closing.compareAndSet(false, true)) {
             return;
@@ -60,7 +76,7 @@ public final class AiMoveService implements AutoCloseable {
 
     private static final class AiThreadFactory implements ThreadFactory {
 
-            @Override
+        @Override
         public Thread newThread(Runnable runnable) {
             Thread thread = new Thread(runnable, "quackle-ai-worker");
             thread.setDaemon(true);

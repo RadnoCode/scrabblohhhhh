@@ -9,11 +9,19 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+/**
+ * Coordinates pending AI turns for one local session.
+ */
 public final class AiSessionRuntime implements AiTurnRuntime {
     private final AiTurnCoordinator aiTurnCoordinator;
     private CompletableFuture<AiMoveOptionSet> pendingAiMove;
     private long requestToken;
 
+    /**
+     * Creates a session runtime backed by an AI turn coordinator.
+     *
+     * @param aiTurnCoordinator coordinator used to request and apply moves
+     */
     public AiSessionRuntime(AiTurnCoordinator aiTurnCoordinator) {
         this.aiTurnCoordinator = Objects.requireNonNull(aiTurnCoordinator, "aiTurnCoordinator cannot be null.");
     }
@@ -53,13 +61,13 @@ public final class AiSessionRuntime implements AiTurnRuntime {
             });
     }
 
-        @Override
+    @Override
     public synchronized void cancelPending() {
         requestToken++;
         pendingAiMove = null;
     }
 
-        @Override
+    @Override
     public synchronized boolean matchesCurrentTurn(
         TurnCompletion completion,
         GameSession session,
@@ -71,12 +79,12 @@ public final class AiSessionRuntime implements AiTurnRuntime {
         Objects.requireNonNull(controller, "controller cannot be null.");
 
         return completion.requestToken() == requestToken
-        && Objects.equals(session.getSessionId(), completion.expectedSessionId())
-        && Objects.equals(currentPlayer.getPlayerId(), completion.expectedPlayerId())
-        && controller.supportsAutomatedTurn();
+            && Objects.equals(session.getSessionId(), completion.expectedSessionId())
+            && Objects.equals(currentPlayer.getPlayerId(), completion.expectedPlayerId())
+            && controller.supportsAutomatedTurn();
     }
 
-        @Override
+    @Override
     public AiTurnAttemptResult applyMove(
         PlayerController controller,
         GameApplicationService gameApplicationService,
@@ -89,12 +97,21 @@ public final class AiSessionRuntime implements AiTurnRuntime {
             Objects.requireNonNull(move, "move cannot be null."));
     }
 
-        @Override
+    @Override
     public synchronized void close() {
         cancelPending();
         aiTurnCoordinator.close();
     }
 
+    /**
+     * Carries the result of one asynchronous AI turn request.
+     *
+     * @param expectedSessionId session id expected when the request completes
+     * @param expectedPlayerId player id expected when the request completes
+     * @param requestToken token used to ignore stale completions
+     * @param moveOptions move options returned by the AI
+     * @param error request error, if one happened
+     */
     public record TurnCompletion(
         String expectedSessionId,
         String expectedPlayerId,
@@ -102,6 +119,9 @@ public final class AiSessionRuntime implements AiTurnRuntime {
         AiMoveOptionSet moveOptions,
         Throwable error) {
 
+        /**
+         * Validates the turn completion.
+         */
         public TurnCompletion {
             expectedSessionId = Objects.requireNonNull(expectedSessionId, "expectedSessionId cannot be null.");
             expectedPlayerId = Objects.requireNonNull(expectedPlayerId, "expectedPlayerId cannot be null.");

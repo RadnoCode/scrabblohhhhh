@@ -4,6 +4,9 @@ import com.kotva.presentation.viewmodel.GameViewModel;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 
+/**
+ * Shows the main action buttons used during a turn.
+ */
 public class ActionPanelView extends StackPane {
     private static final String HIGHLIGHT_STYLE = "action-panel-button-highlight";
     private static final double PANEL_WIDTH = 276;
@@ -23,6 +26,9 @@ public class ActionPanelView extends StackPane {
     private final WorkbenchButton resignButton;
     private final WorkbenchButton submitButton;
 
+    /**
+     * Creates an action panel with all turn buttons.
+     */
     public ActionPanelView() {
         this.skipTurnButton = createButton("Skip Turn");
         this.rearrangeButton = createButton("Rearrange");
@@ -70,26 +76,56 @@ public class ActionPanelView extends StackPane {
             centerY - (BUTTON_HEIGHT / 2.0));
     }
 
+    /**
+     * Returns the skip turn button.
+     *
+     * @return skip turn button
+     */
     public WorkbenchButton getSkipTurnButton() {
         return skipTurnButton;
     }
 
+    /**
+     * Returns the rearrange button.
+     *
+     * @return rearrange button
+     */
     public WorkbenchButton getRearrangeButton() {
         return rearrangeButton;
     }
 
+    /**
+     * Returns the recall button.
+     *
+     * @return recall button
+     */
     public WorkbenchButton getRecallButton() {
         return recallButton;
     }
 
+    /**
+     * Returns the resign button.
+     *
+     * @return resign button
+     */
     public WorkbenchButton getResignButton() {
         return resignButton;
     }
 
+    /**
+     * Returns the submit button.
+     *
+     * @return submit button
+     */
     public WorkbenchButton getSubmitButton() {
         return submitButton;
     }
 
+    /**
+     * Locks or unlocks all action buttons.
+     *
+     * @param interactionLocked true to disable interaction
+     */
     public void setInteractionLocked(boolean interactionLocked) {
         applyButtonState(skipTurnButton, GameViewModel.ActionButtonModel.enabled(), interactionLocked);
         applyButtonState(rearrangeButton, GameViewModel.ActionButtonModel.enabled(), interactionLocked);
@@ -98,6 +134,12 @@ public class ActionPanelView extends StackPane {
         applyButtonState(submitButton, GameViewModel.ActionButtonModel.enabled(), interactionLocked);
     }
 
+    /**
+     * Applies the button state from the view model.
+     *
+     * @param model action panel state
+     * @param interactionLocked true to disable interaction
+     */
     public void applyModel(GameViewModel.ActionPanelModel model, boolean interactionLocked) {
         GameViewModel.ActionPanelModel safeModel =
             model == null ? GameViewModel.ActionPanelModel.defaultState() : model;

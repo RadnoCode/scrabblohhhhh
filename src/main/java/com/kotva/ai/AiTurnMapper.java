@@ -8,11 +8,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Maps AI move output onto real rack tiles.
+ */
 public final class AiTurnMapper {
 
     private AiTurnMapper() {
     }
 
+    /**
+     * Resolves an AI move against the given player's rack.
+     *
+     * @param player player whose rack will be used
+     * @param move AI move to resolve
+     * @return resolved move with real tiles
+     */
     public static ResolvedMove resolve(Player player, AiMove move) {
         Objects.requireNonNull(player, "player cannot be null.");
         Objects.requireNonNull(move, "move cannot be null.");
@@ -66,16 +76,35 @@ public final class AiTurnMapper {
             + placement.blank());
     }
 
+    /**
+     * Stores an AI move after rack tiles are selected.
+     *
+     * @param action resolved move action
+     * @param placements resolved tile placements
+     */
     public record ResolvedMove(AiMove.Action action, List<ResolvedPlacement> placements) {
 
+        /**
+         * Validates the resolved move.
+         */
         public ResolvedMove {
             action = Objects.requireNonNull(action, "action cannot be null.");
             placements = List.copyOf(Objects.requireNonNull(placements, "placements cannot be null."));
         }
     }
 
+    /**
+     * Stores one resolved tile placement.
+     *
+     * @param tile real rack tile
+     * @param position target board position
+     * @param assignedLetter letter chosen for a blank tile
+     */
     public record ResolvedPlacement(Tile tile, Position position, Character assignedLetter) {
 
+        /**
+         * Validates and normalizes the resolved placement.
+         */
         public ResolvedPlacement {
             tile = Objects.requireNonNull(tile, "tile cannot be null.");
             position = Objects.requireNonNull(position, "position cannot be null.");

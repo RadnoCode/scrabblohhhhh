@@ -12,6 +12,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Captures the board and rack state needed by the AI engine.
+ *
+ * @param boardCells board cells in row-major order
+ * @param rack current AI rack
+ * @param unseenTiles tiles not visible to the AI
+ * @param aiScore current AI score
+ * @param opponentScore current opponent score
+ */
 public record AiPositionSnapshot(
     List<BoardCell> boardCells,
     String rack,
@@ -21,6 +30,9 @@ public record AiPositionSnapshot(
     public static final int BOARD_SIDE = 15;
     public static final int BOARD_CELL_COUNT = BOARD_SIDE * BOARD_SIDE;
 
+    /**
+     * Validates the AI position snapshot.
+     */
     public AiPositionSnapshot {
         boardCells = List.copyOf(Objects.requireNonNull(boardCells, "boardCells cannot be null."));
         if (boardCells.size() != BOARD_CELL_COUNT) {
@@ -32,6 +44,12 @@ public record AiPositionSnapshot(
         unseenTiles = Objects.requireNonNull(unseenTiles, "unseenTiles cannot be null.");
     }
 
+    /**
+     * Builds an AI position snapshot from the current session.
+     *
+     * @param session active game session
+     * @return AI position snapshot
+     */
     public static AiPositionSnapshot fromSession(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
 
@@ -114,8 +132,19 @@ public record AiPositionSnapshot(
         return Character.toUpperCase(tile.getLetter());
     }
 
+    /**
+     * Stores the AI-visible state of one board cell.
+     *
+     * @param occupied whether the cell has a tile
+     * @param letter visible letter in the cell
+     * @param blank whether the tile is blank
+     * @param assignedLetter letter assigned to a blank tile
+     */
     public record BoardCell(boolean occupied, char letter, boolean blank, Character assignedLetter) {
 
+        /**
+         * Validates and normalizes the board cell.
+         */
         public BoardCell {
             if (!occupied) {
                 letter = '\0';

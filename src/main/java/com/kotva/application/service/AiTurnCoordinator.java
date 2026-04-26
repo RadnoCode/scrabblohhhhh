@@ -19,9 +19,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Requests AI moves and applies them to the current game.
+ */
 public final class AiTurnCoordinator implements AutoCloseable {
     private final AiMoveService aiMoveService;
 
+    /**
+     * Creates a coordinator for one AI player setup.
+     *
+     * @param bridge native AI bridge
+     * @param dictionaryType dictionary used by the game
+     * @param difficulty AI difficulty
+     */
     public AiTurnCoordinator(
         QuackleNativeBridge bridge, DictionaryType dictionaryType, AiDifficulty difficulty) {
         this.aiMoveService = new AiMoveService(
@@ -30,11 +40,26 @@ public final class AiTurnCoordinator implements AutoCloseable {
             Objects.requireNonNull(difficulty, "difficulty cannot be null."));
     }
 
+    /**
+     * Requests AI move candidates for the current session.
+     *
+     * @param session active game session
+     * @return future with candidate moves
+     */
     public CompletableFuture<AiMoveOptionSet> requestMove(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
         return aiMoveService.requestMove(AiPositionSnapshot.fromSession(session));
     }
 
+    /**
+     * Applies one AI move through the player controller.
+     *
+     * @param controller AI player controller
+     * @param gameApplicationService game action service
+     * @param session active game session
+     * @param move AI move to apply
+     * @return attempt result
+     */
     public AiTurnAttemptResult applyMove(
         PlayerController controller,
         GameApplicationService gameApplicationService,
@@ -120,7 +145,7 @@ public final class AiTurnCoordinator implements AutoCloseable {
         }
     }
 
-        @Override
+    @Override
     public void close() {
         aiMoveService.close();
     }
