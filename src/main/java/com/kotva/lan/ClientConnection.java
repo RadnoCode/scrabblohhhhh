@@ -1,5 +1,6 @@
 package com.kotva.lan;
 
+import com.kotva.lan.message.LocalGameMessage;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -10,39 +11,60 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-import com.kotva.lan.message.LocalGameMessage;
-
 /**
- *   Server:                          Client:
- *   clients[0] = CC(PlayerB)            hostConnection = CC(Host)
- *   clients[1] = CC(PlayerC)
- *         ↓ sendMessage()                     ↓ sendMessage()
- *      send to B / C                           send to host
+ * Wraps a TCP socket and object streams for LAN messages.
  */
 public class ClientConnection {
-
     private static final Logger logger = Logger.getLogger(ClientConnection.class.getName());
-    private final String playerId;  // the ID of the player associated with this connection (could be UUID or in-game name)
-    
-    private final Socket socket; //create a TCP socket for communication with the client
 
+    private final String playerId;
+    private final Socket socket;
     private final ObjectInputStream in;
-    private final ObjectOutputStream out; 
-
+    private final ObjectOutputStream out;
     private volatile boolean closed = false;
 
+    /**
+     * Creates a connection and opens object streams.
+     *
+     * @param playerId player id for this connection
+     * @param socket TCP socket
+     * @throws IOException if streams cannot be opened
+     */
     public ClientConnection(String playerId, Socket socket) throws IOException {
         this(playerId, socket, createStreams(socket));
     }
 
+    /**
+     * Creates a connection with an existing input stream.
+     *
+     * @param playerId player id for this connection
+     * @param socket TCP socket
+     * @param in object input stream
+     * @throws IOException if output stream cannot be opened
+     */
     public ClientConnection(String playerId, Socket socket, ObjectInputStream in) throws IOException {
         this(playerId, socket, in, createOutputStream(socket));
     }
 
+    /**
+     * Creates a connection from a stream pair.
+     *
+     * @param playerId player id for this connection
+     * @param socket TCP socket
+     * @param streamPair input and output streams
+     */
     private ClientConnection(String playerId, Socket socket, StreamPair streamPair) {
         this(playerId, socket, streamPair.in(), streamPair.out());
     }
 
+    /**
+     * Creates a connection with explicit object streams.
+     *
+     * @param playerId player id for this connection
+     * @param socket TCP socket
+     * @param in object input stream
+     * @param out object output stream
+     */
     public ClientConnection(
             String playerId,
             Socket socket,
@@ -54,119 +76,137 @@ public class ClientConnection {
         this.out = Objects.requireNonNull(out, "out cannot be null.");
     }
 
+    /**
+     * Blocks until one LAN message is read.
+     *
+     * @return received LAN message
+     * @throws IOException if the socket fails
+     * @throws ClassNotFoundException if the received class is unknown
+     */
     public LocalGameMessage readMessageBlocking() throws IOException, ClassNotFoundException {
         return (LocalGameMessage) in.readObject();
     }
 
-//--------------main methods: startListening, sendMessage, disconnect----------------
     /**
-     * Start a background thread to listen for incoming messages from the client.
-     * @param onMessage    every time a message is received, this callback is executed with the message as parameter.    
-     * @param onDisconnect  when the connection is closed (either by us or the remote), this callback is executed.
+     * Starts a background thread that reads incoming messages.
+     *
+     * @param onMessage callback for each received message
+     * @param onDisconnect callback when the connection ends
      */
     public void startListening(Consumer<LocalGameMessage> onMessage, Runnable onDisconnect) {
-
         Thread listenerThread = new Thread(() -> {
-
             try {
                 while (!closed && !socket.isClosed()) {
                     LocalGameMessage message = readMessageBlocking();
                     onMessage.accept(message);
                 }
-
-            } catch (EOFException e) {
-                // EOFException :End Of File. means the remote side has closed the connection and there is no more data to read.
+            } catch (EOFException exception) {
                 if (!closed) {
                     logger.info("[" + playerId + "] Remote closed connection normally.");
                 }
-
-            } catch (SocketException e) {
-                // SocketException : socket was forcibly closed (e.g., disconnect() called, or network interruption)
+            } catch (SocketException exception) {
                 if (!closed) {
-                    logger.warning("[" + playerId + "] Socket closed unexpectedly: " + e.getMessage());
+                    logger.warning("[" + playerId + "] Socket closed unexpectedly: " + exception.getMessage());
                 }
-
-            } catch (ClassNotFoundException e) {
-                // ClassNotFoundException : the received object is of a class that we don't have in our classpath. This could be a sign of incompatible versions between client and server, or a malformed message.
-                logger.severe("[" + playerId + "] Unknown message class received: " + e.getMessage());
-
-            } catch (IOException e) {
-                // other IOException : could be network error, or error while reading from the stream. If it's not caused by us closing the connection, log it.
+            } catch (ClassNotFoundException exception) {
+                logger.severe("[" + playerId + "] Unknown message class received: " + exception.getMessage());
+            } catch (IOException exception) {
                 if (!closed) {
-                    logger.warning("[" + playerId + "] I/O error: " + e.getMessage());
+                    logger.warning("[" + playerId + "] I/O error: " + exception.getMessage());
                 }
-
             } finally {
-                onDisconnect.run();  // whether we exit the loop normally (remote closed) or due to an exception, we consider the connection closed and trigger the onDisconnect callback.
+                onDisconnect.run();
             }
-
-        }, "ClientConnection-" + playerId); 
+        }, "ClientConnection-" + playerId);
 
         listenerThread.setDaemon(true);
         listenerThread.start();
     }
 
     /**
-     * Send a message to the other side.
-     * Thread-safe: can be called from any thread.
+     * Sends a message to the remote side.
      *
-     * @param message The message to send (a subclass of LocalGameMessage)
+     * @param message message to send
      */
     public void sendMessage(LocalGameMessage message) {
-        // If already closed, return immediately without throwing an exception (graceful degradation)
         if (closed) {
             logger.warning("[" + playerId + "] Tried to send message on closed connection, ignoring.");
             return;
         }
 
         synchronized (out) {
-            // We synchronize on the ObjectOutputStream to ensure that messages are sent atomically and not interleaved when multiple threads call sendMessage concurrently.
             try {
                 out.writeObject(message);
-                out.flush();  //sent the message immediately, don't wait for the buffer to fill up
-                out.reset(); 
-            } catch (IOException e) {
-                logger.warning("[" + playerId + "] Failed to send message: " + e.getMessage());
+                out.flush();
+                out.reset();
+            } catch (IOException exception) {
+                logger.warning("[" + playerId + "] Failed to send message: " + exception.getMessage());
             }
         }
     }
 
+    /**
+     * Closes the socket connection.
+     */
     public void disconnect() {
-        closed = true;  
+        closed = true;
         try {
-            socket.close();  
-        } catch (IOException e) {
-            logger.warning("[" + playerId + "] Error while closing socket: " + e.getMessage());
+            socket.close();
+        } catch (IOException exception) {
+            logger.warning("[" + playerId + "] Error while closing socket: " + exception.getMessage());
         }
     }
 
-
-//-----------------getter-----------------
-
+    /**
+     * Gets the player id for this connection.
+     *
+     * @return player id
+     */
     public String getPlayerId() {
         return playerId;
     }
 
     /**
-     * Check if the connection is closed.
-     * Used by the host to skip disconnected connections before broadcasting.
+     * Checks whether the connection is closed.
+     *
+     * @return {@code true} if closed
      */
     public boolean isClosed() {
         return closed || socket.isClosed();
     }
 
+    /**
+     * Creates and flushes an object output stream.
+     *
+     * @param socket TCP socket
+     * @return object output stream
+     * @throws IOException if the stream cannot be created
+     */
     private static ObjectOutputStream createOutputStream(Socket socket) throws IOException {
         ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
         outputStream.flush();
         return outputStream;
     }
 
+    /**
+     * Creates object streams for a socket.
+     *
+     * @param socket TCP socket
+     * @return stream pair
+     * @throws IOException if streams cannot be created
+     */
     private static StreamPair createStreams(Socket socket) throws IOException {
         ObjectOutputStream out = createOutputStream(socket);
         ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
         return new StreamPair(in, out);
     }
 
+    /**
+     * Pair of object input and output streams.
+     *
+     * @param in object input stream
+     * @param out object output stream
+     */
     private record StreamPair(ObjectInputStream in, ObjectOutputStream out) {
     }
 }

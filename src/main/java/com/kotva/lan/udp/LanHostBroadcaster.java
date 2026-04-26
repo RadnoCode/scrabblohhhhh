@@ -10,6 +10,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+/**
+ * Periodically broadcasts the host room over UDP.
+ */
 public class LanHostBroadcaster {
     public static final int BROADCAST_PORT = 5051;
     public static final long BROADCAST_INTERVAL_MILLIS = 1000L;
@@ -24,11 +27,20 @@ public class LanHostBroadcaster {
     private List<LanHostAddressResolver.BroadcastEndpoint> broadcastEndpoints;
     private Thread workerThread;
 
+    /**
+     * Creates a broadcaster using the default discovery port.
+     */
     public LanHostBroadcaster() {
         this.discoveryPort = BROADCAST_PORT;
         this.running = new AtomicBoolean(false);
     }
 
+    /**
+     * Starts broadcasting room information in a background thread.
+     *
+     * @param roomSupplier supplies the current room information
+     * @throws IOException if the UDP socket cannot be opened
+     */
     public void startBroadcasting(Supplier<DiscoveredRoom> roomSupplier) throws IOException {
         if (running.get()) {
             throw new IllegalStateException("Broadcaster is already running.");
@@ -63,6 +75,11 @@ public class LanHostBroadcaster {
 
     }
 
+    /**
+     * Background loop that sends room packets repeatedly.
+     *
+     * @param roomSupplier supplies the current room information
+     */
     private void broadcastLoop(Supplier<DiscoveredRoom> roomSupplier) {
         try {
             while (running.get()) {
@@ -103,6 +120,9 @@ public class LanHostBroadcaster {
         }
     }
 
+    /**
+     * Stops broadcasting and closes sockets.
+     */
     public void stop() {
         running.set(false);
 
@@ -119,6 +139,13 @@ public class LanHostBroadcaster {
         broadcastEndpoints = List.of();
     }
 
+    /**
+     * Creates a room copy using an interface-specific host IP.
+     *
+     * @param room source room
+     * @param hostIp host IP for this packet
+     * @return room copy
+     */
     private DiscoveredRoom withHostIp(DiscoveredRoom room, String hostIp) {
         return new DiscoveredRoom(
                 room.sessionId(),

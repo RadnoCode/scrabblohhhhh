@@ -17,12 +17,20 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * LAN client transport backed by a socket client connection.
+ */
 public class SocketLanClientTransport implements LanClientTransport {
     private final ClientConnection connection;
     private final Queue<LanInboundMessage> inboundMessages;
     private final AtomicBoolean closing;
     private final AtomicBoolean disconnectQueued;
 
+    /**
+     * Creates a socket transport.
+     *
+     * @param connection socket connection to the host
+     */
     public SocketLanClientTransport(ClientConnection connection) {
         this.connection = connection;
         this.inboundMessages = new ConcurrentLinkedQueue<>();
@@ -30,11 +38,21 @@ public class SocketLanClientTransport implements LanClientTransport {
         this.disconnectQueued = new AtomicBoolean(false);
     }
 
+    /**
+     * Sends a command to the host.
+     *
+     * @param commandEnvelope command envelope
+     */
     @Override
     public void sendCommand(CommandEnvelope commandEnvelope) {
         connection.sendMessage(new CommandRequestMessage(commandEnvelope));
     }
 
+    /**
+     * Drains inbound messages received from the socket listener.
+     *
+     * @return inbound message list
+     */
     @Override
     public List<LanInboundMessage> drainInboundMessages() {
         List<LanInboundMessage> drainedMessages = new ArrayList<>();
@@ -45,6 +63,11 @@ public class SocketLanClientTransport implements LanClientTransport {
         return drainedMessages;
     }
 
+    /**
+     * Converts a network message into an infrastructure inbound message.
+     *
+     * @param message network message
+     */
     public void onNetworkMessage(LocalGameMessage message) {
         if (message instanceof CommandResultMessage commandResultMessage) {
             inboundMessages.add(new LanCommandResultMessage(commandResultMessage.getResult()));
@@ -61,6 +84,9 @@ public class SocketLanClientTransport implements LanClientTransport {
         }
     }
 
+    /**
+     * Handles socket disconnection.
+     */
     public void onDisconnect() {
         if (!closing.get()) {
             queueDisconnectNotice(
@@ -70,12 +96,21 @@ public class SocketLanClientTransport implements LanClientTransport {
         connection.disconnect();
     }
 
+    /**
+     * Closes the transport.
+     */
     @Override
     public void close() {
         closing.set(true);
         connection.disconnect();
     }
 
+    /**
+     * Queues one disconnect notice.
+     *
+     * @param summary short message
+     * @param details detailed message
+     */
     private void queueDisconnectNotice(String summary, String details) {
         if (disconnectQueued.compareAndSet(false, true)) {
             inboundMessages.add(new LanDisconnectNoticeMessage(summary, details));

@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * represents a game session in the LAN version of the game. It manages the session's state, including the host player, current players, and their connections.
+ * Stores the lobby-side player list and client connections for a LAN session.
  */
 public class LocalGameSession {
 
@@ -29,11 +29,25 @@ public class LocalGameSession {
      */
     private final Map<String, ClientConnection> connections = new ConcurrentHashMap<>();
 
-    // Constructor: when a new session is created, the host player automatically joins the session.
+    /**
+     * Creates a local LAN session with a generated session id.
+     *
+     * @param hostPlayerId host player id
+     * @param hostPlayerName host player name
+     * @param maxPlayers maximum number of players
+     */
     public LocalGameSession(String hostPlayerId, String hostPlayerName, int maxPlayers) {
         this(UUID.randomUUID().toString(), hostPlayerId, hostPlayerName, maxPlayers);
     }
 
+    /**
+     * Creates a local LAN session.
+     *
+     * @param sessionId session id
+     * @param hostPlayerId host player id
+     * @param hostPlayerName host player name
+     * @param maxPlayers maximum number of players
+     */
     public LocalGameSession(
             String sessionId,
             String hostPlayerId,
@@ -44,44 +58,79 @@ public class LocalGameSession {
         this.hostPlayerName = hostPlayerName;
         this.maxPlayers = maxPlayers;
 
-        // The host player joins the session first
         this.players.put(hostPlayerId, hostPlayerName);
     }
 
+    /**
+     * Gets the session id.
+     *
+     * @return session id
+     */
     public String getSessionId() {
         return sessionId;
     }
 
+    /**
+     * Gets the host player id.
+     *
+     * @return host player id
+     */
     public String getHostPlayerId() {
         return hostPlayerId;
     }
 
+    /**
+     * Gets the host player name.
+     *
+     * @return host player name
+     */
     public String getHostPlayerName() {
         return hostPlayerName;
     }
 
+    /**
+     * Gets maximum player count.
+     *
+     * @return max players
+     */
     public int getMaxPlayers() {
         return maxPlayers;
     }
 
+    /**
+     * Gets current player count.
+     *
+     * @return current player count
+     */
     public int getCurrentPlayerCount() {
         return players.size();
     }
-    
-    // if the number of players in the session has reached the maximum allowed, return true. This can be used to prevent new players from joining a full session.
+
+    /**
+     * Checks whether the session is full.
+     *
+     * @return {@code true} if full
+     */
     public boolean isFull() {
         return players.size() >= maxPlayers;
     }
 
-    // check if a player with the given playerId is already in the session. This can be used to prevent duplicate player IDs when new players try to join.
+    /**
+     * Checks whether a player id already exists.
+     *
+     * @param playerId player id
+     * @return {@code true} if the player exists
+     */
     public boolean containsPlayer(String playerId) {
         return players.containsKey(playerId);
     }
 
     /**
-     * A new player joins:
-     * 1) Add to players
-     * 2) Add to connections
+     * Adds a player and its client connection.
+     *
+     * @param playerId player id
+     * @param playerName player display name
+     * @param connection client connection
      */
     public void addPlayer(String playerId, String playerName, ClientConnection connection) {
         players.put(playerId, playerName);
@@ -89,31 +138,46 @@ public class LocalGameSession {
     }
 
     /**
-     * A player leaves:
-     * 1) Remove from players
-     * 2) Remove from connections
+     * Removes a player and its client connection.
+     *
+     * @param playerId player id
      */
     public void removePlayer(String playerId) {
         players.remove(playerId);
         connections.remove(playerId);
     }
 
+    /**
+     * Gets a read-only view of players.
+     *
+     * @return player id to name map
+     */
     public Map<String, String> getPlayersReadonly() {
         return Collections.unmodifiableMap(players);
     }
 
+    /**
+     * Gets lightweight player information for messages.
+     *
+     * @return player brief list
+     */
     public List<PlayerBrief> getPlayerBriefs() {
         return players.entrySet().stream()
                 .map(e -> new PlayerBrief(e.getKey(), e.getValue()))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Gets a read-only view of client connections.
+     *
+     * @return player id to connection map
+     */
     public Map<String, ClientConnection> getConnectionsReadonly() {
         return Collections.unmodifiableMap(connections);
     }
 
     /**
-     * Lightweight player information object, used for initialization messages/lobby messages.
+     * Lightweight player information used in initialization and lobby messages.
      *
      * @param playerId player id
      * @param playerName player display name

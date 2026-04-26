@@ -21,8 +21,6 @@ import java.util.logging.Logger;
 
 /**
  * Listens for UDP discovery broadcasts and maintains a live LAN room list.
- *
- * This class is typically started by the room-search controller.
  */
 public class LanRoomScanner {
     private static final Logger logger =
@@ -41,6 +39,11 @@ public class LanRoomScanner {
     private DatagramSocket socket;
     private Thread workerThread;
 
+    /**
+     * Creates a room scanner.
+     *
+     * @param discoveryPort UDP discovery port
+     */
     public LanRoomScanner(int discoveryPort) {
         this.discoveryPort = discoveryPort;
         this.running = new AtomicBoolean(false);
@@ -50,8 +53,8 @@ public class LanRoomScanner {
     /**
      * Starts scanning in the background.
      *
-     * <p>The callback receives the current room list every scan cycle.
-     * In a JavaFX controller, you usually wrap UI updates in Platform.runLater(...).</p>
+     * @param onUpdate callback receiving the current room list
+     * @throws IOException if the UDP socket cannot be opened
      */
     public void startScanning(Consumer<List<DiscoveredRoom>> onUpdate) throws IOException {
         Objects.requireNonNull(onUpdate, "onUpdate cannot be null.");
@@ -86,12 +89,9 @@ public class LanRoomScanner {
     }
 
     /**
-     * Main scan loop:
-     * 1. Try to receive one UDP packet
-     * 2. Decode it
-     * 3. Merge it into the room cache
-     * 4. Remove expired rooms
-     * 5. Push the latest room list to the callback
+     * Main scan loop that receives packets and updates the room cache.
+     *
+     * @param onUpdate callback receiving the current room list
      */
     private void scanLoop(Consumer<List<DiscoveredRoom>> onUpdate) {
         byte[] buffer = new byte[1024];
@@ -142,6 +142,13 @@ public class LanRoomScanner {
         }
     }
 
+    /**
+     * Chooses a usable host address for a received room.
+     *
+     * @param packetSource address that sent the packet
+     * @param payloadHost host address written in the packet
+     * @return usable host address string
+     */
     private String resolveAdvertisedHost(InetAddress packetSource, String payloadHost) {
         if (isUsableIpv4(packetSource)) {
             return packetSource.getHostAddress();
@@ -153,6 +160,12 @@ public class LanRoomScanner {
         return packetSource == null ? "" : packetSource.getHostAddress();
     }
 
+    /**
+     * Parses an IPv4 address.
+     *
+     * @param host host text
+     * @return IPv4 address, or {@code null}
+     */
     private InetAddress parseIpv4(String host) {
         if (host == null || host.isBlank()) {
             return null;
@@ -165,6 +178,12 @@ public class LanRoomScanner {
         }
     }
 
+    /**
+     * Checks whether an address can be used for LAN connection.
+     *
+     * @param address address to inspect
+     * @return {@code true} if usable
+     */
     private boolean isUsableIpv4(InetAddress address) {
         return address instanceof Inet4Address
                 && !address.isAnyLocalAddress()
@@ -174,7 +193,6 @@ public class LanRoomScanner {
 
     /**
      * Removes rooms that have not broadcast recently.
-     * This keeps dead hosts from staying in the UI forever.
      */
     private void removeExpiredRooms() {
         long now = System.currentTimeMillis();
@@ -185,6 +203,8 @@ public class LanRoomScanner {
 
     /**
      * Creates a stable snapshot list for the UI layer.
+     *
+     * @return discovered room list
      */
     private List<DiscoveredRoom> snapshotRooms() {
         List<DiscoveredRoom> rooms = new ArrayList<>(roomsByKey.values());

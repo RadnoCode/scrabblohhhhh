@@ -2,14 +2,26 @@ package com.kotva.lan.udp;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Encodes and decodes the older UDP LAN discovery packet format.
+ */
 public final class LanDiscoveryCodec {
     public static final String PROTOCOL_PREFIX = "SCRABBLE_LAN_V1";
     private static final String SEPARATOR = "|";
     private static final String SEPARATOR_REGEX = "\\|";
 
-    private LanDiscoveryCodec() { 
+    /**
+     * Prevents creating this utility class.
+     */
+    private LanDiscoveryCodec() {
     }
 
+    /**
+     * Encodes room information into a UDP packet payload.
+     *
+     * @param room room to encode
+     * @return UTF-8 packet bytes
+     */
     public static byte[] encode(DiscoveredRoom room) {
         String payload = String.join(
                 SEPARATOR,
@@ -27,6 +39,12 @@ public final class LanDiscoveryCodec {
         return payload.getBytes(StandardCharsets.UTF_8);
     }
 
+    /**
+     * Escapes null and separator characters.
+     *
+     * @param value value to escape
+     * @return safe value
+     */
     private static String safe(String value) {
         if (value == null) {
             return "";
@@ -34,11 +52,22 @@ public final class LanDiscoveryCodec {
         return value.replace(SEPARATOR, "/");
     }
 
+    /**
+     * Checks whether a packet belongs to this discovery protocol.
+     *
+     * @param rawMessage raw packet text
+     * @return {@code true} if it is a discovery packet
+     */
     public static boolean isDiscoveryPacket(String rawMessage) {
         return rawMessage != null && rawMessage.startsWith(PROTOCOL_PREFIX + SEPARATOR);
     }
 
-    
+    /**
+     * Decodes a discovery packet into room information.
+     *
+     * @param rawMessage raw packet text
+     * @return discovered room, or {@code null} if invalid
+     */
     public static DiscoveredRoom decode(String rawMessage) {
         if (!isDiscoveryPacket(rawMessage)) {
             return null;

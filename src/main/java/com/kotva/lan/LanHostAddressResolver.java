@@ -14,13 +14,25 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+/**
+ * Resolves LAN addresses used for joining and UDP broadcasting.
+ */
 public final class LanHostAddressResolver {
     private static final Logger logger =
             Logger.getLogger(LanHostAddressResolver.class.getName());
 
+    /**
+     * Prevents creating this utility class.
+     */
     private LanHostAddressResolver() {
     }
 
+    /**
+     * Resolves the host endpoint that clients should join.
+     *
+     * @param port TCP port
+     * @return host:port endpoint, or empty string
+     */
     public static String resolveJoinEndpoint(int port) {
         InetAddress address = resolvePreferredIpv4Address();
         if (address == null) {
@@ -29,6 +41,11 @@ public final class LanHostAddressResolver {
         return address.getHostAddress() + ":" + port;
     }
 
+    /**
+     * Gets the best broadcast endpoint.
+     *
+     * @return preferred broadcast endpoint, or {@code null}
+     */
     public static BroadcastEndpoint resolvePreferredBroadcastEndpoint() {
         List<BroadcastEndpoint> endpoints = resolveBroadcastEndpoints();
         if (endpoints.isEmpty()) {
@@ -37,6 +54,11 @@ public final class LanHostAddressResolver {
         return endpoints.get(0);
     }
 
+    /**
+     * Resolves broadcast endpoints for all usable LAN interfaces.
+     *
+     * @return broadcast endpoints
+     */
     public static List<BroadcastEndpoint> resolveBroadcastEndpoints() {
         List<BroadcastEndpoint> endpoints = new ArrayList<>();
         for (InterfaceCandidate candidate : resolveIpv4Candidates()) {
@@ -45,6 +67,11 @@ public final class LanHostAddressResolver {
         return endpoints;
     }
 
+    /**
+     * Resolves preferred broadcast addresses.
+     *
+     * @return broadcast addresses
+     */
     public static Set<InetAddress> resolvePreferredBroadcastAddresses() {
         Set<InetAddress> addresses = new LinkedHashSet<>();
         for (BroadcastEndpoint endpoint : resolveBroadcastEndpoints()) {
@@ -53,6 +80,11 @@ public final class LanHostAddressResolver {
         return addresses;
     }
 
+    /**
+     * Resolves the preferred IPv4 address for hosting.
+     *
+     * @return IPv4 address, or {@code null}
+     */
     public static InetAddress resolvePreferredIpv4Address() {
         List<InterfaceCandidate> candidates = resolveIpv4Candidates();
         if (!candidates.isEmpty()) {
@@ -66,6 +98,11 @@ public final class LanHostAddressResolver {
         return null;
     }
 
+    /**
+     * Finds and scores usable IPv4 interface candidates.
+     *
+     * @return sorted interface candidates
+     */
     private static List<InterfaceCandidate> resolveIpv4Candidates() {
         InetAddress routedAddress = resolveRoutedIpv4Address();
         List<InterfaceCandidate> candidates = new ArrayList<>();
@@ -97,6 +134,11 @@ public final class LanHostAddressResolver {
         return candidates;
     }
 
+    /**
+     * Finds the local address selected by normal routing.
+     *
+     * @return routed IPv4 address, or {@code null}
+     */
     private static InetAddress resolveRoutedIpv4Address() {
         try (DatagramSocket socket = new DatagramSocket()) {
             socket.connect(InetAddress.getByName("8.8.8.8"), 53);
@@ -107,6 +149,13 @@ public final class LanHostAddressResolver {
         }
     }
 
+    /**
+     * Checks whether a network interface should be considered.
+     *
+     * @param networkInterface network interface
+     * @return {@code true} if usable
+     * @throws SocketException if interface info cannot be read
+     */
     private static boolean isCandidateInterface(NetworkInterface networkInterface) throws SocketException {
         String descriptor = describeInterface(networkInterface);
         return networkInterface.isUp()
@@ -115,6 +164,12 @@ public final class LanHostAddressResolver {
                 && !isRejectedDescriptor(descriptor);
     }
 
+    /**
+     * Checks whether an address is a usable IPv4 address.
+     *
+     * @param address address to inspect
+     * @return {@code true} if usable
+     */
     private static boolean isUsableIpv4Address(InetAddress address) {
         return address instanceof Inet4Address
                 && !address.isAnyLocalAddress()
@@ -122,6 +177,13 @@ public final class LanHostAddressResolver {
                 && !address.isLinkLocalAddress();
     }
 
+    /**
+     * Scores a network interface by likely LAN usefulness.
+     *
+     * @param networkInterface network interface
+     * @return score
+     * @throws SocketException if interface info cannot be read
+     */
     private static int scoreInterface(NetworkInterface networkInterface) throws SocketException {
         String descriptor = describeInterface(networkInterface);
 
@@ -172,6 +234,15 @@ public final class LanHostAddressResolver {
         return score;
     }
 
+    /**
+     * Scores one interface address candidate.
+     *
+     * @param networkInterface network interface
+     * @param address IPv4 address
+     * @param routedAddress routed IPv4 address
+     * @return score
+     * @throws SocketException if interface info cannot be read
+     */
     private static int scoreCandidate(
             NetworkInterface networkInterface,
             InetAddress address,
@@ -186,6 +257,12 @@ public final class LanHostAddressResolver {
         return score;
     }
 
+    /**
+     * Checks whether an interface description should be rejected.
+     *
+     * @param descriptor lower-case interface description
+     * @return {@code true} if rejected
+     */
     private static boolean isRejectedDescriptor(String descriptor) {
         return descriptor.contains("vmware")
                 || descriptor.contains("virtualbox")
@@ -206,12 +283,24 @@ public final class LanHostAddressResolver {
                 || descriptor.contains("bluetooth");
     }
 
+    /**
+     * Checks whether an interface looks like a mobile hotspot.
+     *
+     * @param descriptor lower-case interface description
+     * @return {@code true} if hotspot-like
+     */
     private static boolean isHotspotDescriptor(String descriptor) {
         return descriptor.contains("wi-fi direct")
                 || descriptor.contains("wifi direct")
                 || descriptor.contains("mobile hotspot");
     }
 
+    /**
+     * Builds a lower-case description for an interface.
+     *
+     * @param networkInterface network interface
+     * @return description
+     */
     private static String describeInterface(NetworkInterface networkInterface) {
         String name = networkInterface.getName() == null ? "" : networkInterface.getName();
         String displayName =
@@ -219,9 +308,22 @@ public final class LanHostAddressResolver {
         return (name + " " + displayName).toLowerCase();
     }
 
+    /**
+     * Local and broadcast address pair for one LAN interface.
+     *
+     * @param localAddress local IPv4 address
+     * @param broadcastAddress broadcast address
+     */
     public record BroadcastEndpoint(InetAddress localAddress, InetAddress broadcastAddress) {
     }
 
+    /**
+     * Scored candidate interface address.
+     *
+     * @param address local IPv4 address
+     * @param broadcast broadcast address
+     * @param score selection score
+     */
     private record InterfaceCandidate(InetAddress address, InetAddress broadcast, int score) {
     }
 }

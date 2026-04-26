@@ -42,9 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
- * Host-side LAN broker. It supports both the current direct-to-game flow and a
- * lobby-first waiting room flow so UI can choose when to enter the real
- * runtime.
+ * Host-side LAN broker that manages the lobby, TCP clients, and game messages.
  */
 public class GameSessionBroker {
     public static final int DEFAULT_PORT = 5050;
@@ -66,33 +64,68 @@ public class GameSessionBroker {
     private volatile LanLobbyPhase lobbyPhase;
     private volatile BrokerMode brokerMode;
 
+    /**
+     * Creates a broker for a TCP port.
+     *
+     * @param port port to bind
+     */
     public GameSessionBroker(int port) {
         this.port = port;
         this.lobbyPhase = LanLobbyPhase.CLOSED;
         this.brokerMode = null;
     }
 
+    /**
+     * Gets the local LAN session.
+     *
+     * @return local game session, or {@code null}
+     */
     public LocalGameSession getLocalGameSession() {
         return localGameSession;
     }
 
+    /**
+     * Gets the actual bound port.
+     *
+     * @return bound port
+     */
     public int getBoundPort() {
         return serverSocket == null ? port : serverSocket.getLocalPort();
     }
 
+    /**
+     * Gets the server listening address.
+     *
+     * @return listening address, or {@code null}
+     */
     public InetAddress getListeningAddress() {
         return listeningAddress;
     }
 
+    /**
+     * Gets the preferred host address to advertise.
+     *
+     * @return host IPv4 address, or empty string
+     */
     public String getAdvertisedHostAddress() {
         InetAddress address = LanHostAddressResolver.resolvePreferredIpv4Address();
         return address == null ? "" : address.getHostAddress();
     }
 
+    /**
+     * Gets the join endpoint advertised to clients.
+     *
+     * @return host:port endpoint
+     */
     public String getAdvertisedJoinEndpoint() {
         return LanHostAddressResolver.resolveJoinEndpoint(getBoundPort());
     }
 
+    /**
+     * Drains queued system notices.
+     *
+     * @return system notices
+     */
     public List<LanSystemNotice> drainSystemNotices() {
         List<LanSystemNotice> notices = new ArrayList<>();
         LanSystemNotice notice;
@@ -102,14 +135,29 @@ public class GameSessionBroker {
         return notices;
     }
 
+    /**
+     * Gets the blocking system notice.
+     *
+     * @return blocking notice, or {@code null}
+     */
     public LanSystemNotice getBlockingSystemNotice() {
         return blockingSystemNotice;
     }
 
+    /**
+     * Checks whether a blocking system notice exists.
+     *
+     * @return {@code true} if a blocking notice exists
+     */
     public boolean hasBlockingSystemNotice() {
         return blockingSystemNotice != null;
     }
 
+    /**
+     * Gets the current lobby snapshot.
+     *
+     * @return lobby snapshot, or {@code null}
+     */
     public LanLobbySnapshot getLobbySnapshot() {
         if (localGameSession == null || lobbySettings == null) {
             return null;
@@ -117,6 +165,16 @@ public class GameSessionBroker {
         return buildLobbySnapshot();
     }
 
+    /**
+     * Creates a direct-to-game LAN session.
+     *
+     * @param session authoritative game session
+     * @param lanHostService host command service
+     * @param hostPlayerId host player id
+     * @param hostPlayerName host player name
+     * @return session id
+     * @throws IOException if the server socket cannot be opened
+     */
     public synchronized String createSession(
             GameSession session,
             LanHostService lanHostService,
@@ -145,6 +203,15 @@ public class GameSessionBroker {
                         session.getConfig().getPlayerCount()));
     }
 
+    /**
+     * Creates a lobby that waits for players before starting.
+     *
+     * @param settings lobby settings
+     * @param hostPlayerId host player id
+     * @param hostPlayerName host player name
+     * @return lobby session id
+     * @throws IOException if the server socket cannot be opened
+     */
     public synchronized String createLobby(
             LanLobbySettings settings,
             String hostPlayerId,
@@ -168,6 +235,13 @@ public class GameSessionBroker {
                         settings.getMaxPlayers()));
     }
 
+    /**
+     * Starts the game from a waiting lobby.
+     *
+     * @param gameSetupService service used to create the game
+     * @param gameApplicationService service used to execute gameplay commands
+     * @return host game launch data
+     */
     public synchronized LanHostGameLaunch startGame(
             GameSetupService gameSetupService,
             GameApplicationService gameApplicationService) {
@@ -204,10 +278,19 @@ public class GameSessionBroker {
                 hostService.snapshotForViewer(localGameSession.getHostPlayerId()));
     }
 
+    /**
+     * Broadcasts viewer-specific game snapshots to all clients.
+     */
     public void broadcastViewerSnapshotsToAllConnectedClients() {
         broadcastViewerSnapshotsToAllConnectedClients(null);
     }
 
+    /**
+     * Broadcasts a message to all clients except one player.
+     *
+     * @param excludedPlayerId player id to skip
+     * @param message message to send
+     */
     public void broadcastExcept(String excludedPlayerId, LocalGameMessage message) {
         if (localGameSession == null || message == null) {
             return;
@@ -219,10 +302,18 @@ public class GameSessionBroker {
         });
     }
 
+    /**
+     * Broadcasts a message to all connected clients.
+     *
+     * @param message message to send
+     */
     public void broadcastToAll(LocalGameMessage message) {
         broadcastExcept(null, message);
     }
 
+    /**
+     * Stops the LAN server and clears broker state.
+     */
     public void stopServer() {
         running.set(false);
         lobbyPhase = LanLobbyPhase.CLOSED;
@@ -248,6 +339,13 @@ public class GameSessionBroker {
         logger.info("LAN host broker stopped.");
     }
 
+    /**
+     * Opens the server socket and starts the accept loop.
+     *
+     * @param session local session to host
+     * @return session id
+     * @throws IOException if the socket cannot be opened
+     */
     private String initializeServer(LocalGameSession session) throws IOException {
         if (running.get()) {
             throw new IllegalStateException("Server is already running.");
@@ -268,6 +366,12 @@ public class GameSessionBroker {
         return localGameSession.getSessionId();
     }
 
+    /**
+     * Opens the TCP server socket.
+     *
+     * @return server socket
+     * @throws IOException if bind fails
+     */
     private ServerSocket openServerSocket() throws IOException {
         ServerSocket fallbackSocket = new ServerSocket();
         fallbackSocket.setReuseAddress(true);
@@ -276,6 +380,11 @@ public class GameSessionBroker {
         return fallbackSocket;
     }
 
+    /**
+     * Builds a readable listening endpoint.
+     *
+     * @return listening endpoint text
+     */
     private String describeListeningEndpoint() {
         String host =
                 listeningAddress == null
@@ -289,6 +398,9 @@ public class GameSessionBroker {
                 ;
     }
 
+    /**
+     * Accepts incoming TCP clients while the broker is running.
+     */
     private void acceptLoop() {
         while (running.get()) {
             try {
@@ -312,6 +424,11 @@ public class GameSessionBroker {
         }
     }
 
+    /**
+     * Handles the join handshake for one new client.
+     *
+     * @param clientSocket accepted client socket
+     */
     private void handleNewClient(Socket clientSocket) {
         try {
             clientSocket.setSoTimeout(HANDSHAKE_TIMEOUT_MILLIS);
@@ -393,6 +510,12 @@ public class GameSessionBroker {
         }
     }
 
+    /**
+     * Builds the initial game message for a joined direct-session client.
+     *
+     * @param assignedSeat assigned player seat
+     * @return initialization message
+     */
     private GameInitializationMessage buildInitializationMessage(AssignedSeat assignedSeat) {
         return new GameInitializationMessage(
                 localGameSession.getSessionId(),
@@ -403,10 +526,21 @@ public class GameSessionBroker {
                 requireLanHostService().snapshotForViewer(assignedSeat.playerId()));
     }
 
+    /**
+     * Builds a lobby-state message for one client.
+     *
+     * @param localPlayerId local id assigned to the client
+     * @return lobby state message
+     */
     private LobbyStateMessage buildLobbyStateMessage(String localPlayerId) {
         return new LobbyStateMessage(localPlayerId, buildLobbySnapshot());
     }
 
+    /**
+     * Builds the current lobby snapshot.
+     *
+     * @return lobby snapshot
+     */
     private LanLobbySnapshot buildLobbySnapshot() {
         List<LanLobbyPlayerSnapshot> players = new ArrayList<>();
         for (String playerId : buildOrderedPlayerIds()) {
@@ -429,6 +563,11 @@ public class GameSessionBroker {
                 lobbyPhase == LanLobbyPhase.WAITING_FOR_PLAYERS && players.size() >= 2);
     }
 
+    /**
+     * Builds a game config from the current lobby player list.
+     *
+     * @return game config
+     */
     private GameConfig buildLobbyGameConfig() {
         List<PlayerConfig> playerConfigs = new ArrayList<>();
         List<String> orderedPlayerIds = buildOrderedPlayerIds();
@@ -451,6 +590,11 @@ public class GameSessionBroker {
                 null);
     }
 
+    /**
+     * Broadcasts the latest lobby state to clients.
+     *
+     * @param excludedPlayerId player id to skip
+     */
     private void broadcastLobbyState(String excludedPlayerId) {
         if (localGameSession == null || lobbySettings == null) {
             return;
@@ -464,6 +608,9 @@ public class GameSessionBroker {
         });
     }
 
+    /**
+     * Sends game-start messages to all connected clients.
+     */
     private void broadcastGameStart() {
         if (localGameSession == null || authoritativeSession == null || lanHostService == null) {
             return;
@@ -477,6 +624,12 @@ public class GameSessionBroker {
         }
     }
 
+    /**
+     * Finds the next available LAN player seat.
+     *
+     * @param requestedPlayerName requested display name
+     * @return assigned seat, or {@code null}
+     */
     private AssignedSeat resolveNextSeat(String requestedPlayerName) {
         if (localGameSession == null || localGameSession.isFull()) {
             return null;
@@ -494,6 +647,13 @@ public class GameSessionBroker {
         return null;
     }
 
+    /**
+     * Resolves the display name assigned to a player id.
+     *
+     * @param playerId assigned player id
+     * @param requestedPlayerName requested display name
+     * @return assigned player name
+     */
     private String resolveAssignedPlayerName(String playerId, String requestedPlayerName) {
         if (brokerMode == BrokerMode.DIRECT_SESSION && authoritativeSession != null) {
             int playerIndex = extractSeatIndex(playerId) - 1;
@@ -504,12 +664,23 @@ public class GameSessionBroker {
         return ensureUniqueLobbyName(normalizePlayerName(requestedPlayerName));
     }
 
+    /**
+     * Builds player ids sorted by seat index.
+     *
+     * @return ordered player ids
+     */
     private List<String> buildOrderedPlayerIds() {
         return localGameSession.getPlayersReadonly().keySet().stream()
                 .sorted(Comparator.comparingInt(GameSessionBroker::extractSeatIndex))
                 .toList();
     }
 
+    /**
+     * Handles a message received from a client.
+     *
+     * @param playerId sender player id
+     * @param message received message
+     */
     private void onClientMessage(String playerId, LocalGameMessage message) {
         if (message == null) {
             return;
@@ -531,6 +702,12 @@ public class GameSessionBroker {
         }
     }
 
+    /**
+     * Handles a gameplay command request from a client.
+     *
+     * @param playerId sender player id
+     * @param message command request message
+     */
     private void handleCommandRequest(String playerId, CommandRequestMessage message) {
         CommandEnvelope commandEnvelope =
                 Objects.requireNonNull(message, "message cannot be null.").getCommandEnvelope();
@@ -559,6 +736,14 @@ public class GameSessionBroker {
         }
     }
 
+    /**
+     * Builds a rejected command result without applying the command.
+     *
+     * @param playerId viewer player id
+     * @param commandEnvelope rejected command
+     * @param message rejection message
+     * @return remote command result
+     */
     private RemoteCommandResult buildRejectedCommandResult(
             String playerId,
             CommandEnvelope commandEnvelope,
@@ -574,6 +759,11 @@ public class GameSessionBroker {
                 requireLanHostService().snapshotForViewer(playerId));
     }
 
+    /**
+     * Broadcasts viewer-specific snapshots after a game command.
+     *
+     * @param excludedPlayerId player id that already received a command result
+     */
     private void broadcastViewerSnapshotsToAllConnectedClients(String excludedPlayerId) {
         if (localGameSession == null || lanHostService == null) {
             return;
@@ -587,6 +777,11 @@ public class GameSessionBroker {
         });
     }
 
+    /**
+     * Handles a client disconnect.
+     *
+     * @param playerId disconnected player id
+     */
     private void onClientDisconnect(String playerId) {
         if (localGameSession == null) {
             return;
@@ -622,10 +817,20 @@ public class GameSessionBroker {
         logger.info("LAN player disconnected: " + playerId);
     }
 
+    /**
+     * Gets the host service or fails if it is not ready.
+     *
+     * @return LAN host service
+     */
     private LanHostService requireLanHostService() {
         return Objects.requireNonNull(lanHostService, "lanHostService cannot be null.");
     }
 
+    /**
+     * Closes a socket and logs failures.
+     *
+     * @param socket socket to close
+     */
     private void safeClose(Socket socket) {
         if (socket == null) {
             return;
@@ -637,6 +842,12 @@ public class GameSessionBroker {
         }
     }
 
+    /**
+     * Describes a remote socket endpoint.
+     *
+     * @param socket socket to inspect
+     * @return endpoint text
+     */
     private String describeRemoteEndpoint(Socket socket) {
         if (socket == null || socket.getRemoteSocketAddress() == null) {
             return "unknown-remote";
@@ -644,6 +855,12 @@ public class GameSessionBroker {
         return socket.getRemoteSocketAddress().toString();
     }
 
+    /**
+     * Extracts the numeric seat index from a player id.
+     *
+     * @param playerId player id such as player-2
+     * @return seat index, or {@link Integer#MAX_VALUE}
+     */
     private static int extractSeatIndex(String playerId) {
         if (playerId == null) {
             return Integer.MAX_VALUE;
@@ -659,6 +876,12 @@ public class GameSessionBroker {
         }
     }
 
+    /**
+     * Normalizes a player name.
+     *
+     * @param playerName raw player name
+     * @return normalized player name
+     */
     private static String normalizePlayerName(String playerName) {
         if (playerName == null || playerName.isBlank()) {
             return "Guest";
@@ -666,6 +889,12 @@ public class GameSessionBroker {
         return playerName.trim();
     }
 
+    /**
+     * Ensures a lobby player name is unique.
+     *
+     * @param requestedPlayerName normalized requested name
+     * @return unique lobby name
+     */
     private String ensureUniqueLobbyName(String requestedPlayerName) {
         if (localGameSession == null) {
             return requestedPlayerName;
@@ -679,12 +908,25 @@ public class GameSessionBroker {
         return normalizedCandidate;
     }
 
+    /**
+     * Checks whether a name already exists in the lobby.
+     *
+     * @param candidateName candidate name
+     * @return {@code true} if already used
+     */
     private boolean containsPlayerNameIgnoreCase(String candidateName) {
         return localGameSession.getPlayersReadonly().values().stream()
                 .filter(Objects::nonNull)
                 .anyMatch(existingName -> existingName.equalsIgnoreCase(candidateName));
     }
 
+    /**
+     * Appends a numeric suffix while keeping the name short.
+     *
+     * @param baseName base name
+     * @param suffix numeric suffix
+     * @return suffixed name
+     */
     private String appendSuffix(String baseName, int suffix) {
         String suffixText = Integer.toString(suffix);
         int maxBaseCodePoints = Math.max(1, 8 - suffixText.length());
@@ -692,6 +934,13 @@ public class GameSessionBroker {
         return trimmedBaseName + suffixText;
     }
 
+    /**
+     * Trims text by Unicode code point count.
+     *
+     * @param text source text
+     * @param maxCodePoints maximum code points
+     * @return trimmed text
+     */
     private String trimToCodePoints(String text, int maxCodePoints) {
         if (text == null || text.isEmpty() || maxCodePoints < 1) {
             return "";
@@ -704,11 +953,22 @@ public class GameSessionBroker {
         return text.substring(0, endIndex);
     }
 
+    /**
+     * Player seat assigned by the broker.
+     *
+     * @param playerId assigned player id
+     * @param playerName assigned player name
+     */
     private record AssignedSeat(String playerId, String playerName) {
     }
 
+    /**
+     * Broker operating mode.
+     */
     private enum BrokerMode {
+        /** A game session already exists before clients join. */
         DIRECT_SESSION,
+        /** Clients wait in a lobby before the host starts the game. */
         LOBBY
     }
 }
