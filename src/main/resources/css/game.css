@@ -18,12 +18,12 @@
     -fx-alignment: center;
 }
 
-.game-save-load-row {
-    -fx-alignment: center;
-}
-
 .game-utility-button {
     -fx-padding: 0;
+}
+
+.game-corner-save-button {
+    -fx-opacity: 0.96;
 }
 
 .game-utility-button .common-button-label {
@@ -32,6 +32,10 @@
     -fx-font-weight: 800;
     -fx-padding: 0;
     -fx-opacity: 1;
+}
+
+.game-utility-button.game-corner-save-button .common-button-label {
+    -fx-text-fill: #ffd84d;
 }
 
 .game-board-shell {

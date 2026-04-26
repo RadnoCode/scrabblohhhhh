@@ -43,7 +43,7 @@ public class LocalMultiplayerSetupScene extends Scene {
         "/images/local-multiplayer/buttons/bottom-continue.png";
     private static final String LOAD_SAVE_BUTTON_IMAGE_PATH =
         "/images/local-multiplayer/buttons/bottom-load-save.png";
-    private static final double BUTTON_SCALE = 0.8 * 0.7;
+    private static final double BUTTON_SCALE = 0.63;
     private static final double VICE_TITLE_WIDTH = 180;
     private static final double VICE_TITLE_HEIGHT = 90;
     private static final double DEFAULT_SETUP_BUTTON_WIDTH = 420.0;
