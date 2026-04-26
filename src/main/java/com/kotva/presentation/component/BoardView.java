@@ -14,6 +14,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 
+/**
+ * Shows the Scrabble board.
+ */
 public class BoardView extends StackPane {
     public static final int BOARD_SIZE = 15;
     public static final double CELL_SIZE = 30;

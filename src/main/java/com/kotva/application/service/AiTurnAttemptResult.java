@@ -4,15 +4,15 @@ import com.kotva.ai.AiMove;
 import java.util.Objects;
 
 /**
- * Describes whether applying an AI move succeeded.
+ * Result of trying to apply one AI move.
  *
  * @param move AI move that was attempted
  * @param accepted whether the move was accepted
- * @param rejectionCode short rejection code
- * @param rejectionReason readable rejection reason
- * @param error exception raised while applying the move
- * @param awardedScore score earned by the move
- * @param nextPlayerId player id that should act next
+ * @param rejectionCode code for a rejected move
+ * @param rejectionReason readable reason for rejection
+ * @param error error raised while applying the move
+ * @param awardedScore score awarded if accepted
+ * @param nextPlayerId next player id if accepted
  */
 public record AiTurnAttemptResult(
     AiMove move,
@@ -24,7 +24,7 @@ public record AiTurnAttemptResult(
     String nextPlayerId) {
 
     /**
-     * Validates the attempt result.
+     * Validates rejection information.
      */
     public AiTurnAttemptResult {
         move = Objects.requireNonNull(move, "move cannot be null.");
@@ -42,10 +42,10 @@ public record AiTurnAttemptResult(
     /**
      * Creates an accepted AI move result.
      *
-     * @param move accepted AI move
-     * @param awardedScore score earned by the move
-     * @param nextPlayerId player id that should act next
-     * @return accepted attempt result
+     * @param move accepted move
+     * @param awardedScore score awarded
+     * @param nextPlayerId next player id
+     * @return accepted result
      */
     public static AiTurnAttemptResult accepted(AiMove move, int awardedScore, String nextPlayerId) {
         return new AiTurnAttemptResult(move, true, null, null, null, awardedScore, nextPlayerId);
@@ -54,11 +54,11 @@ public record AiTurnAttemptResult(
     /**
      * Creates a rejected AI move result.
      *
-     * @param move rejected AI move
-     * @param rejectionCode short rejection code
-     * @param rejectionReason readable rejection reason
-     * @param error exception raised while applying the move
-     * @return rejected attempt result
+     * @param move rejected move
+     * @param rejectionCode rejection code
+     * @param rejectionReason rejection reason
+     * @param error related error, or {@code null}
+     * @return rejected result
      */
     public static AiTurnAttemptResult rejected(
         AiMove move, String rejectionCode, String rejectionReason, Throwable error) {

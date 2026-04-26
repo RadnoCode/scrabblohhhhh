@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Stores data for the player name setup screen.
+ */
 public final class PlayerNameSetupContext {
     private static final String DEFAULT_TITLE = "SCRABBLE";
     private static final String DEFAULT_ROOM_NAME = "LAN Room";

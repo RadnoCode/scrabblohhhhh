@@ -27,6 +27,9 @@ import com.kotva.infrastructure.dictionary.DictionaryRepository;
 import com.kotva.policy.DictionaryType;
 import com.kotva.policy.WordType;
 
+/**
+ * Default service that validates a draft and builds a player-friendly preview.
+ */
 public class MovePreviewServiceImpl implements MovePreviewService
 {
     private static final String BLANK_TILE_SELECTION_REQUIRED_MESSAGE =
@@ -35,6 +38,11 @@ public class MovePreviewServiceImpl implements MovePreviewService
     private final DictionaryRepository dictionaryRepository;
     private final RuleEngine ruleEngine;
 
+    /**
+     * Creates a preview service.
+     *
+     * @param dictionaryRepository dictionary repository used for validation
+     */
     public MovePreviewServiceImpl(DictionaryRepository dictionaryRepository) {
         this.dictionaryRepository =
         Objects.requireNonNull(
@@ -42,6 +50,12 @@ public class MovePreviewServiceImpl implements MovePreviewService
         this.ruleEngine = new RuleEngine(this.dictionaryRepository);
     }
 
+    /**
+     * Previews the current draft in a game session.
+     *
+     * @param session game session
+     * @return preview result
+     */
     @Override
     public PreviewResult preview(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
@@ -54,6 +68,15 @@ public class MovePreviewServiceImpl implements MovePreviewService
                 session.getTurnDraft());
     }
 
+    /**
+     * Previews a draft using explicit state and player information.
+     *
+     * @param gameState domain game state
+     * @param dictionaryType dictionary to use
+     * @param playerId player id for the preview
+     * @param turnDraft draft to preview
+     * @return preview result
+     */
     @Override
     public PreviewResult preview(
             GameState gameState,
@@ -95,12 +118,24 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return new PreviewResult(valid, estimatedScore, words, highlights, messages);
     }
 
+    /**
+     * Loads the requested dictionary if needed.
+     *
+     * @param dictionaryType dictionary to load
+     */
     private void ensureDictionaryLoaded(DictionaryType dictionaryType) {
         if (dictionaryRepository.getLoadedDictionaryType() != dictionaryType) {
             dictionaryRepository.loadDictionary(dictionaryType);
         }
     }
 
+    /**
+     * Finds the player used for preview.
+     *
+     * @param gameState game state
+     * @param playerId requested player id
+     * @return matching player or current active player
+     */
     private Player resolvePreviewPlayer(GameState gameState, String playerId) {
         if (playerId != null) {
             Player player = gameState.getPlayerById(playerId);
@@ -111,6 +146,13 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return gameState.requireCurrentActivePlayer();
     }
 
+    /**
+     * Checks whether a blank tile still needs a selected letter.
+     *
+     * @param gameState game state
+     * @param turnDraft draft to inspect
+     * @return {@code true} if a blank tile is unassigned
+     */
     private boolean hasUnassignedBlankTile(GameState gameState, TurnDraft turnDraft) {
         for (DraftPlacement placement : turnDraft.getPlacements()) {
             if (placement == null) {
@@ -127,6 +169,13 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return false;
     }
 
+    /**
+     * Runs move validation and converts unexpected errors into a message.
+     *
+     * @param gameState game state
+     * @param action action to validate
+     * @return validation message, or {@code null} if valid
+     */
     private String validateSafely(GameState gameState, PlayerAction action) {
         try {
             return ruleEngine.validateMove(gameState, action);
@@ -138,10 +187,25 @@ public class MovePreviewServiceImpl implements MovePreviewService
         }
     }
 
+    /**
+     * Extracts candidate words formed by an action.
+     *
+     * @param gameState game state
+     * @param action action to inspect
+     * @return candidate words
+     */
     private List<CandidateWord> extractCandidateWords(GameState gameState, PlayerAction action) {
         return WordExtractor.extract(action, gameState.getTileBag(), gameState.getBoard());
     }
 
+    /**
+     * Builds preview word data from candidate words.
+     *
+     * @param gameState game state
+     * @param action preview action
+     * @param candidateWords extracted candidate words
+     * @return preview words
+     */
     private List<PreviewWord> buildPreviewWords(
         GameState gameState, PlayerAction action, List<CandidateWord> candidateWords) {
         if (!canBuildPreviewWords(gameState, action) || candidateWords.isEmpty()) {
@@ -163,6 +227,13 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return words;
     }
 
+    /**
+     * Checks whether the draft shape is good enough to build word previews.
+     *
+     * @param gameState game state
+     * @param action preview action
+     * @return {@code true} if preview words can be built
+     */
     private boolean canBuildPreviewWords(GameState gameState, PlayerAction action) {
         if (action.placements().isEmpty()) {
             return false;
@@ -179,6 +250,13 @@ public class MovePreviewServiceImpl implements MovePreviewService
         && MoveValidator.isContiguous(placements, board);
     }
 
+    /**
+     * Chooses the main word from all candidate words.
+     *
+     * @param candidateWords candidate words from the board
+     * @param action preview action
+     * @return selected main word
+     */
     private CandidateWord resolveMainWord(List<CandidateWord> candidateWords, PlayerAction action) {
         if (candidateWords.isEmpty()) {
             return null;
@@ -233,6 +311,12 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return selectedMainWord != null ? selectedMainWord : candidateWords.get(0);
     }
 
+    /**
+     * Chooses the main word when only one tile is placed.
+     *
+     * @param candidateWords candidate words from the board
+     * @return selected main word
+     */
     private CandidateWord resolveSingleTileMainWord(List<CandidateWord> candidateWords) {
         if (candidateWords.size() == 1) {
             return candidateWords.get(0);
@@ -262,6 +346,15 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return wordLength(horizontalWord) >= wordLength(verticalWord) ? horizontalWord : verticalWord;
     }
 
+    /**
+     * Builds one preview word object.
+     *
+     * @param candidateWord candidate word
+     * @param wordType main or cross word type
+     * @param gameState game state
+     * @param action preview action
+     * @return preview word
+     */
     private PreviewWord buildPreviewWord(
         CandidateWord candidateWord,
         WordType wordType,
@@ -278,6 +371,12 @@ public class MovePreviewServiceImpl implements MovePreviewService
             wordType);
     }
 
+    /**
+     * Builds all board positions covered by a candidate word.
+     *
+     * @param candidateWord candidate word
+     * @return covered board positions
+     */
     private List<Position> buildCoveredPositions(CandidateWord candidateWord) {
         List<Position> coveredPositions = new ArrayList<>();
         int startRow = candidateWord.getStartPosition().getRow();
@@ -293,10 +392,23 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return coveredPositions;
     }
 
+    /**
+     * Checks whether two candidate words are the same.
+     *
+     * @param candidateWord first word
+     * @param otherWord second word
+     * @return {@code true} if they match
+     */
     private boolean isSameWord(CandidateWord candidateWord, CandidateWord otherWord) {
         return otherWord != null && candidateWord.equals(otherWord);
     }
 
+    /**
+     * Calculates the length of a candidate word.
+     *
+     * @param candidateWord candidate word
+     * @return word length
+     */
     private int wordLength(CandidateWord candidateWord) {
         if (candidateWord.getStartPosition().getRow() == candidateWord.getEndPosition().getRow()) {
             return candidateWord.getEndPosition().getCol() - candidateWord.getStartPosition().getCol() + 1;
@@ -304,6 +416,12 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return candidateWord.getEndPosition().getRow() - candidateWord.getStartPosition().getRow() + 1;
     }
 
+    /**
+     * Converts raw validation messages into clearer UI messages.
+     *
+     * @param rawMessage raw validation message
+     * @return user-friendly message
+     */
     private String mapToUserFriendlyMessage(String rawMessage) {
         if (rawMessage == null || rawMessage.isBlank()) {
             return "Invalid placement.";
@@ -317,6 +435,13 @@ public class MovePreviewServiceImpl implements MovePreviewService
         return rawMessage;
     }
 
+    /**
+     * Builds board highlights for all draft placements.
+     *
+     * @param turnDraft draft to highlight
+     * @param valid whether the draft is valid
+     * @return board highlights
+     */
     private List<BoardHighlight> buildHighlights(
         TurnDraft turnDraft,
         boolean valid

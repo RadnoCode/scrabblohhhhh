@@ -1,5 +1,8 @@
 package com.kotva.presentation.viewmodel;
 
+/**
+ * Stores data for setup screens.
+ */
 public class SetupViewModel {
     private final String titleText;
     private final String withFriendsText;

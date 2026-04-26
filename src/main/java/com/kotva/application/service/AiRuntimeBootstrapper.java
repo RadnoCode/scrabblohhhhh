@@ -3,34 +3,34 @@ package com.kotva.application.service;
 import com.kotva.application.session.GameConfig;
 
 /**
- * Creates AI runtime support for a game when needed.
+ * Creates AI turn runtimes and exposes native AI paths.
  */
 public interface AiRuntimeBootstrapper {
 
     /**
-     * Creates an AI turn runtime for the given game config.
+     * Creates an AI turn runtime for a game.
      *
-     * @param gameConfig game configuration
-     * @return AI runtime, or null when the game does not use AI
+     * @param gameConfig game config
+     * @return AI turn runtime
      */
     AiTurnRuntime create(GameConfig gameConfig);
 
     /**
-     * Returns the native library path.
+     * Gets the native AI library path.
      *
-     * @return native library path
+     * @return library path
      */
     String getLibraryPath();
 
     /**
-     * Returns the AI data directory.
+     * Gets the AI data directory.
      *
-     * @return AI data directory
+     * @return data directory
      */
     String getDataDirectory();
 
     /**
-     * Returns the current platform name.
+     * Gets the current platform name.
      *
      * @return platform name
      */

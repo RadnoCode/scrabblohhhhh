@@ -4,6 +4,9 @@ import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.HelpViewModel;
 
+/**
+ * Controls the help screen.
+ */
 public class HelpController {
     private final SceneNavigator navigator;
     private final HelpViewModel viewModel;

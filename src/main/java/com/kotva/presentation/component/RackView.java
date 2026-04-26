@@ -12,6 +12,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 
+/**
+ * Shows the player's tile rack.
+ */
 public class RackView extends StackPane {
     private static final int RACK_SIZE = 7;
     private static final String RACK_HOVER_STYLE = "game-rack-hover";

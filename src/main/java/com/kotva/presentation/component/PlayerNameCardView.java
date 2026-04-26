@@ -7,6 +7,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+/**
+ * Shows and edits a player name.
+ */
 public class PlayerNameCardView extends StackPane {
     public static final int MAX_NAME_CODE_POINTS = 8;
     private static final double CARD_WIDTH = 420;

@@ -5,6 +5,9 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Controls the home button show animation.
+ */
 final class HomeButtonSequenceManager {
     enum ButtonKey {
         PLAY,

@@ -3,7 +3,7 @@ package com.kotva.application.service;
 import com.kotva.application.result.SettlementResult;
 
 /**
- * Describes the result of dispatching one game action.
+ * Internal result used after dispatching a player action.
  */
 public final class ActionDispatchResult {
     private final boolean success;
@@ -13,6 +13,16 @@ public final class ActionDispatchResult {
     private final boolean gameEnded;
     private final SettlementResult settlementResult;
 
+    /**
+     * Creates an action dispatch result.
+     *
+     * @param success whether the action succeeded
+     * @param message result message
+     * @param awardedScore score awarded by the action
+     * @param nextPlayerId next player id
+     * @param gameEnded whether the game ended
+     * @param settlementResult settlement result, or {@code null}
+     */
     private ActionDispatchResult(
             boolean success,
             String message,
@@ -29,25 +39,25 @@ public final class ActionDispatchResult {
     }
 
     /**
-     * Creates a failed action result.
+     * Creates a failed dispatch result.
      *
-     * @param message message shown to the caller
-     * @param nextPlayerId player id that should act next
-     * @return a failed dispatch result
+     * @param message failure message
+     * @param nextPlayerId current or next player id
+     * @return failure result
      */
     public static ActionDispatchResult failure(String message, String nextPlayerId) {
         return new ActionDispatchResult(false, message, 0, nextPlayerId, false, null);
     }
 
     /**
-     * Creates a successful action result.
+     * Creates a successful dispatch result.
      *
-     * @param message message shown to the caller
-     * @param awardedScore score earned by the action
-     * @param nextPlayerId player id that should act next
-     * @param gameEnded whether the action ended the game
-     * @param settlementResult final settlement, if the game ended
-     * @return a successful dispatch result
+     * @param message success message
+     * @param awardedScore score awarded by the action
+     * @param nextPlayerId next player id
+     * @param gameEnded whether the game ended
+     * @param settlementResult settlement result, or {@code null}
+     * @return success result
      */
     public static ActionDispatchResult success(
             String message,
@@ -65,16 +75,16 @@ public final class ActionDispatchResult {
     }
 
     /**
-     * Returns whether the action was accepted.
+     * Checks whether dispatch succeeded.
      *
-     * @return true when the action succeeded
+     * @return {@code true} if successful
      */
     public boolean isSuccess() {
         return success;
     }
 
     /**
-     * Returns the result message.
+     * Gets the result message.
      *
      * @return result message
      */
@@ -83,7 +93,7 @@ public final class ActionDispatchResult {
     }
 
     /**
-     * Returns the score awarded by the action.
+     * Gets score awarded by the action.
      *
      * @return awarded score
      */
@@ -92,7 +102,7 @@ public final class ActionDispatchResult {
     }
 
     /**
-     * Returns the next player id.
+     * Gets the next player id.
      *
      * @return next player id
      */
@@ -101,18 +111,18 @@ public final class ActionDispatchResult {
     }
 
     /**
-     * Returns whether the game has ended.
+     * Checks whether the game ended.
      *
-     * @return true when the game ended
+     * @return {@code true} if ended
      */
     public boolean isGameEnded() {
         return gameEnded;
     }
 
     /**
-     * Returns the settlement result.
+     * Gets the settlement result.
      *
-     * @return settlement result, or null when the game is not ended
+     * @return settlement result, or {@code null}
      */
     public SettlementResult getSettlementResult() {
         return settlementResult;

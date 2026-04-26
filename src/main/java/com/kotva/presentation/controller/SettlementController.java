@@ -16,6 +16,9 @@ import javafx.scene.image.WritableImage;
 import javafx.stage.FileChooser;
 import javax.imageio.ImageIO;
 
+/**
+ * Controls the settlement screen.
+ */
 public class SettlementController {
     private static final DateTimeFormatter EXPORT_TIME_FORMAT =
         DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");

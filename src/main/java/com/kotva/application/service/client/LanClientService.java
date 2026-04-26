@@ -19,6 +19,9 @@ import com.kotva.policy.SessionStatus;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Client-side service for LAN gameplay.
+ */
 public class LanClientService {
     private final ClientGameContext context;
     private final ClientDraftService draftService;
@@ -30,6 +33,12 @@ public class LanClientService {
     private String statusDetails;
     private boolean disconnected;
 
+    /**
+     * Creates a LAN client service with default local helpers.
+     *
+     * @param context client game context
+     * @param transport LAN client transport
+     */
     public LanClientService(ClientGameContext context, LanClientTransport transport) {
         this(
                 context,
@@ -38,6 +47,14 @@ public class LanClientService {
                 PlayerController.create(context.getLocalPlayerId(), PlayerType.LAN));
     }
 
+    /**
+     * Creates a LAN client service.
+     *
+     * @param context client game context
+     * @param draftService local draft service
+     * @param transport LAN client transport
+     * @param playerController local player controller
+     */
     public LanClientService(
             ClientGameContext context,
             ClientDraftService draftService,
@@ -54,51 +71,97 @@ public class LanClientService {
         this.disconnected = false;
     }
 
+    /**
+     * Places a tile in the local draft.
+     *
+     * @param tileId tile id
+     * @param position board position
+     * @return preview result
+     */
     public PreviewResult placeDraftTile(String tileId, Position position) {
         ensureInteractiveEditingAllowed();
         clearStatusMessage();
         return draftService.placeDraftTile(tileId, position);
     }
 
+    /**
+     * Moves a tile in the local draft.
+     *
+     * @param tileId tile id
+     * @param position new board position
+     * @return preview result
+     */
     public PreviewResult moveDraftTile(String tileId, Position position) {
         ensureInteractiveEditingAllowed();
         clearStatusMessage();
         return draftService.moveDraftTile(tileId, position);
     }
 
+    /**
+     * Removes a tile from the local draft.
+     *
+     * @param tileId tile id
+     * @return preview result
+     */
     public PreviewResult removeDraftTile(String tileId) {
         ensureInteractiveEditingAllowed();
         clearStatusMessage();
         return draftService.removeDraftTile(tileId);
     }
 
+    /**
+     * Assigns a letter to a blank tile in the local draft.
+     *
+     * @param tileId blank tile id
+     * @param assignedLetter selected letter
+     */
     public void assignBlankTileLetter(String tileId, char assignedLetter) {
         ensureInteractiveEditingAllowed();
         clearStatusMessage();
         draftService.assignBlankTileLetter(tileId, assignedLetter);
     }
 
+    /**
+     * Recalls all local draft tiles.
+     *
+     * @return preview result
+     */
     public PreviewResult recallAllDraftTiles() {
         ensureInteractiveEditingAllowed();
         clearStatusMessage();
         return draftService.recallAllDraftTiles();
     }
 
+    /**
+     * Sends the current draft to the host.
+     */
     public void submitDraft() {
         ensureInteractiveEditingAllowed();
         dispatchCommand(draftService.buildSubmitAction(), "Waiting for host confirmation.");
     }
 
+    /**
+     * Sends a pass command to the host.
+     */
     public void passTurn() {
         ensureInteractiveEditingAllowed();
         dispatchCommand(PlayerAction.pass(context.getLocalPlayerId()), "Waiting for host confirmation.");
     }
 
+    /**
+     * Sends a resign command to the host.
+     */
     public void resign() {
         ensureInteractiveEditingAllowed();
         dispatchCommand(PlayerAction.lose(context.getLocalPlayerId()), "Waiting for host confirmation.");
     }
 
+    /**
+     * Processes inbound LAN messages and updates local clock prediction.
+     *
+     * @param elapsedMillis local elapsed time since last tick
+     * @return UI snapshot
+     */
     public GameSessionSnapshot tickClock(long elapsedMillis) {
         List<LanInboundMessage> inboundMessages = transport.drainInboundMessages();
         for (LanInboundMessage inboundMessage : inboundMessages) {
@@ -116,15 +179,29 @@ public class LanClientService {
         return getUiSnapshot();
     }
 
+    /**
+     * Builds the current UI snapshot for the LAN client.
+     *
+     * @return UI snapshot
+     */
     public GameSessionSnapshot getUiSnapshot() {
         GameSessionSnapshot snapshot = draftService.getUiSnapshot();
         return GameSessionSnapshotFactory.withClientRuntimeSnapshot(snapshot, buildRuntimeSnapshot());
     }
 
+    /**
+     * Closes the client transport.
+     */
     public void shutdown() {
         transport.close();
     }
 
+    /**
+     * Sends a command to the host and marks it pending.
+     *
+     * @param action action to send
+     * @param summary status summary while waiting
+     */
     private void dispatchCommand(PlayerAction action, String summary) {
         CommandEnvelope commandEnvelope =
                 playerController.buildLanCommand(
@@ -137,6 +214,11 @@ public class LanClientService {
         statusDetails = "commandId=" + pendingCommandId;
     }
 
+    /**
+     * Applies the host result for a previously sent command.
+     *
+     * @param result host command result
+     */
     private void applyCommandResult(RemoteCommandResult result) {
         if (disconnected) {
             return;
@@ -164,6 +246,12 @@ public class LanClientService {
         }
     }
 
+    /**
+     * Applies an authoritative snapshot from the host.
+     *
+     * @param snapshot host snapshot
+     * @param preserveDraftWhenSameEditableTurn whether local draft may be kept
+     */
     private void applyAuthoritativeSnapshot(
             GameSessionSnapshot snapshot, boolean preserveDraftWhenSameEditableTurn) {
         if (disconnected) {
@@ -178,6 +266,12 @@ public class LanClientService {
         }
     }
 
+    /**
+     * Checks whether a host snapshot still describes the same editable local turn.
+     *
+     * @param snapshot host snapshot
+     * @return {@code true} if local draft can be preserved
+     */
     private boolean isSameEditableTurn(GameSessionSnapshot snapshot) {
         return snapshot.getSessionStatus() == SessionStatus.IN_PROGRESS
                 && context.getSessionStatus() == SessionStatus.IN_PROGRESS
@@ -186,6 +280,11 @@ public class LanClientService {
                 && snapshot.getTurnNumber() == context.getTurnNumber();
     }
 
+    /**
+     * Builds runtime status for the client UI.
+     *
+     * @return client runtime snapshot
+     */
     private ClientRuntimeSnapshot buildRuntimeSnapshot() {
         if (disconnected) {
             return new ClientRuntimeSnapshot(true, null, statusSummary, statusDetails);
@@ -208,6 +307,9 @@ public class LanClientService {
                 statusDetails);
     }
 
+    /**
+     * Ensures the client can currently edit or submit commands.
+     */
     private void ensureInteractiveEditingAllowed() {
         if (disconnected) {
             throw new IllegalStateException("LAN client is disconnected.");
@@ -223,11 +325,19 @@ public class LanClientService {
         }
     }
 
+    /**
+     * Clears current status message.
+     */
     private void clearStatusMessage() {
         statusSummary = "";
         statusDetails = "";
     }
 
+    /**
+     * Applies a disconnect notice from the host.
+     *
+     * @param disconnectNoticeMessage disconnect notice
+     */
     private void applyDisconnectNotice(LanDisconnectNoticeMessage disconnectNoticeMessage) {
         disconnected = true;
         pendingCommandId = null;

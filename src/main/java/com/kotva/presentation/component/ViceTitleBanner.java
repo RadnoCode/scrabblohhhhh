@@ -9,6 +9,9 @@ import javafx.scene.shape.Rectangle;
 
 import java.util.Objects;
 
+/**
+ * Shows the small title under the main title.
+ */
 public class ViceTitleBanner extends StackPane {
     private static final double PREF_WIDTH = 300;
     private static final double PREF_HEIGHT = 198;

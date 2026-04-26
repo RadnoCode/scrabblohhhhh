@@ -16,6 +16,9 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * A shared button style used by many screens.
+ */
 public class CommonButton extends Button {
     private static final double TEMPLATE_ASPECT_RATIO = 1301.0 / 262.0;
     private static final double DEFAULT_BUTTON_WIDTH = 420;

@@ -11,6 +11,9 @@ import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.util.Duration;
 
+/**
+ * Plays entrance animations for option screens.
+ */
 final class OptionSceneEntranceAnimationManager {
     static final String OPTION_ENTRANCE_INSTALLED_KEY = "option-entrance-installed";
     private static final Duration FEATURED_DURATION = Duration.seconds(0.7);

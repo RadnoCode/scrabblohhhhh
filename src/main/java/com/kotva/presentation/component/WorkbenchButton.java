@@ -3,6 +3,9 @@ package com.kotva.presentation.component;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 
+/**
+ * A small button used in the game panel.
+ */
 public class WorkbenchButton extends CommonButton {
 
     public WorkbenchButton(String text) {

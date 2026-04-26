@@ -7,6 +7,9 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 
+/**
+ * Draws the help icon.
+ */
 public class HelpIconView extends Pane {
     private final Rectangle panelFrame;
     private final Circle bulbCircle;

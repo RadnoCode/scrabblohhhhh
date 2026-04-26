@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Stores data for the game screen.
+ */
 public class GameViewModel {
     private static final int DEFAULT_RACK_SLOT_COUNT = 7;
 

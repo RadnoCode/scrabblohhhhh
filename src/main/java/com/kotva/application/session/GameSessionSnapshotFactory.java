@@ -25,21 +25,48 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Builds game session snapshots for UI rendering and LAN transfer.
+ */
 public final class GameSessionSnapshotFactory {
 
+    /**
+     * Prevents creating this utility class.
+     */
     private GameSessionSnapshotFactory() {
     }
 
+    /**
+     * Builds a snapshot visible to the current player.
+     *
+     * @param session source game session
+     * @return session snapshot
+     */
     public static GameSessionSnapshot fromSession(GameSession session) {
         return fromSession(session, null, null);
     }
 
+    /**
+     * Builds a snapshot with AI runtime status.
+     *
+     * @param session source game session
+     * @param aiRuntimeSnapshot AI runtime status
+     * @return session snapshot
+     */
     public static GameSessionSnapshot fromSession(
             GameSession session,
             AiRuntimeSnapshot aiRuntimeSnapshot) {
         return fromSession(session, aiRuntimeSnapshot, null);
     }
 
+    /**
+     * Builds a snapshot with AI and LAN client runtime status.
+     *
+     * @param session source game session
+     * @param aiRuntimeSnapshot AI runtime status
+     * @param clientRuntimeSnapshot LAN client runtime status
+     * @return session snapshot
+     */
     public static GameSessionSnapshot fromSession(
             GameSession session,
             AiRuntimeSnapshot aiRuntimeSnapshot,
@@ -54,12 +81,28 @@ public final class GameSessionSnapshotFactory {
                 clientRuntimeSnapshot);
     }
 
+    /**
+     * Builds a snapshot for a specific viewer.
+     *
+     * @param session source game session
+     * @param viewerPlayerId id of the player who will view the snapshot
+     * @return session snapshot filtered for that viewer
+     */
     public static GameSessionSnapshot fromSessionForViewer(
             GameSession session,
             String viewerPlayerId) {
         return fromSessionForViewer(session, viewerPlayerId, null, null);
     }
 
+    /**
+     * Builds a snapshot for a specific viewer with runtime status.
+     *
+     * @param session source game session
+     * @param viewerPlayerId id of the player who will view the snapshot
+     * @param aiRuntimeSnapshot AI runtime status
+     * @param clientRuntimeSnapshot LAN client runtime status
+     * @return session snapshot filtered for that viewer
+     */
     public static GameSessionSnapshot fromSessionForViewer(
             GameSession session,
             String viewerPlayerId,
@@ -78,6 +121,13 @@ public final class GameSessionSnapshotFactory {
                 clientRuntimeSnapshot);
     }
 
+    /**
+     * Adds a local draft to an existing snapshot.
+     *
+     * @param baseSnapshot snapshot from the host or latest local state
+     * @param turnDraft local editable draft
+     * @return copied snapshot with local draft data
+     */
     public static GameSessionSnapshot withLocalDraft(
             GameSessionSnapshot baseSnapshot,
             TurnDraft turnDraft) {
@@ -99,6 +149,13 @@ public final class GameSessionSnapshotFactory {
                 baseSnapshot.getClientRuntimeSnapshot());
     }
 
+    /**
+     * Adds LAN client runtime status to a snapshot.
+     *
+     * @param baseSnapshot source snapshot
+     * @param clientRuntimeSnapshot client runtime status
+     * @return copied snapshot with client status
+     */
     public static GameSessionSnapshot withClientRuntimeSnapshot(
             GameSessionSnapshot baseSnapshot,
             ClientRuntimeSnapshot clientRuntimeSnapshot) {
@@ -113,6 +170,13 @@ public final class GameSessionSnapshotFactory {
                 clientRuntimeSnapshot);
     }
 
+    /**
+     * Copies a snapshot and records when it was received.
+     *
+     * @param baseSnapshot source snapshot
+     * @param receivedAtEpochMillis receive time in epoch milliseconds
+     * @return copied snapshot with receive timestamp
+     */
     public static GameSessionSnapshot withReceivedTimestamp(
             GameSessionSnapshot baseSnapshot,
             long receivedAtEpochMillis) {
@@ -145,6 +209,13 @@ public final class GameSessionSnapshotFactory {
                 receivedAtEpochMillis);
     }
 
+    /**
+     * Predicts the local clock display using elapsed client time.
+     *
+     * @param baseSnapshot source snapshot
+     * @param localElapsedMillis elapsed local time since receiving the snapshot
+     * @return copied snapshot with predicted clock values
+     */
     public static GameSessionSnapshot withLocalClockPrediction(
             GameSessionSnapshot baseSnapshot,
             long localElapsedMillis) {
@@ -235,6 +306,16 @@ public final class GameSessionSnapshotFactory {
                 baseSnapshot.getSnapshotReceivedAtEpochMillis());
     }
 
+    /**
+     * Builds a full snapshot from a session and viewer context.
+     *
+     * @param session source session
+     * @param viewerPlayer player who will see the snapshot
+     * @param viewerCanSeeDraft whether draft and preview should be included
+     * @param aiRuntimeSnapshot AI runtime status
+     * @param clientRuntimeSnapshot LAN client runtime status
+     * @return full session snapshot
+     */
     private static GameSessionSnapshot buildSnapshot(
             GameSession session,
             Player viewerPlayer,
@@ -308,6 +389,18 @@ public final class GameSessionSnapshotFactory {
                 snapshotTimestamp);
     }
 
+    /**
+     * Copies a snapshot while replacing render-related parts.
+     *
+     * @param baseSnapshot source snapshot
+     * @param boardCells rendered board cells
+     * @param visibleRackTiles visible rack tiles
+     * @param draftPlacements draft placements
+     * @param previewSnapshot preview data
+     * @param aiRuntimeSnapshot AI runtime status
+     * @param clientRuntimeSnapshot LAN client runtime status
+     * @return copied snapshot
+     */
     private static GameSessionSnapshot copyOf(
             GameSessionSnapshot baseSnapshot,
             List<BoardCellRenderSnapshot> boardCells,
@@ -344,6 +437,12 @@ public final class GameSessionSnapshotFactory {
                 baseSnapshot.getSnapshotReceivedAtEpochMillis());
     }
 
+    /**
+     * Builds rack tile snapshots visible to one player.
+     *
+     * @param player player whose rack is shown
+     * @return rack tile snapshots
+     */
     private static List<RackTileSnapshot> buildVisibleRackTiles(Player player) {
         List<RackTileSnapshot> visibleRackTiles = new ArrayList<>();
         for (RackSlot slot : player.getRack().getSlots()) {
@@ -360,12 +459,25 @@ public final class GameSessionSnapshotFactory {
         return visibleRackTiles;
     }
 
+    /**
+     * Estimates network delay stored inside a snapshot.
+     *
+     * @param snapshot snapshot with sent and received timestamps
+     * @return non-negative delay in milliseconds
+     */
     private static long resolveTransportDelayMillis(GameSessionSnapshot snapshot) {
         long delayMillis = snapshot.getSnapshotReceivedAtEpochMillis()
                 - snapshot.getSnapshotSentAtEpochMillis();
         return Math.max(0L, delayMillis);
     }
 
+    /**
+     * Adds two long values while avoiding overflow.
+     *
+     * @param left first value
+     * @param right second value
+     * @return sum or {@link Long#MAX_VALUE} on overflow
+     */
     private static long safeAdd(long left, long right) {
         if (left >= Long.MAX_VALUE - right) {
             return Long.MAX_VALUE;
@@ -373,6 +485,15 @@ public final class GameSessionSnapshotFactory {
         return left + right;
     }
 
+    /**
+     * Applies elapsed time to a clock and returns predicted values.
+     *
+     * @param mainTimeRemainingMillis remaining main time
+     * @param byoYomiRemainingMillis remaining byo-yomi time
+     * @param phase current clock phase
+     * @param elapsedMillis elapsed time to apply
+     * @return predicted clock state
+     */
     private static PredictedClock applyElapsedToClock(
             long mainTimeRemainingMillis,
             long byoYomiRemainingMillis,
@@ -415,6 +536,15 @@ public final class GameSessionSnapshotFactory {
                 predictedPhase);
     }
 
+    /**
+     * Builds board render cells from a live game session.
+     *
+     * @param session source session
+     * @param viewerPlayer viewer whose rack may contain draft tiles
+     * @param turnDraft visible turn draft
+     * @param previewSnapshot visible preview data
+     * @return render cell snapshots
+     */
     private static List<BoardCellRenderSnapshot> buildBoardCells(
             GameSession session,
             Player viewerPlayer,
@@ -508,6 +638,13 @@ public final class GameSessionSnapshotFactory {
         return boardCells;
     }
 
+    /**
+     * Rebuilds visible rack tiles after applying local blank-letter choices.
+     *
+     * @param baseSnapshot source snapshot
+     * @param turnDraft local draft
+     * @return updated rack tile snapshots
+     */
     private static List<RackTileSnapshot> buildVisibleRackTiles(
             GameSessionSnapshot baseSnapshot,
             TurnDraft turnDraft) {
@@ -532,6 +669,15 @@ public final class GameSessionSnapshotFactory {
         return visibleRackTiles;
     }
 
+    /**
+     * Builds board render cells by applying a local draft to a base snapshot.
+     *
+     * @param baseSnapshot source snapshot
+     * @param turnDraft local draft
+     * @param previewSnapshot local preview data
+     * @param visibleRackTiles rack tiles visible to the local player
+     * @return render cell snapshots
+     */
     private static List<BoardCellRenderSnapshot> buildBoardCells(
             GameSessionSnapshot baseSnapshot,
             TurnDraft turnDraft,
@@ -626,6 +772,12 @@ public final class GameSessionSnapshotFactory {
         return boardCells;
     }
 
+    /**
+     * Converts draft placements into snapshot objects.
+     *
+     * @param turnDraft source draft
+     * @return draft placement snapshots
+     */
     private static List<DraftPlacementSnapshot> buildDraftPlacements(TurnDraft turnDraft) {
         List<DraftPlacementSnapshot> draftPlacements = new ArrayList<>();
         for (DraftPlacement placement : turnDraft.getPlacements()) {
@@ -637,6 +789,12 @@ public final class GameSessionSnapshotFactory {
         return draftPlacements;
     }
 
+    /**
+     * Converts preview result into a serializable snapshot.
+     *
+     * @param previewResult source preview result
+     * @return preview snapshot, or {@code null}
+     */
     private static PreviewSnapshot buildPreviewSnapshot(PreviewResult previewResult) {
         if (previewResult == null) {
             return null;
@@ -649,6 +807,12 @@ public final class GameSessionSnapshotFactory {
                 previewResult.getMessages());
     }
 
+    /**
+     * Converts preview words into snapshot objects.
+     *
+     * @param previewResult source preview result
+     * @return preview word snapshots
+     */
     private static List<PreviewWordSnapshot> buildPreviewWords(PreviewResult previewResult) {
         List<PreviewWordSnapshot> words = new ArrayList<>();
         if (previewResult.getWordList() == null) {
@@ -669,6 +833,12 @@ public final class GameSessionSnapshotFactory {
         return words;
     }
 
+    /**
+     * Converts preview highlights into snapshot objects.
+     *
+     * @param previewResult source preview result
+     * @return preview highlight snapshots
+     */
     private static List<PreviewHighlightSnapshot> buildPreviewHighlights(PreviewResult previewResult) {
         List<PreviewHighlightSnapshot> highlights = new ArrayList<>();
         if (previewResult.getHighlights() == null) {
@@ -687,6 +857,12 @@ public final class GameSessionSnapshotFactory {
         return highlights;
     }
 
+    /**
+     * Converts domain positions into preview position snapshots.
+     *
+     * @param positions source positions
+     * @return preview position snapshots
+     */
     private static List<PreviewPositionSnapshot> buildPreviewPositions(List<Position> positions) {
         List<PreviewPositionSnapshot> coveredPositions = new ArrayList<>();
         if (positions == null) {
@@ -702,6 +878,12 @@ public final class GameSessionSnapshotFactory {
         return coveredPositions;
     }
 
+    /**
+     * Finds the player used as the current snapshot player.
+     *
+     * @param session source session
+     * @return current or fallback player
+     */
     private static Player resolveSnapshotPlayer(GameSession session) {
         if (session.getGameState().hasActivePlayers()) {
             return session.getGameState().requireCurrentActivePlayer();
@@ -709,6 +891,14 @@ public final class GameSessionSnapshotFactory {
         return session.getGameState().getCurrentPlayer();
     }
 
+    /**
+     * Finds the player who is viewing the snapshot.
+     *
+     * @param session source session
+     * @param viewerPlayerId requested viewer id
+     * @param fallbackPlayer fallback when no viewer is found
+     * @return viewer player
+     */
     private static Player resolveViewerPlayer(
             GameSession session,
             String viewerPlayerId,
@@ -722,6 +912,12 @@ public final class GameSessionSnapshotFactory {
         return fallbackPlayer;
     }
 
+    /**
+     * Counts non-empty tiles in a player's rack.
+     *
+     * @param player player to inspect
+     * @return rack tile count
+     */
     private static int countRackTiles(Player player) {
         int count = 0;
         for (RackSlot slot : player.getRack().getSlots()) {
@@ -732,6 +928,13 @@ public final class GameSessionSnapshotFactory {
         return count;
     }
 
+    /**
+     * Collects board positions marked valid or invalid by preview highlights.
+     *
+     * @param previewSnapshot preview snapshot to read
+     * @param previewValidPositions output set for valid positions
+     * @param previewInvalidPositions output set for invalid positions
+     */
     private static void collectPreviewHighlightPositions(
             PreviewSnapshot previewSnapshot,
             Set<BoardPositionKey> previewValidPositions,
@@ -750,6 +953,13 @@ public final class GameSessionSnapshotFactory {
         }
     }
 
+    /**
+     * Collects board positions covered by main and cross words.
+     *
+     * @param previewSnapshot preview snapshot to read
+     * @param mainWordPositions output set for main word positions
+     * @param crossWordPositions output set for cross word positions
+     */
     private static void collectPreviewWordPositions(
             PreviewSnapshot previewSnapshot,
             Set<BoardPositionKey> mainWordPositions,
@@ -771,6 +981,12 @@ public final class GameSessionSnapshotFactory {
         }
     }
 
+    /**
+     * Resolves the letter that should be displayed for a tile.
+     *
+     * @param tile tile to inspect
+     * @return assigned blank letter or normal tile letter
+     */
     private static Character resolveDisplayLetter(Tile tile) {
         Objects.requireNonNull(tile, "tile cannot be null.");
         if (tile.isBlank() && tile.getAssignedLetter() != null) {
@@ -779,9 +995,22 @@ public final class GameSessionSnapshotFactory {
         return tile.getLetter();
     }
 
+    /**
+     * Simple key used for board-position maps.
+     *
+     * @param row board row
+     * @param col board column
+     */
     private record BoardPositionKey(int row, int col) {
     }
 
+    /**
+     * Predicted clock values after applying elapsed time.
+     *
+     * @param mainTimeRemainingMillis predicted main time
+     * @param byoYomiRemainingMillis predicted byo-yomi time
+     * @param phase predicted clock phase
+     */
     private record PredictedClock(
             long mainTimeRemainingMillis,
             long byoYomiRemainingMillis,

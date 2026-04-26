@@ -8,6 +8,9 @@ import javafx.scene.control.Slider;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 
+/**
+ * A button with a slider inside.
+ */
 public class SliderButton extends CommonButton {
     private final Label leftLabel;
     private final Slider slider;

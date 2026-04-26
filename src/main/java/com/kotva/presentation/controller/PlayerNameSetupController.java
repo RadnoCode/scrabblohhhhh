@@ -28,6 +28,9 @@ import java.util.Locale;
 import java.util.Set;
 import javafx.application.Platform;
 
+/**
+ * Controls the player name setup screen.
+ */
 public class PlayerNameSetupController {
     private static final String HOST_PLAYER_ID = "player-1";
     private static final String BLANK_NAME_MESSAGE = "Nickname cannot be blank.";

@@ -7,6 +7,9 @@ import javafx.scene.layout.StackPane;
 
 import java.util.Objects;
 
+/**
+ * Shows the main title image.
+ */
 public class TitleBanner extends StackPane {
     private static final String TITLE_IMAGE_PATH = "/images/home/title.png";
     private static final double PREF_HEIGHT = 120;

@@ -4,16 +4,16 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Stores UI-visible state for the AI runtime.
+ * Snapshot of the current AI runtime status for the UI.
  *
- * @param fatal whether the AI failure is fatal
- * @param interactionLocked whether player interaction is locked
- * @param failureKind current failure kind
+ * @param fatal whether the AI problem cannot be recovered
+ * @param interactionLocked whether player interaction should be blocked
+ * @param failureKind type of AI failure
  * @param summary short status message
  * @param details detailed status message
- * @param consecutiveIllegalMoveCount number of rejected AI moves in a row
- * @param candidateCount number of candidate moves
- * @param attemptedCandidateCount number of tried candidate moves
+ * @param consecutiveIllegalMoveCount illegal AI moves in a row
+ * @param candidateCount number of AI candidates received
+ * @param attemptedCandidateCount number of AI candidates already tried
  */
 public record AiRuntimeSnapshot(
     boolean fatal,
@@ -26,7 +26,7 @@ public record AiRuntimeSnapshot(
     int attemptedCandidateCount) implements Serializable {
 
     /**
-     * Validates the AI runtime snapshot.
+     * Validates required text fields and failure kind.
      */
     public AiRuntimeSnapshot {
         failureKind = Objects.requireNonNull(failureKind, "failureKind cannot be null.");

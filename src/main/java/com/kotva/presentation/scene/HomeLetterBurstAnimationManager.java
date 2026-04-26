@@ -16,6 +16,9 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
 
+/**
+ * Plays the letter burst animation on the home screen.
+ */
 final class HomeLetterBurstAnimationManager {
     private static final Duration HOVER_DELAY = Duration.seconds(3);
     private static final double TILE_SIZE = 60;

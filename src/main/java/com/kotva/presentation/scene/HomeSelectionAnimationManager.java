@@ -14,6 +14,9 @@ import javafx.scene.Node;
 import javafx.geometry.Bounds;
 import javafx.util.Duration;
 
+/**
+ * Plays the animation after a home button is selected.
+ */
 final class HomeSelectionAnimationManager {
     enum ButtonKey {
         PLAY,

@@ -15,6 +15,9 @@ import com.kotva.presentation.viewmodel.GameLaunchContext;
 import com.kotva.presentation.viewmodel.GameBranchSetupViewModel;
 import com.kotva.runtime.GameRuntime;
 
+/**
+ * Controls the local multiplayer setup screen.
+ */
 public class LocalMultiplayerSetupController {
     private static final String DEFAULT_GAME_TIME_MINUTES = "15";
     private static final String DEFAULT_STEP_TIME_SECONDS = "30";

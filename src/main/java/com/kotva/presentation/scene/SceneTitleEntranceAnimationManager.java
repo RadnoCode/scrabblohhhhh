@@ -9,6 +9,9 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.util.Duration;
 
+/**
+ * Plays the title entrance animation.
+ */
 public final class SceneTitleEntranceAnimationManager {
     private static final Duration TITLE_ENTRANCE_DURATION = Duration.seconds(0.3);
     private static final double TITLE_ENTRY_OFFSET_Y = 180;

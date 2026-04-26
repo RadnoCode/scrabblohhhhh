@@ -13,6 +13,9 @@ import java.util.List;
  * and room waiting pages. It replaces the old ticket component with a
  * more neutral room panel component while keeping the same visual idea.
  */
+/**
+ * Shows room information for LAN screens.
+ */
 public class RoomPanelView extends Pane {
     private enum Variant {
         SEARCH,

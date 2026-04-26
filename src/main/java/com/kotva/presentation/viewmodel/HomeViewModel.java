@@ -1,5 +1,8 @@
 package com.kotva.presentation.viewmodel;
 
+/**
+ * Stores data for the home screen.
+ */
 public class HomeViewModel {
     private final String titleText;
     private final String playText;

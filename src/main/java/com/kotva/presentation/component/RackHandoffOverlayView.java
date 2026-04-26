@@ -11,6 +11,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
+/**
+ * Shows the handoff screen between local players.
+ */
 public class RackHandoffOverlayView extends Pane {
     private static final Duration DEFAULT_VISIBLE_DURATION = Duration.seconds(5);
     private static final String PROMPT_TEXT = "Please let the next player sit at the computer";

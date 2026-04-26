@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * Coordinates pending AI turns for one local session.
+ * Default AI runtime that manages one asynchronous AI turn request.
  */
 public final class AiSessionRuntime implements AiTurnRuntime {
     private final AiTurnCoordinator aiTurnCoordinator;
@@ -18,14 +18,21 @@ public final class AiSessionRuntime implements AiTurnRuntime {
     private long requestToken;
 
     /**
-     * Creates a session runtime backed by an AI turn coordinator.
+     * Creates an AI session runtime.
      *
-     * @param aiTurnCoordinator coordinator used to request and apply moves
+     * @param aiTurnCoordinator coordinator used to ask AI for moves
      */
     public AiSessionRuntime(AiTurnCoordinator aiTurnCoordinator) {
         this.aiTurnCoordinator = Objects.requireNonNull(aiTurnCoordinator, "aiTurnCoordinator cannot be null.");
     }
 
+    /**
+     * Starts an AI turn request if the runtime is idle.
+     *
+     * @param session game session
+     * @param controller AI player controller
+     * @param completionConsumer callback receiving the result
+     */
     public void requestTurnIfIdle(
         GameSession session,
         PlayerController controller,
@@ -61,12 +68,24 @@ public final class AiSessionRuntime implements AiTurnRuntime {
             });
     }
 
+    /**
+     * Cancels the current pending request.
+     */
     @Override
     public synchronized void cancelPending() {
         requestToken++;
         pendingAiMove = null;
     }
 
+    /**
+     * Checks whether a completed AI result still matches the current turn.
+     *
+     * @param completion AI completion
+     * @param session current session
+     * @param currentPlayer current player
+     * @param controller AI controller
+     * @return {@code true} if it still matches
+     */
     @Override
     public synchronized boolean matchesCurrentTurn(
         TurnCompletion completion,
@@ -79,11 +98,20 @@ public final class AiSessionRuntime implements AiTurnRuntime {
         Objects.requireNonNull(controller, "controller cannot be null.");
 
         return completion.requestToken() == requestToken
-            && Objects.equals(session.getSessionId(), completion.expectedSessionId())
-            && Objects.equals(currentPlayer.getPlayerId(), completion.expectedPlayerId())
-            && controller.supportsAutomatedTurn();
+        && Objects.equals(session.getSessionId(), completion.expectedSessionId())
+        && Objects.equals(currentPlayer.getPlayerId(), completion.expectedPlayerId())
+        && controller.supportsAutomatedTurn();
     }
 
+    /**
+     * Applies an AI move through the player controller.
+     *
+     * @param controller AI controller
+     * @param gameApplicationService application service
+     * @param session game session
+     * @param move AI move
+     * @return attempt result
+     */
     @Override
     public AiTurnAttemptResult applyMove(
         PlayerController controller,
@@ -97,6 +125,9 @@ public final class AiSessionRuntime implements AiTurnRuntime {
             Objects.requireNonNull(move, "move cannot be null."));
     }
 
+    /**
+     * Cancels pending work and closes the coordinator.
+     */
     @Override
     public synchronized void close() {
         cancelPending();
@@ -104,13 +135,13 @@ public final class AiSessionRuntime implements AiTurnRuntime {
     }
 
     /**
-     * Carries the result of one asynchronous AI turn request.
+     * Data returned when an asynchronous AI turn completes.
      *
-     * @param expectedSessionId session id expected when the request completes
-     * @param expectedPlayerId player id expected when the request completes
-     * @param requestToken token used to ignore stale completions
-     * @param moveOptions move options returned by the AI
-     * @param error request error, if one happened
+     * @param expectedSessionId session id captured when request started
+     * @param expectedPlayerId player id captured when request started
+     * @param requestToken request token used to reject stale completions
+     * @param moveOptions AI move options
+     * @param error error raised by the AI request
      */
     public record TurnCompletion(
         String expectedSessionId,
@@ -120,7 +151,7 @@ public final class AiSessionRuntime implements AiTurnRuntime {
         Throwable error) {
 
         /**
-         * Validates the turn completion.
+         * Validates captured session and player ids.
          */
         public TurnCompletion {
             expectedSessionId = Objects.requireNonNull(expectedSessionId, "expectedSessionId cannot be null.");

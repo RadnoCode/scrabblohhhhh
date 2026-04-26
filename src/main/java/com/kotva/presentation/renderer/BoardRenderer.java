@@ -5,6 +5,9 @@ import com.kotva.presentation.interaction.GameDraftState;
 import com.kotva.presentation.viewmodel.BoardCoordinate;
 import java.util.Objects;
 
+/**
+ * Updates the board view.
+ */
 public class BoardRenderer {
     private final BoardView boardView;
     private final GameDraftState draftState;

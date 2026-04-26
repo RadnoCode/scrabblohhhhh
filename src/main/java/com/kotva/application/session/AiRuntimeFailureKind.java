@@ -1,23 +1,15 @@
 package com.kotva.application.session;
 
 /**
- * Lists the kinds of AI runtime failures.
+ * Lists the main kinds of AI runtime failures.
  */
 public enum AiRuntimeFailureKind {
-    /**
-     * AI setup failed after all retries.
-     */
+    /** AI setup failed after retrying. */
     INIT_RETRY_EXHAUSTED,
-    /**
-     * The AI move request failed.
-     */
+    /** AI move request failed. */
     MOVE_REQUEST_FAILURE,
-    /**
-     * The AI move was rejected by game rules.
-     */
+    /** AI produced a move that the game rejected. */
     INVALID_MOVE_REJECTED,
-    /**
-     * Too many invalid AI moves were rejected.
-     */
+    /** AI produced too many invalid moves and was stopped. */
     INVALID_MOVE_CIRCUIT_BROKEN
 }

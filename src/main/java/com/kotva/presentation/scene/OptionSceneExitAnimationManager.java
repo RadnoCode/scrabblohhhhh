@@ -12,6 +12,9 @@ import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.util.Duration;
 
+/**
+ * Plays exit animations for option screens.
+ */
 final class OptionSceneExitAnimationManager {
     private static final Duration TITLE_EXIT_DURATION = Duration.seconds(0.3);
     private static final Duration FEATURED_EXIT_DURATION = Duration.seconds(0.7);

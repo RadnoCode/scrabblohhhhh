@@ -4,6 +4,9 @@ import com.kotva.presentation.component.CommonButton;
 import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.SetupViewModel;
 
+/**
+ * Controls the mode select screen.
+ */
 public class ModeSelectController {
     private final SceneNavigator navigator;
     private final SetupViewModel viewModel;

@@ -1,5 +1,8 @@
 package com.kotva.presentation.viewmodel;
 
+/**
+ * Stores text for a two-button setup screen.
+ */
 public class GameBranchSetupViewModel {
     private final String titleText;
     private final String viceTitleText;

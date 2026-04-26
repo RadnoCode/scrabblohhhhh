@@ -6,15 +6,12 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
 /**
- * Shows short AI status messages in the game view.
+ * Shows messages while the AI is thinking.
  */
 public class AiStatusBannerView extends VBox {
     private final Label summaryLabel;
     private final Label detailsLabel;
 
-    /**
-     * Creates an empty AI status banner.
-     */
     public AiStatusBannerView() {
         this.summaryLabel = new Label();
         this.detailsLabel = new Label();
@@ -36,12 +33,6 @@ public class AiStatusBannerView extends VBox {
         getChildren().addAll(summaryLabel, detailsLabel);
     }
 
-    /**
-     * Shows a status message.
-     *
-     * @param summary short message
-     * @param details optional detail message
-     */
     public void showMessage(String summary, String details) {
         summaryLabel.setText(summary);
         detailsLabel.setText(details);
@@ -52,9 +43,6 @@ public class AiStatusBannerView extends VBox {
         setVisible(true);
     }
 
-    /**
-     * Clears and hides the banner.
-     */
     public void clear() {
         summaryLabel.setText("");
         detailsLabel.setText("");
