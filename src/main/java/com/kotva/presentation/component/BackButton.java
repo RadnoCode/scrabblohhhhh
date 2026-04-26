@@ -1,5 +1,8 @@
 package com.kotva.presentation.component;
 
+/**
+ * A common back button.
+ */
 public class BackButton extends CommonButton {
     private static final String BACK_BUTTON_IMAGE_PATH = "/images/buttons/back.png";
     private static final double BACK_BUTTON_WIDTH = 100;

@@ -20,6 +20,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.control.Label;
 import java.util.List;
 
+/**
+ * Shows the home screen.
+ */
 public class HomeScene extends Scene {
     private static final double DEFAULT_WIDTH = 1280;
     private static final double DEFAULT_HEIGHT = 800;

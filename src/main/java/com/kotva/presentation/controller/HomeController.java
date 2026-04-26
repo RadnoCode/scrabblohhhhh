@@ -11,6 +11,9 @@ import com.kotva.presentation.component.TutorialEnvelope;
 import com.kotva.presentation.fx.SceneNavigator;
 import com.kotva.presentation.viewmodel.HomeViewModel;
 
+/**
+ * Controls the home screen.
+ */
 public class HomeController {
     private final HomeViewModel viewModel;
     private final SceneNavigator navigator;

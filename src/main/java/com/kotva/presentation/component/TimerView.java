@@ -7,6 +7,9 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 
+/**
+ * Shows the game timer.
+ */
 public class TimerView extends StackPane {
     public enum Variant {
         STEP("game-timer-step"),

@@ -4,6 +4,9 @@ import com.kotva.presentation.viewmodel.GameViewModel;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 
+/**
+ * Shows the game action buttons.
+ */
 public class ActionPanelView extends StackPane {
     private static final String HIGHLIGHT_STYLE = "action-panel-button-highlight";
     private static final double PANEL_WIDTH = 276;

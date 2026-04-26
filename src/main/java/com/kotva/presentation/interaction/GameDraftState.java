@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Stores the tiles that are being placed before submit.
+ */
 public class GameDraftState {
     private static final int RACK_SLOT_COUNT = 7;
 

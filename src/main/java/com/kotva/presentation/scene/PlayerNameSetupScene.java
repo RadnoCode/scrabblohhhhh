@@ -24,6 +24,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+/**
+ * Shows the player name setup screen.
+ */
 public class PlayerNameSetupScene extends Scene {
     private static final int MAX_NAME_CODE_POINTS = 8;
     private static final double DEFAULT_WIDTH = 1280;

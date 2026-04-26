@@ -14,6 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Stores settings used to start a game.
+ */
 public class GameLaunchContext {
     private static final long DEFAULT_STEP_TIME_MILLIS = 30_000L;
 

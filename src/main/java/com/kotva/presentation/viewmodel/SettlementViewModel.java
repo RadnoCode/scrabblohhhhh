@@ -6,6 +6,9 @@ import com.kotva.domain.endgame.GameEndReason;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Stores data for the final result screen.
+ */
 public final class SettlementViewModel {
     private static final String DEFAULT_REASON_CAPTION = "GAME END REASON";
     private static final String DEFAULT_PODIUM_TEXT = "PODIUM";

@@ -15,6 +15,9 @@ import com.kotva.presentation.viewmodel.GameViewModel;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Updates the main game screen.
+ */
 public class GameRenderer {
     private final BoardView boardView;
     private final RackView rackView;

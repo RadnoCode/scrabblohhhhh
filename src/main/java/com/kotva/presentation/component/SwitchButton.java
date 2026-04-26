@@ -8,6 +8,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 
+/**
+ * A button that switches between options.
+ */
 public class SwitchButton extends CommonButton {
     private static final double DEFAULT_SWITCH_TRIGGER_WIDTH = 172;
     private static final double DEFAULT_SWITCH_TRIGGER_HEIGHT = 40;

@@ -5,6 +5,9 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 
+/**
+ * Shows one player's game information.
+ */
 public class PlayerInfoCardView extends StackPane {
     public static final double CARD_WIDTH = 288;
     public static final double CARD_HEIGHT = 96;

@@ -3,6 +3,9 @@ package com.kotva.presentation.scene;
 import javafx.application.Platform;
 import javafx.scene.layout.Region;
 
+/**
+ * Helps resize scene layouts.
+ */
 final class ResponsiveLayoutUtil {
     private ResponsiveLayoutUtil() {
     }

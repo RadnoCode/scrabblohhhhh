@@ -6,6 +6,9 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 
+/**
+ * Draws the settings gear icon.
+ */
 public class SettingsGearIconView extends StackPane {
     private static final String GEAR_IMAGE_PATH = "/images/settings/gear.png";
 

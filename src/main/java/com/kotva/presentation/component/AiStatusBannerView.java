@@ -5,6 +5,9 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
+/**
+ * Shows messages while the AI is thinking.
+ */
 public class AiStatusBannerView extends VBox {
     private final Label summaryLabel;
     private final Label detailsLabel;

@@ -5,6 +5,9 @@ import com.kotva.presentation.component.InputButton;
 import com.kotva.presentation.component.SwitchButton;
 import javafx.geometry.Pos;
 
+/**
+ * Helps style local setup buttons.
+ */
 final class LocalSetupButtonStyle {
     static final String DARK_BACKGROUND = "local-themed-setup-button-dark";
     static final String MEDIUM_BACKGROUND = "local-themed-setup-button-medium";

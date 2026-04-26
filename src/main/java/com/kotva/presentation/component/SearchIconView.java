@@ -4,6 +4,9 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 
+/**
+ * Draws the search icon.
+ */
 public class SearchIconView extends Pane {
     private final Circle lens;
     private final Line handle;

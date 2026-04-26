@@ -8,6 +8,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 
+/**
+ * Shows a card stack icon.
+ */
 public class CardStackIconView extends StackPane {
     private static final String CARD_IMAGE_RESOURCE_PATH = "/images/card-stack/card-frame-18.png";
     private static final double PREF_WIDTH = 360;

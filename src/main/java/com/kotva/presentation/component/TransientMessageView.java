@@ -7,6 +7,9 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
 
+/**
+ * Shows a short message on the screen.
+ */
 public class TransientMessageView extends StackPane {
     private static final Duration DEFAULT_VISIBLE_DURATION = Duration.seconds(5);
 

@@ -11,6 +11,9 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+/**
+ * Lets the player choose a letter for a blank tile.
+ */
 public class BlankTilePickerView extends StackPane {
     private static final int COLUMN_COUNT = 7;
     private static final double TILE_SIZE = BoardView.CELL_SIZE;

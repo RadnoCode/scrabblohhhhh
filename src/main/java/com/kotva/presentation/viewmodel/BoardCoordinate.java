@@ -2,6 +2,12 @@ package com.kotva.presentation.viewmodel;
 
 import com.kotva.domain.model.Position;
 
+/**
+ * Stores a board row and column.
+ *
+ * @param row board row
+ * @param col board column
+ */
 public record BoardCoordinate(int row, int col) {
 
     public BoardCoordinate {
@@ -10,6 +16,11 @@ public record BoardCoordinate(int row, int col) {
         }
     }
 
+    /**
+     * Converts this coordinate to a position.
+     *
+     * @return the position
+     */
     public Position toPosition() {
         return new Position(row, col);
     }

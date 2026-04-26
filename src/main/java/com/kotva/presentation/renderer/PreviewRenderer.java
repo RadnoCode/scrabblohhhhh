@@ -9,6 +9,9 @@ import java.util.Objects;
 import javafx.geometry.Point2D;
 import javafx.scene.layout.Pane;
 
+/**
+ * Updates the move preview.
+ */
 public class PreviewRenderer {
     private final BoardView boardView;
     private final RackView rackView;

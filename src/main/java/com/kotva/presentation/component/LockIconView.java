@@ -5,6 +5,9 @@ import javafx.scene.shape.Arc;
 import javafx.scene.shape.ArcType;
 import javafx.scene.shape.Rectangle;
 
+/**
+ * Draws the lock icon.
+ */
 public class LockIconView extends Pane {
     private final Rectangle body;
     private final Arc arc;

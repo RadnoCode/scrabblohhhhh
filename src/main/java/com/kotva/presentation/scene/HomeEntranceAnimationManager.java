@@ -11,6 +11,9 @@ import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.util.Duration;
 
+/**
+ * Plays the home screen entrance animation.
+ */
 final class HomeEntranceAnimationManager {
     private static final Duration ENVELOPE_DURATION = Duration.seconds(0.7);
     private static final Duration BUTTON_DURATION = Duration.seconds(0.4);

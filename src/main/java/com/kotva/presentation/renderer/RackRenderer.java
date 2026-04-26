@@ -4,6 +4,9 @@ import com.kotva.presentation.component.RackView;
 import com.kotva.presentation.interaction.GameDraftState;
 import java.util.Objects;
 
+/**
+ * Updates the rack view.
+ */
 public class RackRenderer {
     private final RackView rackView;
     private final GameDraftState draftState;

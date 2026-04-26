@@ -11,6 +11,9 @@ import com.kotva.presentation.viewmodel.SettingsViewModel;
 
 import java.net.InetAddress;
 
+/**
+ * Controls the settings screen.
+ */
 public class SettingsController {
     private static final String NO_IP_ADDRESS_TEXT = "No IP Adress";
 
