@@ -30,6 +30,12 @@ public class OnlineSetupScene extends Scene {
     private static final double VICE_TITLE_HEIGHT = 90;
     private static final double BUTTON_PANEL_OFFSET_X = 130;
     private static final Insets CONTENT_MARGIN = new Insets(2, 100, 48, 100);
+    private static final String SEARCH_ROOM_BUTTON_IMAGE_PATH =
+        "/images/local-multiplayer/buttons/bottom-search-room.png";
+    private static final String CREATE_ROOM_BUTTON_IMAGE_PATH =
+        "/images/local-multiplayer/buttons/bottom-create-room.png";
+    private static final double ROOM_NAV_BUTTON_WIDTH = 420;
+    private static final double ROOM_NAV_BUTTON_HEIGHT = 420.0 / (1301.0 / 262.0);
 
     public OnlineSetupScene(OnlineSetupController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -63,8 +69,8 @@ public class OnlineSetupScene extends Scene {
 
         CommonButton firstButton = new CommonButton(viewModel.getFirstOptionText());
         CommonButton secondButton = new CommonButton(viewModel.getSecondOptionText());
-        firstButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
-        secondButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_3);
+        configureRoomNavButton(firstButton, SEARCH_ROOM_BUTTON_IMAGE_PATH);
+        configureRoomNavButton(secondButton, CREATE_ROOM_BUTTON_IMAGE_PATH);
         controller.bindActions(firstButton, secondButton);
 
         VBox buttonColumn = new VBox(10);
@@ -118,5 +124,11 @@ public class OnlineSetupScene extends Scene {
         getStylesheets().add(getClass().getResource("/css/theme.css").toExternalForm());
         getStylesheets().add(getClass().getResource("/css/component.css").toExternalForm());
         getStylesheets().add(getClass().getResource("/css/mode.css").toExternalForm());
+    }
+
+    private static void configureRoomNavButton(CommonButton button, String imagePath) {
+        button.getStyleClass().add("mode-nav-button");
+        button.setCustomBackgroundImage(imagePath);
+        button.applyButtonSize(ROOM_NAV_BUTTON_WIDTH, ROOM_NAV_BUTTON_HEIGHT);
     }
 }

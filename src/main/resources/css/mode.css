@@ -18,6 +18,34 @@
     -fx-opacity: 0;
 }
 
+.local-setup-button .input-button-field,
+.local-setup-button .switch-trigger {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-padding: 2 8 2 8;
+}
+
+.local-setup-button .input-button-field:focused,
+.local-setup-button .switch-trigger:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.10);
+}
+
+.local-setup-button .input-button-field,
+.local-setup-button .switch-button-value {
+    -fx-font-size: 15px;
+}
+
+.local-setup-button-large .input-button-field,
+.local-setup-button-large .switch-button-value {
+    -fx-font-size: 22px;
+}
+
+.local-setup-button-large .input-button-field,
+.local-setup-button-large .switch-trigger {
+    -fx-padding: 4 12 4 12;
+}
+
 .local-themed-setup-button {
     -fx-background-radius: 0;
     -fx-border-radius: 0;

@@ -62,17 +62,13 @@ public class GameScene extends Scene {
 
         TitleBanner titleBanner = new TitleBanner(viewModel.getTitleText());
         CommonButton saveButton = createUtilityButton("Save");
-        CommonButton loadButton = createUtilityButton("Load");
+        saveButton.getStyleClass().add("game-corner-save-button");
         saveButton.setOnAction(event -> controller.onSaveGameRequested());
-        loadButton.setOnAction(event -> controller.onLoadGameRequested());
-        HBox saveLoadRow = new HBox(8, saveButton, loadButton);
-        saveLoadRow.getStyleClass().add("game-save-load-row");
-        saveLoadRow.setAlignment(Pos.CENTER);
-        boolean showSaveLoad = controller.shouldShowSaveLoadControls();
-        saveLoadRow.setVisible(showSaveLoad);
-        saveLoadRow.setManaged(showSaveLoad);
+        boolean showSave = controller.shouldShowSaveLoadControls();
+        saveButton.setVisible(showSave);
+        saveButton.setManaged(showSave);
 
-        VBox topBox = new VBox(8, titleBanner, saveLoadRow);
+        VBox topBox = new VBox(8, titleBanner);
         topBox.setAlignment(Pos.CENTER);
         BorderPane.setMargin(topBox, new Insets(18, 180, 8, 180));
         contentRoot.setTop(topBox);
@@ -192,12 +188,16 @@ public class GameScene extends Scene {
             controller);
         controller.bind(renderer, interactionCoordinator);
 
+        StackPane.setAlignment(saveButton, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(saveButton, new Insets(0, 34, 30, 0));
+
         root.getChildren().addAll(
             contentRoot,
             transientMessageLayer,
             blankTilePickerLayer,
             dragOverlay,
-            rackHandoffLayer);
+            rackHandoffLayer,
+            saveButton);
 
         return root;
     }

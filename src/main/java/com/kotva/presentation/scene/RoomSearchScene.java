@@ -31,6 +31,12 @@ public class RoomSearchScene extends Scene {
     private static final double ROOM_LIST_HEIGHT = 168;
     private static final double RIGHT_COLUMN_OFFSET_X = 98;
     private static final double RIGHT_COLUMN_OFFSET_Y = 50;
+    private static final String JOIN_SELECTED_BUTTON_IMAGE_PATH =
+        "/images/local-multiplayer/buttons/bottom-join-selected.png";
+    private static final String REFRESH_BUTTON_IMAGE_PATH =
+        "/images/local-multiplayer/buttons/bottom-refresh.png";
+    private static final double ROOM_ACTION_BUTTON_WIDTH = 420;
+    private static final double ROOM_ACTION_BUTTON_HEIGHT = 420.0 / (1301.0 / 262.0);
 
     public RoomSearchScene(RoomSearchController controller) {
         super(createRoot(controller), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -73,8 +79,8 @@ public class RoomSearchScene extends Scene {
 
         CommonButton joinButton = new CommonButton("Join Selected");
         CommonButton refreshButton = new CommonButton("Refresh");
-        joinButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_2);
-        refreshButton.setTemplateState(CommonButton.TemplateState.TEMPLATE_1);
+        configureRoomActionButton(joinButton, JOIN_SELECTED_BUTTON_IMAGE_PATH);
+        configureRoomActionButton(refreshButton, REFRESH_BUTTON_IMAGE_PATH);
         controller.bindJoinAction(joinButton);
         controller.bindRefreshAction(refreshButton);
 
@@ -112,5 +118,11 @@ public class RoomSearchScene extends Scene {
         getStylesheets().add(getClass().getResource("/css/theme.css").toExternalForm());
         getStylesheets().add(getClass().getResource("/css/component.css").toExternalForm());
         getStylesheets().add(getClass().getResource("/css/room.css").toExternalForm());
+    }
+
+    private static void configureRoomActionButton(CommonButton button, String imagePath) {
+        button.getStyleClass().add("room-action-button");
+        button.setCustomBackgroundImage(imagePath);
+        button.applyButtonSize(ROOM_ACTION_BUTTON_WIDTH, ROOM_ACTION_BUTTON_HEIGHT);
     }
 }

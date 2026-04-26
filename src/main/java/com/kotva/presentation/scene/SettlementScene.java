@@ -47,8 +47,20 @@ public class SettlementScene extends Scene {
 
         VBox topBox = new VBox(6, reasonCaptionLabel, reasonLabel, reasonDetailLabel);
         topBox.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(topBox, new Insets(28, 56, 12, 56));
-        root.setTop(topBox);
+
+        CommonButton exportButton = createActionButton(viewModel.getExportButtonText());
+        CommonButton homeButton = createActionButton(viewModel.getHomeButtonText());
+
+        HBox actionBar = new HBox(12, exportButton, homeButton);
+        actionBar.setAlignment(Pos.CENTER_RIGHT);
+        actionBar.setMaxWidth(Region.USE_PREF_SIZE);
+
+        StackPane headerPane = new StackPane(topBox, actionBar);
+        StackPane.setAlignment(topBox, Pos.CENTER);
+        StackPane.setMargin(topBox, new Insets(30, 0, 0, 0));
+        StackPane.setAlignment(actionBar, Pos.TOP_RIGHT);
+        BorderPane.setMargin(headerPane, new Insets(28, 56, 12, 56));
+        root.setTop(headerPane);
 
         Label podiumLabel = new Label(viewModel.getPodiumText());
         podiumLabel.getStyleClass().add("settlement-podium-title");
@@ -74,16 +86,10 @@ public class SettlementScene extends Scene {
         TransientMessageView messageView = new TransientMessageView();
         messageView.getStyleClass().add("settlement-export-message");
 
-        CommonButton exportButton = createActionButton(viewModel.getExportButtonText());
-        CommonButton homeButton = createActionButton(viewModel.getHomeButtonText());
-
-        HBox actionBar = new HBox(12, exportButton, homeButton);
-        actionBar.setAlignment(Pos.CENTER_RIGHT);
-        actionBar.setMaxWidth(Region.USE_PREF_SIZE);
-
         controller.bindActions(homeButton, exportButton, sceneRoot, messageView);
         installResponsiveLayout(
             sceneRoot,
+            headerPane,
             topBox,
             reasonLabel,
             reasonDetailLabel,
@@ -95,8 +101,7 @@ public class SettlementScene extends Scene {
             messageView);
 
         StackPane.setAlignment(messageView, Pos.TOP_CENTER);
-        StackPane.setAlignment(actionBar, Pos.BOTTOM_RIGHT);
-        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, messageView, actionBar);
+        sceneRoot.getChildren().addAll(SceneBackgroundLayer.createFor(sceneRoot), root, messageView);
         return sceneRoot;
     }
 
@@ -113,6 +118,7 @@ public class SettlementScene extends Scene {
 
     private static void installResponsiveLayout(
         StackPane sceneRoot,
+        StackPane headerPane,
         VBox topBox,
         Label reasonLabel,
         Label reasonDetailLabel,
@@ -134,7 +140,7 @@ public class SettlementScene extends Scene {
             double topWidth = ResponsiveLayoutUtil.clamp(width * 0.72, 320, 780);
 
             BorderPane.setMargin(
-                topBox,
+                headerPane,
                 new Insets(shortHeight ? 20 : 28, horizontalMargin, shortHeight ? 8 : 12, horizontalMargin));
             topBox.setSpacing(shortHeight ? 4 : 6);
             reasonLabel.setMaxWidth(topWidth);
@@ -151,7 +157,7 @@ public class SettlementScene extends Scene {
             chartCard.setMaxWidth(cardWidth);
             scoreChartView.setChartWidth(chartWidth);
 
-            StackPane.setMargin(actionBar, new Insets(0, 32, shortHeight ? 18 : 28, 0));
+            StackPane.setMargin(actionBar, new Insets(shortHeight ? 48 : 68, 0, 0, 0));
             actionBar.toFront();
 
             double messageWidth = ResponsiveLayoutUtil.clamp(width * 0.42, 260, 460);

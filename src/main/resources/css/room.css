@@ -134,6 +134,10 @@
     -fx-max-width: 420px;
 }
 
+.room-action-button .common-button-label {
+    -fx-opacity: 0;
+}
+
 .room-summary-label {
     -fx-text-fill: rgba(79, 97, 132, 0.96);
     -fx-font-size: 18px;

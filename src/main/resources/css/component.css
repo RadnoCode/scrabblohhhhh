@@ -375,10 +375,8 @@
 }
 
 .game-player-card-current {
-    -fx-border-color: rgba(255, 226, 112, 0.98);
-    -fx-border-width: 3;
-    -fx-border-radius: 18;
-    -fx-effect: dropshadow(gaussian, rgba(255, 213, 82, 0.62), 24, 0.28, 0, 0);
+    -fx-border-width: 0;
+    -fx-effect: none;
 }
 
 .game-player-card-inactive {
