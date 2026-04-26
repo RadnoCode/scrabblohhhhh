@@ -19,9 +19,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Coordinates AI move requests and applies selected AI moves.
+ */
 public final class AiTurnCoordinator implements AutoCloseable {
     private final AiMoveService aiMoveService;
 
+    /**
+     * Creates an AI turn coordinator.
+     *
+     * @param bridge native AI bridge
+     * @param dictionaryType dictionary used by the AI
+     * @param difficulty AI difficulty
+     */
     public AiTurnCoordinator(
         QuackleNativeBridge bridge, DictionaryType dictionaryType, AiDifficulty difficulty) {
         this.aiMoveService = new AiMoveService(
@@ -30,11 +40,26 @@ public final class AiTurnCoordinator implements AutoCloseable {
             Objects.requireNonNull(difficulty, "difficulty cannot be null."));
     }
 
+    /**
+     * Requests move candidates from the AI service.
+     *
+     * @param session current game session
+     * @return future containing AI move options
+     */
     public CompletableFuture<AiMoveOptionSet> requestMove(GameSession session) {
         Objects.requireNonNull(session, "session cannot be null.");
         return aiMoveService.requestMove(AiPositionSnapshot.fromSession(session));
     }
 
+    /**
+     * Applies one AI move to the game through the normal application service.
+     *
+     * @param controller AI player controller
+     * @param gameApplicationService application service
+     * @param session game session
+     * @param move AI move to apply
+     * @return attempt result
+     */
     public AiTurnAttemptResult applyMove(
         PlayerController controller,
         GameApplicationService gameApplicationService,
@@ -120,11 +145,20 @@ public final class AiTurnCoordinator implements AutoCloseable {
         }
     }
 
-        @Override
+    /**
+     * Closes the underlying AI move service.
+     */
+    @Override
     public void close() {
         aiMoveService.close();
     }
 
+    /**
+     * Verifies that the current session turn belongs to the AI controller.
+     *
+     * @param controller AI player controller
+     * @param session game session
+     */
     private static void ensureAiTurn(PlayerController controller, GameSession session) {
         if (session.getSessionStatus() != SessionStatus.IN_PROGRESS) {
             throw new IllegalStateException("Game session is not in progress.");
@@ -143,6 +177,14 @@ public final class AiTurnCoordinator implements AutoCloseable {
         }
     }
 
+    /**
+     * Clears temporary draft state after a failed AI move.
+     *
+     * @param controller AI player controller
+     * @param gameApplicationService application service
+     * @param session game session
+     * @param assignedBlankTiles blank tiles changed while applying the move
+     */
     private static void rollbackDraft(
         PlayerController controller,
         GameApplicationService gameApplicationService,

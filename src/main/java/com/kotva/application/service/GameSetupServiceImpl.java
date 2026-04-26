@@ -24,11 +24,21 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Default service for validating setup input and creating game sessions.
+ */
 public class GameSetupServiceImpl implements GameSetupService {
     private final DictionaryRepository dictionaryRepository;
     private final ClockService clockService;
     private final Random random;
 
+    /**
+     * Creates a setup service.
+     *
+     * @param dictionaryRepository dictionary repository to load words
+     * @param clockService clock service used to start timed games
+     * @param random random source used for player order
+     */
     public GameSetupServiceImpl(
         DictionaryRepository dictionaryRepository,
         ClockService clockService,
@@ -39,7 +49,13 @@ public class GameSetupServiceImpl implements GameSetupService {
         this.random = Objects.requireNonNull(random, "random cannot be null.");
     }
 
-        @Override
+    /**
+     * Validates the setup request and builds a game config.
+     *
+     * @param request setup request from the UI
+     * @return validated game config
+     */
+    @Override
     public GameConfig buildConfig(NewGameRequest request) {
         Objects.requireNonNull(request, "request cannot be null.");
 
@@ -93,18 +109,36 @@ public class GameSetupServiceImpl implements GameSetupService {
             request.getRuleset().isScribbleRuleset() ? request.getTargetScore() : null);
     }
 
-        @Override
+    /**
+     * Starts a new game from a setup request.
+     *
+     * @param request setup request from the UI
+     * @return created game session
+     */
+    @Override
     public GameSession startNewGame(NewGameRequest request) {
         GameConfig config = buildConfig(request);
         return createSession(config);
     }
 
+    /**
+     * Starts a new game from an already validated config.
+     *
+     * @param config game config
+     * @return created game session
+     */
     @Override
     public GameSession startNewGame(GameConfig config) {
         Objects.requireNonNull(config, "config cannot be null.");
         return createSession(config);
     }
 
+    /**
+     * Creates the session, players, tile bag, and initial rack draw.
+     *
+     * @param config game config
+     * @return created game session
+     */
     private GameSession createSession(GameConfig config) {
         dictionaryRepository.loadDictionary(config.getDictionaryType());
 
@@ -123,6 +157,12 @@ public class GameSetupServiceImpl implements GameSetupService {
         return session;
     }
 
+    /**
+     * Creates domain players from player configs.
+     *
+     * @param config game config
+     * @return player list
+     */
     private List<Player> createPlayers(GameConfig config) {
         List<Player> players = new ArrayList<>(config.getPlayerCount());
         TimeControlConfig timeControlConfig = config.getTimeControlConfig();
@@ -140,6 +180,12 @@ public class GameSetupServiceImpl implements GameSetupService {
         return players;
     }
 
+    /**
+     * Creates a player clock based on time control settings.
+     *
+     * @param timeControlConfig time control config, or {@code null}
+     * @return player clock
+     */
     private PlayerClock createPlayerClock(TimeControlConfig timeControlConfig) {
         if (timeControlConfig == null) {
             return PlayerClock.disabled();
@@ -149,6 +195,12 @@ public class GameSetupServiceImpl implements GameSetupService {
             timeControlConfig.getByoYomiMillisPerTurn());
     }
 
+    /**
+     * Trims and validates a player name.
+     *
+     * @param rawName name from setup input
+     * @return normalized name
+     */
     private String normalizePlayerName(String rawName) {
         if (rawName == null) {
             throw new IllegalArgumentException("player names cannot be null.");
@@ -161,6 +213,13 @@ public class GameSetupServiceImpl implements GameSetupService {
         return normalizedName;
     }
 
+    /**
+     * Decides the player type for a game mode and player index.
+     *
+     * @param gameMode selected game mode
+     * @param playerIndex index in setup order
+     * @return player type
+     */
     private PlayerType resolvePlayerType(GameMode gameMode, int playerIndex) {
         return switch (gameMode) {
         case HOT_SEAT -> PlayerType.LOCAL;
@@ -169,6 +228,12 @@ public class GameSetupServiceImpl implements GameSetupService {
         };
     }
 
+    /**
+     * Checks whether a target score can be used.
+     *
+     * @param targetScore target score from setup
+     * @return {@code true} if positive
+     */
     private boolean isValidTargetScore(Integer targetScore) {
         return targetScore != null && targetScore > 0;
     }

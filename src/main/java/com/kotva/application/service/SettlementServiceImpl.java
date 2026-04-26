@@ -15,20 +15,38 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * Builds final rankings, messages, and board data when a game ends.
+ */
 public class SettlementServiceImpl implements SettlementService {
     private final SettlementNavigationPort settlementNavigationPort;
 
+    /**
+     * Creates the service without UI navigation.
+     */
     public SettlementServiceImpl() {
         this(new NoOpSettlementNavigationPort());
     }
 
+    /**
+     * Creates the service with a navigation output port.
+     *
+     * @param settlementNavigationPort port used to show settlement
+     */
     public SettlementServiceImpl(SettlementNavigationPort settlementNavigationPort) {
         this.settlementNavigationPort =
         Objects.requireNonNull(
             settlementNavigationPort, "settlementNavigationPort cannot be null.");
     }
 
-        @Override
+    /**
+     * Settles a finished game.
+     *
+     * @param gameState final game state
+     * @param endReason reason why the game ended
+     * @return settlement result
+     */
+    @Override
     public SettlementResult settle(GameState gameState, GameEndReason endReason) {
         Objects.requireNonNull(gameState, "gameState cannot be null.");
         Objects.requireNonNull(endReason, "endReason cannot be null.");
@@ -43,6 +61,12 @@ public class SettlementServiceImpl implements SettlementService {
         return result;
     }
 
+    /**
+     * Builds final player rankings by score.
+     *
+     * @param gameState final game state
+     * @return player settlement rows
+     */
     private List<PlayerSettlement> buildRankings(GameState gameState) {
         List<Player> sortedPlayers = new ArrayList<>(gameState.getPlayers());
         sortedPlayers.sort(Comparator.comparingInt(Player::getScore).reversed());
@@ -63,6 +87,13 @@ public class SettlementServiceImpl implements SettlementService {
         return rankings;
     }
 
+    /**
+     * Builds short messages for the settlement screen.
+     *
+     * @param gameState final game state
+     * @param endReason reason why the game ended
+     * @return summary messages
+     */
     private List<String> buildSummaryMessages(GameState gameState, GameEndReason endReason) {
         List<String> messages = new ArrayList<>();
         messages.add(buildEndReasonMessage(endReason));
@@ -87,6 +118,12 @@ public class SettlementServiceImpl implements SettlementService {
         return messages;
     }
 
+    /**
+     * Converts an end reason into a readable message.
+     *
+     * @param endReason reason why the game ended
+     * @return readable message
+     */
     private String buildEndReasonMessage(GameEndReason endReason) {
         return switch (endReason) {
         case ALL_PLAYERS_PASSED -> "Game ended because all active players passed in the round.";

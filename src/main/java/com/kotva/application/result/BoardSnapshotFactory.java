@@ -8,11 +8,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Builds board snapshots from the domain board.
+ */
 public final class BoardSnapshotFactory {
 
+    /**
+     * Prevents creating this utility class.
+     */
     private BoardSnapshotFactory() {
     }
 
+    /**
+     * Converts a domain board into a serializable snapshot.
+     *
+     * @param board domain board to read
+     * @return snapshot containing every board cell
+     */
     public static BoardSnapshot fromBoard(Board board) {
         Objects.requireNonNull(board, "board cannot be null.");
 
