@@ -8,6 +8,12 @@ BUILD_DIR="${QUACKLE_ROOT}/build/macos"
 OUTPUT_DIR="${PROJECT_ROOT}/native"
 TARGET_DYLIB="${OUTPUT_DIR}/libquackle_ffm.dylib"
 
+if [[ ! -f "${QUACKLE_ROOT}/CMakeLists.txt" ]]; then
+  echo "Quackle CMake project not found at ${QUACKLE_ROOT}" >&2
+  echo "Set QUACKLE_ROOT=/path/to/quackle if it lives elsewhere." >&2
+  exit 1
+fi
+
 cmake --fresh \
   -S "${QUACKLE_ROOT}" \
   -B "${BUILD_DIR}" \
